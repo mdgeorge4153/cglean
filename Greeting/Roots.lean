@@ -3,6 +3,7 @@ import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
+import Greeting.Signs
 
 open Mathlib.Tactic.Ring
 
@@ -15,74 +16,45 @@ open Mathlib.Tactic.Ring
 
 namespace AdjoinRoot
 
-instance [Zero R] : Zero (AdjoinRoot R n) where
+@[simps] instance [Zero R] : Zero (AdjoinRoot R n) where
   zero := ⟨0,0⟩
-@[simp] theorem zero_1 [Zero R] : (0 : AdjoinRoot R n).a₁ = (0 : R) := by rfl
-@[simp] theorem zero_n [Zero R] : (0 : AdjoinRoot R n).aₙ = (0 : R) := by rfl
 
-instance [One R] [Zero R] : One (AdjoinRoot R n) where
+@[simps] instance [One R] [Zero R] : One (AdjoinRoot R n) where
   one := ⟨1,0⟩
-@[simp] theorem one_1 [One R] [Zero R] : (1 : AdjoinRoot R n).a₁ = (1 : R) := by rfl
-@[simp] theorem one_n [One R] [Zero R] : (1 : AdjoinRoot R n).aₙ = (0 : R) := by rfl
 
-instance [Add R] : Add (AdjoinRoot R n) where
+@[simps] instance [Add R] : Add (AdjoinRoot R n) where
   add x y := ⟨ x.a₁ + y.a₁, x.aₙ + y.aₙ ⟩
-@[simp] theorem add_1 [Add R] (x y : AdjoinRoot R n) : (x + y).a₁ = x.a₁ + y.a₁ := by rfl
-@[simp] theorem add_n [Add R] (x y : AdjoinRoot R n) : (x + y).aₙ = x.aₙ + y.aₙ := by rfl
 
-instance [Neg R] : Neg (AdjoinRoot R n) where
+@[simps] instance [Neg R] : Neg (AdjoinRoot R n) where
   neg x := ⟨ -x.a₁, -x.aₙ ⟩ 
-@[simp] theorem neg_1   [Neg R] (x : AdjoinRoot R n) : (-x).a₁ = -x.a₁ := by rfl
-@[simp] theorem neg_n   [Neg R] (x : AdjoinRoot R n) : (-x).aₙ = -x.aₙ := by rfl
 
-instance [Mul R] [Add R] : Mul (AdjoinRoot R n) where
+@[simps] instance [Mul R] [Add R] : Mul (AdjoinRoot R n) where
   mul x y := ⟨x.a₁*y.a₁ + n*x.aₙ*y.aₙ, x.a₁*y.aₙ + x.aₙ*y.a₁⟩
-@[simp] theorem mul_1 [Mul R] [Add R] (x y : AdjoinRoot R n) : (x * y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := by rfl
-@[simp] theorem mul_n [Mul R] [Add R] (x y : AdjoinRoot R n) : (x * y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁   := by rfl
 
-instance [Mul R] : SMul R (AdjoinRoot R n) where
+@[simps] instance [Mul R] : SMul R (AdjoinRoot R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
-@[simp] theorem smul_1 [Mul R] (x : R) (y : AdjoinRoot R n) : (x • y).a₁ = x*y.a₁ := by rfl
-@[simp] theorem smul_n [Mul R] (x : R) (y : AdjoinRoot R n) : (x • y).aₙ = x*y.aₙ := by rfl
 
-instance coe [Zero R] : Coe R (AdjoinRoot R n) where
+@[simps] instance coe [Zero R] : Coe R (AdjoinRoot R n) where
   coe x := ⟨x, 0⟩
-@[simp] theorem coe_1 [Zero R] (x : R): (x : AdjoinRoot R n).a₁ = x := by rfl
-@[simp] theorem coe_n [Zero R] (x : R): (x : AdjoinRoot R n).aₙ = 0 := by rfl
 
 abbrev conj [Neg R] (x : AdjoinRoot R n) : AdjoinRoot R n := ⟨x.a₁, -x.aₙ⟩
 
 instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinRoot R n) (x * conj x) R where
   coe := (x * conj x).a₁ 
 
-instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinRoot R n) where
+@[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinRoot R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
-@[simp] theorem inv_1 [Zero R] [Neg R] [Mul R] [Add R] [Inv R] (x : AdjoinRoot R n) : x⁻¹.a₁ = (x.conj * (x * x.conj : R)⁻¹).a₁ := by rfl
-@[simp] theorem inv_n [Zero R] [Neg R] [Mul R] [Add R] [Inv R] (x : AdjoinRoot R n) : x⁻¹.aₙ = (x.conj * (x * x.conj : R)⁻¹).aₙ := by rfl
 
+open Signed
 
--- inductive Sign : Type
---   | neg | pos | zer
--- 
--- instance : Neg Sign where
---   neg s := match s with
---     | Sign.neg => Sign.pos
---     | Sign.pos => Sign.neg
---     | Sign.zer => Sign.zer
--- 
--- class Signed (α : Type) where
---   sign : α → Sign
--- 
--- open Signed
--- 
--- instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinRoot R n) where
---   sign x :=
---     match (sign x.a₁, sign x.aₙ) with
---       | (.zer, .zer) => .zer
---       | (.pos, .pos) | (.pos,.zer) | (.zer, .pos) => .pos
---       | (.neg, .neg) | (.neg,.zer) | (.zer, .neg) => .neg
---       | (.pos, .neg) =>  sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² > b²n (since both sides of inequality are pos)
---       | (.neg, .pos) => -sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² < b²n (since both sides of inequality are neg)
+@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinRoot R n) where
+  sign x :=
+    match (sign x.a₁, sign x.aₙ) with
+      | (.zer, .zer) => .zer
+      | (.pos, .pos) | (.pos,.zer) | (.zer, .pos) => .pos
+      | (.neg, .neg) | (.neg,.zer) | (.zer, .neg) => .neg
+      | (.pos, .neg) =>  sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² > b²n (since both sides of inequality are pos)
+      | (.neg, .pos) => -sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² < b²n (since both sides of inequality are neg)
 
 
 /-- Theorems ------------------------------------------------------------------/
@@ -145,6 +117,8 @@ lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
   rw [← H']
   ring
 
+-- TODO: need this for a CommRing, not just a field
+-- should be possible just using cancellation maybe? Might need a UFD or something
 lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinRoot R n, (x * x.conj : R) = 0 → x = 0 := by
   intros x H
   simp at H
@@ -155,6 +129,7 @@ lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinRoot R n, (x * x.conj : R
     apply eq_zero_or_eq_zero_of_mul_eq_zero at H
     cases H <;> ext <;> simp <;> assumption
   case neg =>
+    -- here's where we need division in this proof
     have H'' : (x.a₁ * x.aₙ⁻¹) * (x.a₁  * x.aₙ⁻¹) = n := by
       field_simp
       apply cancel_neg
@@ -190,7 +165,42 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinRoot R n) where
     simp;
     assumption
 
-
-
 example [CommRing R] (x y : AdjoinRoot R n) : AdjoinRoot R n := x - y
+
+
+instance [Field R] [SignCone R] [Nonsquare R n]: SignCone (AdjoinRoot R n) where
+  sign_zero := by simp; rw [SignCone.sign_zero]
+  sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
+  zero_sign := by
+    intro a
+    simp
+    cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp
+    case zer.zer =>
+      have a1zero : a.a₁ = 0 := by apply SignCone.zero_sign; trivial
+      have anzero : a.aₙ = 0 := by apply SignCone.zero_sign; trivial
+      intro; ext <;> trivial
+    case pos.neg =>
+      intro h
+      apply SignCone.zero_sign at h
+      apply conj_0 a
+      simp; trivial
+    case neg.pos =>
+      intro h
+      rw [←SignCone.sign_neg] at h
+      apply SignCone.zero_sign at h
+      rw [neg_eq_zero] at h
+      apply conj_0
+      simp; trivial
+
+  sign_neg := by
+    intros a
+    cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignCone.sign_neg, h1, hn] <;> try rfl
+    case neg.pos =>
+      rw [add_comm]
+      rw [neg_involutive]
+
+
+
+      
+
 

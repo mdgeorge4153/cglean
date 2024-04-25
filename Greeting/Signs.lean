@@ -20,11 +20,14 @@ instance : LE Sign := leOfOrd
 example : neg < zer := by rfl
 example : zer ≤ zer := by rfl
 
-@[simps] instance negSign : Neg Sign where
+@[simps] instance : Neg Sign where
   neg s := match s with
     | .neg => .pos
     | .pos => .neg
     | .zer => .zer
+
+instance : InvolutiveNeg Sign where
+  neg_neg := by intro x; cases x <;> rfl
 
 @[simps] instance : Mul Sign where
   mul s₁ s₂ := match s₁ with
