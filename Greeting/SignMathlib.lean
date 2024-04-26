@@ -6,55 +6,69 @@ import Mathlib.Tactic.Linarith.Frontend
 --   given a ordered structure, produce a signed structure
 --   given a signed structure, produce an ordered structure
 
--- TODO: would like to unbundle [sign] from this structure, but I'm not sure how
--- to clearly add a requirement that [sign] is a MonoidWithZeroHom.
-class Signcone (R : Type) [Ring R] where
-  sign : R →*₀ SignType
+class Signed (R : Type) where
+  sign : R → SignType
+
+open Signed
+
+-- TODO: start higher in the hierarchy - e.g. SignedGroup etc
+class SignedRing (R : Type) extends Ring R, Signed R where
+  sign_zero : sign 0 = 0
+  sign_one  : sign 1 = 1
+  sign_mul  : ∀ (a b : R), sign (a * b) = sign a * sign b
   zero_sign : ∀ (a : R), sign a = 0 → a = 0
   sign_neg  : ∀ (a : R), sign (-a) = -sign a
   sign_plus : ∀ (a b : R), sign a ≠ .neg → sign b ≠ .neg → sign (a + b) ≠ .neg
 
-open Signcone
+open SignedRing
 
-instance [Ring R] [Signcone R] : Nontrivial R where
+def SignedRing.signHom [SignedRing R] : R →*₀ SignType := {
+  toFun := sign
+  map_zero' := SignedRing.sign_zero
+  map_one'  := SignedRing.sign_one
+  map_mul'  := SignedRing.sign_mul
+}
+
+instance [SignedRing R] : Nontrivial R where
   exists_pair_ne := by
     exists 0, 1
     intro eq
     have h : sign (0:R) = sign (1:R) := by rw [eq]
-    rw [map_zero, map_one] at h
+    rw [SignedRing.sign_zero, SignedRing.sign_one] at h
     contradiction
 
-
-instance [Ring R] [Signcone R]: LinearOrderedRing R := .mkOfPositiveCone {
+instance [SignedRing R] : LinearOrderedRing R := .mkOfPositiveCone {
   nonneg := fun (x:R) => sign x ≠ .neg
-  zero_nonneg := by simp
-  one_nonneg  := by simp
+  zero_nonneg := by simp [SignedRing.sign_zero]
   add_nonneg  := by apply sign_plus
   nonneg_antisymm := by
     intros a anneg anpos
     apply zero_sign
     cases h: (sign a)
-    rfl
-    contradiction
-    simp [Signcone.sign_neg] at anpos
-    contradiction
+    case a.zero => rfl
+    case a.neg => contradiction
+    case a.pos => simp [SignedRing.sign_neg] at anpos; contradiction
+
+  one_nonneg := by simp [SignedRing.sign_one]
+  mul_pos := by
+    simp [SignedRing.sign_neg]
+    intros a b _ apos _ bpos
+    rw [SignedRing.sign_mul, apos, bpos]; decide
   nonnegDecidable := by infer_instance
   nonneg_total := by
-    simp [Signcone.sign_neg]; intro a; cases (sign a) <;> trivial
-
-  mul_pos := by
-    simp [Signcone.sign_neg]
-    intros a b _ apos _ bpos
-    rw [apos, bpos]; decide
+    simp [SignedRing.sign_neg]; intro a; cases (sign a) <;> trivial
 }
 
--- TODO: don't need Comm, except it allows for linarith
-instance [LinearOrderedCommRing R] : Signcone R where
-  sign := signHom
-  zero_sign := by unfold signHom; simp
-  sign_neg  := by unfold signHom; simp [Left.sign_neg]
+-- TODO: I think we don't need Comm, except it allows for linarith
+instance [LinearOrderedCommRing R] : SignedRing R where
+  sign := SignType.sign
+  sign_zero := sign_zero
+  sign_one  := sign_one
+  sign_mul  := sign_mul
+  zero_sign := by simp
+  sign_neg  := by exact Left.sign_neg
   sign_plus := by
-    unfold signHom; simp
+    simp
     intros a b anneg bnneg
     rw [sign_eq_neg_one_iff, lt_iff_not_le] at *
     simp at *
