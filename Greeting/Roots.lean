@@ -10,66 +10,69 @@ open Mathlib.Tactic.Ring
 /-- Definitions ---------------------------------------------------------------/
 
 -- Numbers of the form a₁ + aₙ√n
-@[ext] structure AdjoinRoot (R : Type u) (n : R) where
+@[ext] structure AdjoinSqrt (R : Type u) (n : R) where
   a₁ : R
   aₙ : R
 
-namespace AdjoinRoot
+namespace AdjoinSqrt
 
-@[simps] instance [Zero R] : Zero (AdjoinRoot R n) where
+@[simps] instance [Zero R] : Zero (AdjoinSqrt R n) where
   zero := ⟨0,0⟩
 
-@[simps] instance [One R] [Zero R] : One (AdjoinRoot R n) where
+@[simps] instance [One R] [Zero R] : One (AdjoinSqrt R n) where
   one := ⟨1,0⟩
 
-@[simps] instance [Add R] : Add (AdjoinRoot R n) where
+@[simps] instance [Add R] : Add (AdjoinSqrt R n) where
   add x y := ⟨ x.a₁ + y.a₁, x.aₙ + y.aₙ ⟩
 
-@[simps] instance [Neg R] : Neg (AdjoinRoot R n) where
+@[simps] instance [Neg R] : Neg (AdjoinSqrt R n) where
   neg x := ⟨ -x.a₁, -x.aₙ ⟩ 
 
-@[simps] instance [Mul R] [Add R] : Mul (AdjoinRoot R n) where
+@[simps] instance [Mul R] [Add R] : Mul (AdjoinSqrt R n) where
   mul x y := ⟨x.a₁*y.a₁ + n*x.aₙ*y.aₙ, x.a₁*y.aₙ + x.aₙ*y.a₁⟩
 
-@[simps] instance [Mul R] : SMul R (AdjoinRoot R n) where
+@[simps] instance [Mul R] : SMul R (AdjoinSqrt R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
 
-@[simps] instance coe [Zero R] : Coe R (AdjoinRoot R n) where
+@[simps] instance [Zero R] : Coe R (AdjoinSqrt R n) where
   coe x := ⟨x, 0⟩
 
-abbrev conj [Neg R] (x : AdjoinRoot R n) : AdjoinRoot R n := ⟨x.a₁, -x.aₙ⟩
+abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
-instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinRoot R n) (x * conj x) R where
+@[simps] instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinSqrt R n) (x * conj x) R where
   coe := (x * conj x).a₁ 
 
-@[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinRoot R n) where
+@[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
+
+class Signed (R : Type) where
+  sign : R → SignType
 
 open Signed
 
-@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinRoot R n) where
+@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
   sign x :=
     match (sign x.a₁, sign x.aₙ) with
-      | (.zer, .zer) => .zer
-      | (.pos, .pos) | (.pos,.zer) | (.zer, .pos) => .pos
-      | (.neg, .neg) | (.neg,.zer) | (.zer, .neg) => .neg
+      | (.zero, .zero) => .zero
+      | (.pos, .pos) | (.pos,.zero) | (.zero, .pos) => .pos
+      | (.neg, .neg) | (.neg,.zero) | (.zero, .neg) => .neg
       | (.pos, .neg) =>  sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² > b²n (since both sides of inequality are pos)
       | (.neg, .pos) => -sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² < b²n (since both sides of inequality are neg)
 
 
 /-- Theorems ------------------------------------------------------------------/
 
-instance [AddSemigroup R]: AddSemigroup (AdjoinRoot R n) where
-  add_assoc := by intros; ext <;> simp <;> apply add_assoc
+instance [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
+  add_assoc := by intros; ext <;> apply add_assoc
 
-instance [AddMonoid R]: AddMonoid (AdjoinRoot R n) where
+instance [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
   zero_add := by intros; ext <;> simp
   add_zero := by intros; ext <;> simp
 
-instance [AddCommMonoid R]: AddCommMonoid (AdjoinRoot R n) := by
+instance [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
   constructor; intros; ext <;> apply add_comm
 
-instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinRoot R n) := by
+instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
   constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> conv =>
     -- this proof just involves finding the right places to commute things. We
     -- should just hand this off to something like `ring`, but I don't think
@@ -85,14 +88,14 @@ instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinRoot R 
     all_goals rfl
 
 
-instance [CommSemiring R]: NonUnitalSemiring (AdjoinRoot R n) := by
+instance [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
 
-instance [CommSemiring R]: Semiring (AdjoinRoot R n) where
+instance [CommSemiring R]: Semiring (AdjoinSqrt R n) where
   one_mul := by intros; ext <;> simp
   mul_one := by intros; ext <;> simp
 
-instance [CommSemiring R]: Algebra R (AdjoinRoot R n) where
+instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   toFun (x : R) := x
   map_one'  := by rfl
   map_mul'  := by intros; ext <;> simp
@@ -101,10 +104,10 @@ instance [CommSemiring R]: Algebra R (AdjoinRoot R n) where
   commutes' := by intros; ext <;> simp <;> apply mul_comm
   smul_def' := by intros; ext <;> simp
 
-instance [CommRing R]: Ring (AdjoinRoot R n) where
+instance [CommRing R]: Ring (AdjoinSqrt R n) where
   add_left_neg := by intros; ext <;> simp
 
-instance [CommRing R]: CommRing (AdjoinRoot R n) where
+instance [CommRing R]: CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
 
 class Nonsquare (R : Type) [Mul R] (n : R) where
@@ -119,7 +122,7 @@ lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
 
 -- TODO: need this for a CommRing, not just a field
 -- should be possible just using cancellation maybe? Might need a UFD or something
-lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinRoot R n, (x * x.conj : R) = 0 → x = 0 := by
+lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R) = 0 → x = 0 := by
   intros x H
   simp at H
   by_cases an0 : x.aₙ = 0
@@ -138,7 +141,7 @@ lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinRoot R n, (x * x.conj : R
     apply Nonsquare.not_square at H''
     exfalso; assumption
 
-instance [Field R] [Nonsquare R n]: Field (AdjoinRoot R n) where
+instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
     -- TODO: this proof is a bit nasty I think
     intros x xne0; ext
@@ -165,10 +168,10 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinRoot R n) where
     simp;
     assumption
 
-example [CommRing R] (x y : AdjoinRoot R n) : AdjoinRoot R n := x - y
+example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 
 
-instance [Field R] [SignCone R] [Nonsquare R n]: SignCone (AdjoinRoot R n) where
+instance [Field R] [Signcone R] [Nonsquare R n]: SignCone (AdjoinSqrt R n) where
   sign_zero := by simp; rw [SignCone.sign_zero]
   sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
   zero_sign := by

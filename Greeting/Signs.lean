@@ -13,7 +13,7 @@ open Sign
 example : compare neg zer = Ordering.lt := by rfl
 example : compare zer pos = Ordering.lt := by rfl
 example : compare zer zer = Ordering.eq := by rfl
-  
+
 instance : LT Sign := ltOfOrd
 instance : LE Sign := leOfOrd
 
