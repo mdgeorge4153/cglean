@@ -2,5 +2,6 @@
 -- Import modules here that should be built as part of the library.
 import «Greeting».Basic
 import «Greeting».Impl
-import «Greeting».Approx
+import «Greeting».SignMathlib
+import «Greeting».Roots
 

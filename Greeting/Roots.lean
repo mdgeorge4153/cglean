@@ -3,9 +3,17 @@ import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
-import Greeting.Signs
+import Mathlib.Tactic.Linarith.Frontend
 
 open Mathlib.Tactic.Ring
+
+-- TODO: this import breaks things somehow; copying class to make progress
+-- import Greeting.SignMathlib
+
+
+class SignedPlaceholder (R : Type) where
+  sign : R → SignType
+open SignedPlaceholder
 
 /-- Definitions ---------------------------------------------------------------/
 
@@ -45,12 +53,7 @@ abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ�
 @[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
 
-class Signed (R : Type) where
-  sign : R → SignType
-
-open Signed
-
-@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
+@[simps] instance [SignedPlaceholder R] [Mul R] [Add R] [Neg R]: SignedPlaceholder (AdjoinSqrt R n) where
   sign x :=
     match (sign x.a₁, sign x.aₙ) with
       | (.zero, .zero) => .zero
@@ -66,7 +69,9 @@ instance [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
   add_assoc := by intros; ext <;> apply add_assoc
 
 instance [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
-  zero_add := by intros; ext <;> simp
+  zero_add := by
+    intros a; ext <;> simp
+
   add_zero := by intros; ext <;> simp
 
 instance [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
@@ -170,38 +175,38 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
 
 example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 
-
-instance [Field R] [Signcone R] [Nonsquare R n]: SignCone (AdjoinSqrt R n) where
-  sign_zero := by simp; rw [SignCone.sign_zero]
-  sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
-  zero_sign := by
-    intro a
-    simp
-    cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp
-    case zer.zer =>
-      have a1zero : a.a₁ = 0 := by apply SignCone.zero_sign; trivial
-      have anzero : a.aₙ = 0 := by apply SignCone.zero_sign; trivial
-      intro; ext <;> trivial
-    case pos.neg =>
-      intro h
-      apply SignCone.zero_sign at h
-      apply conj_0 a
-      simp; trivial
-    case neg.pos =>
-      intro h
-      rw [←SignCone.sign_neg] at h
-      apply SignCone.zero_sign at h
-      rw [neg_eq_zero] at h
-      apply conj_0
-      simp; trivial
-
-  sign_neg := by
-    intros a
-    cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignCone.sign_neg, h1, hn] <;> try rfl
-    case neg.pos =>
-      rw [add_comm]
-      rw [neg_involutive]
-
+-- TODO: can't do this because import is breaking things
+-- instance [Field R] [Signcone R] [Nonsquare R n]: SignCone (AdjoinSqrt R n) where
+--   sign_zero := by simp; rw [SignCone.sign_zero]
+--   sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
+--   zero_sign := by
+--     intro a
+--     simp
+--     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp
+--     case zer.zer =>
+--       have a1zero : a.a₁ = 0 := by apply SignCone.zero_sign; trivial
+--       have anzero : a.aₙ = 0 := by apply SignCone.zero_sign; trivial
+--       intro; ext <;> trivial
+--     case pos.neg =>
+--       intro h
+--       apply SignCone.zero_sign at h
+--       apply conj_0 a
+--       simp; trivial
+--     case neg.pos =>
+--       intro h
+--       rw [←SignCone.sign_neg] at h
+--       apply SignCone.zero_sign at h
+--       rw [neg_eq_zero] at h
+--       apply conj_0
+--       simp; trivial
+-- 
+--   sign_neg := by
+--     intros a
+--     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignCone.sign_neg, h1, hn] <;> try rfl
+--     case neg.pos =>
+--       rw [add_comm]
+--       rw [neg_involutive]
+-- 
 
 
       

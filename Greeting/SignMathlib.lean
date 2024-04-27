@@ -13,12 +13,12 @@ open Signed
 
 -- TODO: start higher in the hierarchy - e.g. SignedGroup etc
 class SignedRing (R : Type) extends Ring R, Signed R where
-  sign_zero : sign 0 = 0
-  sign_one  : sign 1 = 1
-  sign_mul  : ∀ (a b : R), sign (a * b) = sign a * sign b
-  zero_sign : ∀ (a : R), sign a = 0 → a = 0
-  sign_neg  : ∀ (a : R), sign (-a) = -sign a
-  sign_plus : ∀ (a b : R), sign a ≠ .neg → sign b ≠ .neg → sign (a + b) ≠ .neg
+ sign_zero : sign 0 = 0
+ sign_one  : sign 1 = 1
+ sign_mul  : ∀ (a b : R), sign (a * b) = sign a * sign b
+ zero_sign : ∀ (a : R), sign a = 0 → a = 0
+ sign_neg  : ∀ (a : R), sign (-a) = -sign a
+ sign_plus : ∀ (a b : R), sign a ≠ .neg → sign b ≠ .neg → sign (a + b) ≠ .neg
 
 open SignedRing
 
