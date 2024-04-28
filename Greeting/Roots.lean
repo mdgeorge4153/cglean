@@ -4,16 +4,9 @@ import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith.Frontend
+import Greeting.SignMathlib
 
 open Mathlib.Tactic.Ring
-
--- TODO: this import breaks things somehow; copying class to make progress
--- import Greeting.SignMathlib
-
-
-class SignedPlaceholder (R : Type) where
-  sign : R → SignType
-open SignedPlaceholder
 
 /-- Definitions ---------------------------------------------------------------/
 
@@ -34,7 +27,7 @@ namespace AdjoinSqrt
   add x y := ⟨ x.a₁ + y.a₁, x.aₙ + y.aₙ ⟩
 
 @[simps] instance [Neg R] : Neg (AdjoinSqrt R n) where
-  neg x := ⟨ -x.a₁, -x.aₙ ⟩ 
+  neg x := ⟨ -x.a₁, -x.aₙ ⟩
 
 @[simps] instance [Mul R] [Add R] : Mul (AdjoinSqrt R n) where
   mul x y := ⟨x.a₁*y.a₁ + n*x.aₙ*y.aₙ, x.a₁*y.aₙ + x.aₙ*y.a₁⟩
@@ -48,12 +41,14 @@ namespace AdjoinSqrt
 abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
 @[simps] instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinSqrt R n) (x * conj x) R where
-  coe := (x * conj x).a₁ 
+  coe := (x * conj x).a₁
 
 @[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
 
-@[simps] instance [SignedPlaceholder R] [Mul R] [Add R] [Neg R]: SignedPlaceholder (AdjoinSqrt R n) where
+open Signed
+
+@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
   sign x :=
     match (sign x.a₁, sign x.aₙ) with
       | (.zero, .zero) => .zero
@@ -69,16 +64,15 @@ instance [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
   add_assoc := by intros; ext <;> apply add_assoc
 
 instance [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
-  zero_add := by
-    intros a; ext <;> simp
-
+  zero_add := by intros a; ext <;> simp
   add_zero := by intros; ext <;> simp
+  nsmul := nsmulRec
 
 instance [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
   constructor; intros; ext <;> apply add_comm
 
 instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
-  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> conv =>
+  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> try conv =>
     -- this proof just involves finding the right places to commute things. We
     -- should just hand this off to something like `ring`, but I don't think
     -- there are nice tactics like that for things higher in the hierarchy
@@ -91,26 +85,27 @@ instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R 
     all_goals rhs
     rw [add_comm]
     all_goals rfl
-
+  all_goals rw [add_zero]
 
 instance [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
 
 instance [CommSemiring R]: Semiring (AdjoinSqrt R n) where
-  one_mul := by intros; ext <;> simp
-  mul_one := by intros; ext <;> simp
+  one_mul := by intros; ext <;> simp <;> ring
+  mul_one := by intros; ext <;> simp <;> ring
 
 instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   toFun (x : R) := x
   map_one'  := by rfl
-  map_mul'  := by intros; ext <;> simp
+  map_mul'  := by intros; ext <;> simp <;> ring
   map_zero' := by rfl
-  map_add'  := by intros; ext <;> simp
-  commutes' := by intros; ext <;> simp <;> apply mul_comm
-  smul_def' := by intros; ext <;> simp
+  map_add'  := by intros; ext <;> simp; ring
+  commutes' := by intros; ext <;> simp <;> ring
+  smul_def' := by intros; ext <;> simp <;> ring
 
 instance [CommRing R]: Ring (AdjoinSqrt R n) where
-  add_left_neg := by intros; ext <;> simp
+  add_left_neg := by intros; ext <;> simp <;> ring
+  zsmul := zsmulRec
 
 instance [CommRing R]: CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
@@ -173,17 +168,22 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
     simp;
     assumption
 
+  qsmul := _
+
+
 example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 
--- TODO: can't do this because import is breaking things
--- instance [Field R] [Signcone R] [Nonsquare R n]: SignCone (AdjoinSqrt R n) where
---   sign_zero := by simp; rw [SignCone.sign_zero]
+-- instance [Field R] [i: SignedRing R] [Nonsquare R n]: SignedRing (AdjoinSqrt R n) where
+--   sign_zero := by
+--     simp
+--     cases h: sign (0:R) <;> simp
+--     rw [SignedRing.sign_zero] at h
 --   sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
 --   zero_sign := by
 --     intro a
 --     simp
 --     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp
---     case zer.zer =>
+--     case zero.zero =>
 --       have a1zero : a.a₁ = 0 := by apply SignCone.zero_sign; trivial
 --       have anzero : a.aₙ = 0 := by apply SignCone.zero_sign; trivial
 --       intro; ext <;> trivial
@@ -207,8 +207,4 @@ example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 --       rw [add_comm]
 --       rw [neg_involutive]
 -- 
-
-
-      
-
-
+-- 
