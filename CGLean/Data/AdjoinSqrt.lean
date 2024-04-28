@@ -173,11 +173,18 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
 
 example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 
--- instance [Field R] [i: SignedRing R] [Nonsquare R n]: SignedRing (AdjoinSqrt R n) where
---   sign_zero := by
---     simp
---     cases h: sign (0:R) <;> simp
---     rw [SignedRing.sign_zero] at h
+instance [Field R] [i: SignedRing R] [Nonsquare R n]: SignedRing (AdjoinSqrt R n) where
+  sign_zero := by
+    simp
+    -- TODO: goal is match (sign 0, ...) with ..., why doesn't this rewrite match?
+    rw [SignedRing.sign_zero]
+    admit
+  sign_one := sorry
+  sign_mul := sorry
+  zero_sign := sorry
+  sign_neg := sorry
+  sign_plus := sorry
+
 --   sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
 --   zero_sign := by
 --     intro a
@@ -206,5 +213,5 @@ example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 --     case neg.pos =>
 --       rw [add_comm]
 --       rw [neg_involutive]
--- 
--- 
+
+
