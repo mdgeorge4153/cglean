@@ -4,7 +4,7 @@ import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith.Frontend
-import Greeting.SignMathlib
+import CGLean.Algebra.Signed
 
 open Mathlib.Tactic.Ring
 

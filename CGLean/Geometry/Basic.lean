@@ -1,5 +1,5 @@
 import LeanColls
-import Greeting.Impl
+import CGLean.Geometry.Impl
 
 inductive Location :=
   | inside

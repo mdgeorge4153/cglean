@@ -1,15 +1,14 @@
 import Lake
 open Lake DSL
 
-package greeting
+package cglean
 
 @[default_target]
-lean_lib Greeting
+lean_lib CGLean
 
 require leancolls from git
   "https://github.com/JamesGallicchio/LeanColls.git" @ "main"
 
 require ray from git
   "https://github.com/girving/ray.git" @ "main"
-
 
