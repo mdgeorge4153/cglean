@@ -1,5 +1,12 @@
 import Mathlib.Data.Rat.Field
 import Mathlib.Algebra.Ring.Prod
+import LeanColls.Data.RBMap
+import CGLean.Geometry.Basic
+import CGLean.Classes.Basic
+import ProofWidgets.Data.Svg
+import ProofWidgets.Component.HtmlDisplay
+
+open LeanColls
 
 variable (k : Type)
 variable [LinearOrderedRing k]
@@ -38,3 +45,65 @@ infixl:72 " ⬝ " => dotProduct _
 
 def h (p₁ p₂ : Point k) : k := p₁ ⬝ p₂
 
+structure Edge : Type where
+  target   : Point k
+  left_in  : Bool -- is the right side of the line "inside" the region?
+  right_in : Bool -- is the left side of the edge "inside" the region?
+
+/--
+A region is stored as a map; each vertex in the boundary of the region has a
+corresponding key.  The values are lists of edges.  We refer to the source
+of an edge as the key under which the edge is stored.
+
+a region r is valid if
+ 1. the target of every edge is less than the source (in the < order)
+ 2. the target of every edge has a corresponding vertex in the map
+ 3. the edges at each source are sorted (by the compare_edges_around order)
+ 4. the edges and vertices are all interior-disjoint
+-/
+structure RegionImpl : Type where
+  edges : List (Point k × List (Edge k))
+  -- TODO: invariants
+
+def RegionImpl.segments (r : RegionImpl k) : List (Point k × Point k) :=
+  do let (source, edges) ← r.edges
+     let edge ← edges
+     pure (source, edge.target)
+
+def RegionImpl.vertices (r : RegionImpl k) : List (Point k) :=
+  List.map Prod.fst r.edges
+
+instance: HAdd (RegionImpl k) (Point k) (RegionImpl k) where
+  hAdd r offset := {
+    edges := do
+      let (source, edges) ← r.edges
+      pure (source + offset, List.map (fun e => {target := e.target + offset, left_in := e.left_in, right_in := e.right_in}) edges)
+  }
+
+def bigTri : RegionImpl ℚ := {
+  edges := [
+    ((0, 0), []),
+    ((0,2), [⟨(0,0), true, false⟩]),
+    ((2,0), [⟨(0,2), true, false⟩, ⟨(0,0), false, true⟩])
+  ]
+}
+
+open ProofWidgets Svg
+
+private def frame : Frame where
+  xmin   := -1
+  ymin   := -1
+  xSize  := 4
+  width  := 400
+  height := 400
+
+def floatPoint [Floatable α] (p : Point α) : Float × Float := (Floatable.toFloat p.x, Floatable.toFloat p.y)
+
+def toSvg [Floatable α] (r : RegionImpl α) : Svg frame :=
+  let nodes : Array (Element frame) := r.vertices |> List.map (fun p => circle (floatPoint p) (.abs 0.05) |>.setFill (0.5,0.5,1.)) |> List.toArray
+  let edges : Array (Element frame) := r.segments |> List.map (fun (p,q) => line (floatPoint p) (floatPoint q) |>.setStroke (0.8, 0.0, 0.0) (.px 2)) |> List.toArray
+  { elements := edges ++ nodes }
+
+#html bigTri |> toSvg |>.toHtml
+
+instance : Region (RegionImpl k) (Point k) := sorry
