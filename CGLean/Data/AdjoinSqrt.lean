@@ -1,4 +1,5 @@
 import Mathlib.Algebra.Ring.Basic
+import Mathlib.Algebra.Field.IsField
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
@@ -11,7 +12,7 @@ open Mathlib.Tactic.Ring
 /-- Definitions ---------------------------------------------------------------/
 
 -- Numbers of the form a₁ + aₙ√n
-@[ext] structure AdjoinSqrt (R : Type u) (n : R) where
+@[ext] structure AdjoinSqrt (R : Type) (n : R) where
   a₁ : R
   aₙ : R
 
@@ -85,26 +86,25 @@ instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R 
     all_goals rhs
     rw [add_comm]
     all_goals rfl
-  all_goals rw [add_zero]
 
 instance [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
 
 instance [CommSemiring R]: Semiring (AdjoinSqrt R n) where
-  one_mul := by intros; ext <;> simp <;> ring
-  mul_one := by intros; ext <;> simp <;> ring
+  one_mul := by intros; ext <;> simp
+  mul_one := by intros; ext <;> simp
 
 instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   toFun (x : R) := x
   map_one'  := by rfl
-  map_mul'  := by intros; ext <;> simp <;> ring
+  map_mul'  := by intros; ext <;> simp
   map_zero' := by rfl
-  map_add'  := by intros; ext <;> simp; ring
+  map_add'  := by intros; ext <;> simp
   commutes' := by intros; ext <;> simp <;> ring
-  smul_def' := by intros; ext <;> simp <;> ring
+  smul_def' := by intros; ext <;> simp
 
 instance [CommRing R]: Ring (AdjoinSqrt R n) where
-  add_left_neg := by intros; ext <;> simp <;> ring
+  add_left_neg := by intros; ext <;> simp
   zsmul := zsmulRec
 
 instance [CommRing R]: CommRing (AdjoinSqrt R n) where
@@ -173,45 +173,39 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
 
 example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
 
-instance [Field R] [i: SignedRing R] [Nonsquare R n]: SignedRing (AdjoinSqrt R n) where
-  sign_zero := by
-    simp
-    -- TODO: goal is match (sign 0, ...) with ..., why doesn't this rewrite match?
-    rw [SignedRing.sign_zero]
-    admit
-  sign_one := sorry
-  sign_mul := sorry
-  zero_sign := sorry
-  sign_neg := sorry
-  sign_plus := sorry
+class Pos (R : Type) [Signed R] (n : R) where
+  n_pos : sign n = .pos
 
---   sign_one  := by simp; rw[SignCone.sign_zero, SignCone.sign_one]
+open SignedRing
+
+-- TODO
+-- instance [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) where
+--   sign_zero := by simp [SignedRing.sign_zero]
+--   sign_one := by simp [SignedRing.sign_zero, SignedRing.sign_one]
+--   sign_neg := by
+--     intros a
+--     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignedRing.sign_neg, h1, hn]
+-- 
 --   zero_sign := by
 --     intro a
---     simp
---     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp
---     case zero.zero =>
---       have a1zero : a.a₁ = 0 := by apply SignCone.zero_sign; trivial
---       have anzero : a.aₙ = 0 := by apply SignCone.zero_sign; trivial
---       intro; ext <;> trivial
---     case pos.neg =>
---       intro h
---       apply SignCone.zero_sign at h
---       apply conj_0 a
---       simp; trivial
+--     cases asign : sign (a.a₁) <;> cases bsign : sign (a.aₙ) <;> simp [asign, bsign]
+--     case zero.zero => apply SignedRing.zero_sign at asign; apply SignedRing.zero_sign at bsign; ext <;> trivial
+-- 
 --     case neg.pos =>
 --       intro h
---       rw [←SignCone.sign_neg] at h
---       apply SignCone.zero_sign at h
+--       rw [← SignedRing.sign_neg] at h
+--       apply SignedRing.zero_sign at h
 --       rw [neg_eq_zero] at h
 --       apply conj_0
 --       simp; trivial
 -- 
---   sign_neg := by
---     intros a
---     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignCone.sign_neg, h1, hn] <;> try rfl
---     case neg.pos =>
---       rw [add_comm]
---       rw [neg_involutive]
-
+--     case pos.neg =>
+--       intro h
+--       apply SignedRing.zero_sign at h
+--       apply @conj_0 _ _ f.toField _ a
+--       simp; trivial
+-- 
+--   sign_mul := sorry
+--   sign_plus := sorry
+    
 
