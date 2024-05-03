@@ -36,7 +36,7 @@ class Region (ρ : Type) (π : outParam Type)
   vertices : ρ → List π
 
   -- the edges on the boundary of the region
-  edges : ρ → List (π × π)
+  segments : ρ → List (π × π)
 
 
 def Region.interior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .inside}

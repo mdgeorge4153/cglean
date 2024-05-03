@@ -1,22 +1,36 @@
 import ProofWidgets.Data.Svg
 import ProofWidgets.Component.HtmlDisplay
+import CGLean.Render.Region
+import CGLean.Render.Utils
+
+import CGLean.Geometry.Arrangement
 
 open ProofWidgets Svg
 
+def bigTri : Arrangement ℚ := {
+  edges := [
+    ((0, 0), []),
+    ((0,2), [⟨(0,0), true, false⟩]),
+    ((2,0), [⟨(0,2), true, false⟩, ⟨(0,0), false, true⟩])
+  ]
+}
+
+def square : Arrangement ℚ := {
+  edges := [
+    ((0,0), []),
+    ((0,1), [⟨(0,0), true, false⟩]),
+    ((1,0), [⟨(0,0), false, true⟩]),
+    ((1,1), [⟨(0,1), true, false⟩, ⟨(1,0), false, true⟩])
+  ]
+}
+
+def t : Point ℚ := (3/4,3/4)
+
 private def frame : Frame where
-  xmin   := -2
-  ymin   := -2
+  xmin   := -1
+  ymin   := -1
   xSize  := 4
   width  := 400
   height := 400
 
-private def svg : Svg frame :=
-  { elements :=
-      #[line (0.,0.) (1.,0.) |>.setStroke (1.,0.,0.) (.px 2),
-        line (1.,0.) (0.,1.) |>.setStroke (0.,1.,0.) (.px 2),
-        line (0.,1.) (0.,0.) |>.setStroke (0.,0.,1.) (.px 2),
-        circle (0.,0.) (.abs 0.1) |>.setStroke (0.,0.,0.) (.px 2) |>.setFill (0.,1.,1.) |>.setId "point1",
-        circle (1.,0.) (.abs 0.1) |>.setStroke (0.,0.,0.) (.px 2) |>.setFill (1.,0.,1.) |>.setId "point2",
-        circle (0.,1.) (.abs 0.1) |>.setStroke (0.,0.,0.) (.px 2) |>.setFill (1.,1.,0.) |>.setId "point3"] }
-
-#html svg.toHtml
+#html (bigTri |> toSvg frame) ++ (square + t |> toSvg _) |>.toHtml
