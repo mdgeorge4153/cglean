@@ -80,14 +80,6 @@ instance: HAdd (RegionImpl k) (Point k) (RegionImpl k) where
       pure (source + offset, List.map (fun e => {target := e.target + offset, left_in := e.left_in, right_in := e.right_in}) edges)
   }
 
-def bigTri : RegionImpl ℚ := {
-  edges := [
-    ((0, 0), []),
-    ((0,2), [⟨(0,0), true, false⟩]),
-    ((2,0), [⟨(0,2), true, false⟩, ⟨(0,0), false, true⟩])
-  ]
-}
-
 open ProofWidgets Svg
 
 private def frame : Frame where
@@ -104,6 +96,29 @@ def toSvg [Floatable α] (r : RegionImpl α) : Svg frame :=
   let edges : Array (Element frame) := r.segments |> List.map (fun (p,q) => line (floatPoint p) (floatPoint q) |>.setStroke (0.8, 0.0, 0.0) (.px 2)) |> List.toArray
   { elements := edges ++ nodes }
 
-#html bigTri |> toSvg |>.toHtml
+def bigTri : RegionImpl ℚ := {
+  edges := [
+    ((0, 0), []),
+    ((0,2), [⟨(0,0), true, false⟩]),
+    ((2,0), [⟨(0,2), true, false⟩, ⟨(0,0), false, true⟩])
+  ]
+}
+
+def square : RegionImpl ℚ := {
+  edges := [
+    ((0,0), []),
+    ((0,1), [⟨(0,0), true, false⟩]),
+    ((1,0), [⟨(0,0), false, true⟩]),
+    ((1,1), [⟨(0,1), true, false⟩, ⟨(1,0), false, true⟩])
+  ]
+}
+
+instance: Append (Svg frame) where
+  -- TODO: what about index map?
+  append s1 s2 := { elements := s1.elements ++ s2.elements }
+
+def t : Point ℚ := (3/4,3/4)
+
+#html (bigTri |> toSvg) ++ (square + t |> toSvg) |>.toHtml
 
 instance : Region (RegionImpl k) (Point k) := sorry
