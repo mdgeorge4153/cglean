@@ -3,6 +3,9 @@ import Std.Data.Rat.Basic
 class Floatable (α : Type) where
   toFloat : α → Float
 
+instance: Floatable Float where
+  toFloat := id
+
 instance: Floatable Nat where
   toFloat := Nat.toFloat
 
@@ -13,4 +16,5 @@ instance: Floatable Int where
 
 instance: Floatable Rat where
   toFloat r := Floatable.toFloat r.num / Floatable.toFloat r.den
+
 
