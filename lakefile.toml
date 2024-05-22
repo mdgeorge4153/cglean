@@ -1,0 +1,20 @@
+name = "cglean"
+defaultTargets = ["CGLean"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.8.0-rc1"
+
+[[require]]
+name = "leancolls"
+git = "https://github.com/mdgeorge4153/LeanColls.git"
+rev = "lean-4.8"
+
+[[require]]
+name = "ray"
+git = "https://github.com/girving/ray.git"
+rev = "lean-4.8"
+
+[[lean_lib]]
+name = "CGLean"
