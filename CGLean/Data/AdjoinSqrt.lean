@@ -169,6 +169,7 @@ instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
     assumption
 
   qsmul := _
+  nnqsmul := _
 
 
 example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
