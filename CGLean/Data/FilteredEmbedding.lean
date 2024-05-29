@@ -33,6 +33,9 @@ FP approximations are exact). It is worth looking into the paper on reference
 equality optimizations (or even some kind of union-find structure) to see if
 this can be improved.
 
+TODO: Update documentation to reflect FilteredReal (quotient of
+FilteredEmbedding)
+
 ## Implementation note
 
 Since a `FilteredEmbedding f` value must contain a proof that the
@@ -67,68 +70,119 @@ structure FilteredEmbedding (f : α → ℝ) where
 
 @[simp] def FilteredEmbedding.toReal (x : FilteredEmbedding f) : ℝ := f x.value.get
 
+/-! ## FilteredReals are equivalence classes of FilteredEmbedding -------------/
+
+@[simp] def eqv (f : α → ℝ) (x y : FilteredEmbedding f) : Prop := x.value.get = y.value.get
+
+@[simps] instance same_value (f : α → ℝ): Setoid (FilteredEmbedding f) where
+  r     := eqv f
+  iseqv := InvImage.equivalence _ _ eq_equivalence
+
+def FilteredReal (f : α → ℝ) : Type := Quotient (same_value f)
+
+namespace FilteredReal
+
+def mk (f : α → ℝ) (value : α) (range : Around (f value)) : FilteredReal f :=
+  Quotient.mk' ⟨value, range⟩
+
+theorem mk_eq_mk : x = y → mk f x p₁ = mk f y p₂ := by
+  intro; apply Quot.sound; simpa [InvImage]
+
+end FilteredReal
+
 /-! ## Zero -------------------------------------------------------------------/
 
-@[simps] instance [Zero α] [FunLike F α ℝ] [ZeroHomClass F α ℝ] (f : F): Zero (FilteredEmbedding f) where
+section Zero
+
+variable [Zero α] [FunLike F α ℝ] [ZeroHomClass F α ℝ] (f : F)
+
+@[simps] instance: Zero (FilteredEmbedding f) where
   zero := {
     value := (0 : α)
     range := ⟨0, by simp [map_zero]⟩
   }
 
-def toZeroHom [Zero α] [FunLike F α ℝ] [ZeroHomClass F α ℝ] (f : F): ZeroHom (FilteredEmbedding f) ℝ where
+def toZeroHom: ZeroHom (FilteredEmbedding f) ℝ where
   toFun     := FilteredEmbedding.toReal
   map_zero' := by simp
 
-def ratToReal : ZeroHom ℚ ℝ where
-  toFun q   := q
-  map_zero' := by simp
+instance: Zero (FilteredReal f) where
+  zero := Quotient.mk' 0
 
-abbrev FilteredRat : Type := FilteredEmbedding ratToReal
-
-example : FilteredRat := 0
+end Zero
 
 /-! ## One --------------------------------------------------------------------/
 
-@[simps] instance [One α] [FunLike F α ℝ] [OneHomClass F α ℝ] (f : F): One (FilteredEmbedding f) where
+section One
+
+variable [One α] [FunLike F α ℝ] [OneHomClass F α ℝ] (f : F)
+
+@[simps] instance: One (FilteredEmbedding f) where
   one := {
     value := (1 : α)
     range := ⟨1, by simp [map_one]⟩
   }
 
-def toOneHom [One α] [FunLike F α ℝ] [OneHomClass F α ℝ] (f : F): OneHom (FilteredEmbedding f) ℝ where
+def toOneHom: OneHom (FilteredEmbedding f) ℝ where
   toFun    := FilteredEmbedding.toReal
   map_one' := by simp
 
+instance: One (FilteredReal f) where
+  one := Quotient.mk' 1
+
+end One
+
 /-! ## Add --------------------------------------------------------------------/
 
-@[simps] instance [Add α] [FunLike F α ℝ] [AddHomClass F α ℝ] (f : F): Add (FilteredEmbedding f) where
+section Add
+
+variable [Add α] [FunLike F α ℝ] [AddHomClass F α ℝ] (f : F)
+
+@[simps] instance: Add (FilteredEmbedding f) where
   add x y := {
     value := x.value.get + y.value.get
     range := ⟨x.range.i + y.range.i, by simp [map_add]; mono⟩
   }
 
-def toAddHom [Add α] [FunLike F α ℝ] [AddHomClass F α ℝ] (f : F): AddHom (FilteredEmbedding f) ℝ where
+def toAddHom: AddHom (FilteredEmbedding f) ℝ where
   toFun := FilteredEmbedding.toReal
   map_add' := by simp
 
+instance: Add (FilteredReal f) where
+  add := Quot.map₂ (· + ·) (by simp_all) (by simp_all)
+
+end Add
+
 /-! ## Mul --------------------------------------------------------------------/
 
-@[simps] instance [Mul α] [FunLike F α ℝ] [MulHomClass F α ℝ] (f : F): Mul (FilteredEmbedding f) where
+section Mul
+
+variable [Mul α] [FunLike F α ℝ] [MulHomClass F α ℝ] (f : F)
+
+@[simps] instance: Mul (FilteredEmbedding f) where
   mul x y := {
     value := x.value.get * y.value.get
     range := ⟨x.range.i * y.range.i, by simp [map_mul]; mono⟩
   }
 
-def toMulHom [Mul α] [FunLike F α ℝ] [MulHomClass F α ℝ] (f : F): MulHom (FilteredEmbedding f) ℝ where
+def toMulHom: MulHom (FilteredEmbedding f) ℝ where
   toFun := FilteredEmbedding.toReal
   map_mul' := by simp
 
+instance: Mul (FilteredReal f) where
+  mul := Quot.map₂ (· * ·) (by simp_all) (by simp_all)
+
+end Mul
 
 /-! ## Equality ---------------------------------------------------------------/
 
-instance same_value : Setoid (FilteredEmbedding f) where
-  r     := InvImage (· = ·) (λ x ↦ x.value.get)
-  iseqv := InvImage.equivalence _ _ eq_equivalence
+instance [BEq α] (f : α → ℝ): BEq (FilteredEmbedding f) where
+  beq x y :=
+    if x.range.i.hi < y.range.i.lo then false
+    else if x.range.i.lo > y.range.i.hi then false
+    else x.value.get == y.value.get
 
--- TODO: equality and comparisons
+-- TODO: implement BEq and/or DecidableEq
+-- TODO: comparisons
+-- TODO: CGLean.Algebra.Signed
 
