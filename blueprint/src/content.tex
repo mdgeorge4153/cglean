@@ -1,7 +1,92 @@
-% In this file you should put the actual content of the blueprint.
-% It will be used both by the web and the print version.
-% It should *not* include the \begin{document}
-%
-% If you want to split the blueprint content into several files then
-% the current file can be a simple sequence of \input. Otherwise It
-% can start with a \section or \chapter for instance.
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\section{Overview}
+
+\section{2D Planar Geometry Primitives}
+
+\section{Planar Arrangements}
+
+\section{Computational Number Representations}
+
+\subsection{Adjoining a square root}
+
+\begin{definition}
+  \label{def:adjoin}
+  \lean{AdjoinSqrt}
+  \leanok
+  $A[\sqrt{n}]$ is stored as a pair $(a_1, a_n)$, representing the value
+  $a_1 + a_n\sqrt{n}$.
+\end{definition}
+
+\begin{definition}
+  \label{def:adjoinEmbedding}
+  \lean{instCoeAdjoin}
+  \leanok
+  \uses{def:adjoin}
+  We write $A \hookrightarrow A[\sqrt{n}]$ for the natural embedding
+  $a \mapsto a + 0\sqrt{n}$ (assuming $0 ∈ A$).
+\end{definition}
+
+\begin{theorem}
+  \label{thm:adjoinRing}
+  \lean{instAdjoinCommRing}
+  \leanok
+  \uses{def:adjoinEmbedding}
+  If $A$ is a (commutative) ring, then we can provide a commutative ring structure
+  on $A[\sqrt{n}]$ in the obvious way.
+\end{theorem}
+
+\begin{lemma}
+  \label{thm:adjoinAlgebra}
+  \lean{instAdjoinAlgebra}
+  \leanok
+  \uses{def:adjoin, def:adjoinEmbedding}
+  If $A$ is a ring, then $A[\sqrt{n}]$ is an $A$-algebra.
+\end{lemma}
+
+\begin{lemma}
+  \label{thm:adjoinInjective}
+  \lean{instAdjoinInjective}
+  \uses{def:adjoinEmbedding}
+  If $n$ is not a square in $A$ then the inclusion $A \hookrightarrow
+  A[\sqrt{n}]$ is injective.
+\end{lemma}
+
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{theorem}
+  \label{thm:adjoinField}
+  \lean{instAdjoinField}
+  \leanok
+  \uses{def:adjoin}
+  If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
+  field.
+\end{theorem}
+
+\begin{theorem}
+  \label{thm:adjoinOrder}
+  \lean{instAdjoinLinearOrderedField}
+  \uses{def:adjoin}
+
+  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
+  then $A[\sqrt{n}]$ is also linearly ordered.
+\end{theorem}
+\begin{proof}
+  TODO
+\end{proof}
+
+\begin{lemma}
+  \label{thm:mathlibAdjoin}
+  \uses{def:adjoin}
+  $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
+\end{lemma}
+
+\subsection{Interval arithmetic}
+
+
+\section{Applications}
+
