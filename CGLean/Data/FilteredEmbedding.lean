@@ -299,6 +299,7 @@ theorem compare?_complete:
           case neg.eq.eq =>
             rw [compare_eq_iff_eq] at *
             simp [nan, Interval.glb] at *
+            sorry
 
 end Interval
 

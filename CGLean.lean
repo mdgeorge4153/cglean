@@ -1,5 +1,5 @@
 import «CGLean».Data.AdjoinSqrt
-import «CGLean».Data.FilteredReal
+import «CGLean».Data.FilteredEmbedding
 import «CGLean».Geometry.Arrangement
 import CGLean.Playground
 
