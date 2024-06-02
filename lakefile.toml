@@ -16,5 +16,9 @@ name = "ray"
 git = "https://github.com/girving/ray.git"
 rev = "lean-4.8"
 
+[[require]]
+name = "checkdecls"
+git = "https://github.com/PatrickMassot/checkdecls.git"
+
 [[lean_lib]]
 name = "CGLean"
