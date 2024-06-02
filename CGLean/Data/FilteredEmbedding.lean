@@ -6,6 +6,7 @@ Author: Michael D. George.
 import Mathlib.Data.Real.Basic
 import Ray.Approx.Interval.Around
 import Ray.Approx.Interval.Mul
+import CGLean.Data.Interval
 
 /-!
 # Filtered Real Numbers
@@ -189,7 +190,7 @@ def compare? (x y : Interval) : Option Ordering :=
   else none
 
 /--
-If `compare?` returns `some o`, then comparing any element of the intervals
+If `compare?` returns `some o`, then comparing any elements of the intervals
 must return `o`
 -/
 
@@ -229,6 +230,15 @@ lemma mem_approx_nan : ∀ (x : ℝ) (i : Interval), i = nan → x ∈ approx i 
 
 lemma exists_in [Membership α β] {p : α → Prop} {y : β} (x : α) (h: x ∈ y) (h': p x) : ∃ x ∈ y, p x := by exists x
 
+-- theorem compare?_complete:
+--   ∀ (x y : Interval), compare? x y = none →
+--     ∃ x₁ ∈ approx x, ∃ x₂ ∈ approx x, ∃ y₁ ∈ approx y, ∃ y₂ ∈ approx y,
+--       compare x₁ y₁ ≠ compare x₂ y₂ := by
+--         intros x y cmp
+
+        
+        
+
 /--
 `compare?` only returns `none` if the intervals are incomparable. This is not
 necessary for correctness of FilteredReal, but ensures that we don't evaluate
@@ -240,7 +250,7 @@ theorem compare?_complete:
       compare x₁ y₁ ≠ compare x₂ y₂ := by
         unfold compare?
         intros x y cmp
-        split_ifs at cmp with nan
+        split_ifs at cmp with nan gt lt eq
         . cases nan
           . -- x = nan
             let x₁ := y.lo.val - 1
@@ -273,7 +283,22 @@ theorem compare?_complete:
 
             simp [hlt, hgt]
 
-        . sorry
+        . apply exists_in x.glb.val (by apply glb_mem)
+          apply exists_in x.lub.val (by apply lub_mem)
+          apply exists_in y.lub.val (by apply lub_mem)
+          apply exists_in y.glb.val (by apply glb_mem)
+
+          have cmp1: x.glb.val ≤ y.lub.val := by sorry
+          have cmp2: x.lub.val ≥ y.glb.val := by sorry
+
+          cases h1: (compare x.glb.val y.lub.val)
+            <;> cases h2: (compare x.lub.val y.glb.val)
+              <;> simp
+          case neg.lt.lt => rw [←compare_ge_iff_ge] at *; contradiction
+          case neg.gt.gt => rw [←compare_le_iff_le] at *; contradiction
+          case neg.eq.eq =>
+            rw [compare_eq_iff_eq] at *
+            simp [nan, Interval.glb] at *
 
 end Interval
 
