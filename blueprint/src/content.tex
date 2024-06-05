@@ -1,16 +1,120 @@
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
 
-\section{Overview}
+\chapter{Overview}
 
-\section{2D Planar Geometry Primitives}
+\chapter{2D Planar Geometry Primitives}
 
-\section{Planar Arrangements}
+\chapter{Planar Arrangements}
 
-\section{Computational Number Representations}
+\chapter{Point Location Queries}
 
-\subsection{Adjoining a square root}
+\chapter{Minkowski Sum}
+
+\chapter{Computational Number Representations}
+
+For our computational geometry algorithms to be correct, we need to use exact
+number representations --- roundoff error introduced by floating-point
+approximations can easily lead to incorrect outcomes.  For example,
+if the intersection of two polygons is a single point or line, small rounding
+errors could easily make the intersection look empty.
+
+Mathlib provides an exact real number representation that encodes a number as
+an infinite sequence of rational approximations. Unfortunately, this
+representation is not suitable for computation because some operations are not
+computable. For example, determining whether two reals are equal requires
+iterating over the entire infinite sequences that represent them.
+
+The rational numbers ($ℚ$) are a reasonable choice of number type: fractions are easy
+to compute with and don't introduce any rounding error. Some applications
+require irrational numbers though. For example, rotating a unit line segment by
+$45°$ produces a point with coordinates $(\sqrt{2}/2, \sqrt{2}/2)$, whose
+coordinates are irrational.
+
+If we only cared about $45°$ rotations, we could store numbers of the
+form $a_1 + a_2\sqrt{2}$ where $a_1$ and $a_2$ are rational numbers. It
+turns out that adding, multiplying, and dividing numbers of this form produces
+numbers of this form, and it is not too hard to compare them for equality and
+inequalities; these operations are sufficient to perform many geometric
+operations (including polygon union and intersection).
+
+Of course if you give a mouse a $45°$ rotation, they will want a
+rotation of $30°$. We can support both $45°$ and $30°$
+rotations with numbers of the form
+$a_1 + a_2\sqrt{2} + a_3\sqrt{3} + a_6\sqrt{6}$; these numbers also support the
+important operations for many geometric algorithms.
+
+This suggests that the choice of number representation should be application
+specific, and the geometric algorithms should be compatible with different
+number representations. This package constructs a few concrete number
+representations that applications can use, and proves that they are correct.
+
+In this context, correctness means that the numbers support the necessary
+operations, and that those operations behave as you would expect. More
+concretely, we show that the number representations form ``linearly ordered
+fields,'' which are types that support addition, multiplication, subtraction,
+division, and computable comparisons (equality and inequality), all of which
+must satisfy certain axioms.
+
+The first implementation is \code{AdjoinRoot A n} (abbreviated $A[\sqrt{n}]$),
+which represents numbers of the form $a_1 + a_n\sqrt{n}$. Instead of requiring
+$a_1$ and $a_n$ to be rationals, we allow them to be taken from any fixed
+linearly ordered field $A$.  This allows the construction to be repeated. For
+example, we can factor numbers of the form $a_1 + a_2\sqrt{2} + a_3\sqrt{3} +
+a_6\sqrt{6}$ as $(a_1 + a_2\sqrt{2}) + (a_3 + a_6\sqrt{2})\sqrt{3}$, and then
+represent them using $ℚ[\sqrt{2}][\sqrt{3}]$.
+
+The second implementation is intended to improve performance by using
+floating-point approximations wherever possible, and only falling back on the
+exact computations when the floating-point arithmetic is not precise enough. We
+define \code{FilteredEmbedding α} which wraps deferred values of $α$
+inside a floating-point interval.
+
+We can summarize the example from this section in the following corollary:
+\begin{corollary}
+  \label{thm:numberType}
+  \uses{def:adjoin, def:filtered}
+  \code{FilteredEmbedding $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
+\end{corollary}
+
+\begin{proof}
+  \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderedFieldHom}
+  TODO
+\end{proof}
+
+The definition of a linearly ordered field can be broken down into parts, and
+these parts are important stepping stones on the path to proving that a number
+representation is a linearly ordered field. In particular, we will mention the
+following intermediate interfaces:
+
+\begin{enumerate}
+\item A (commutative) ring must support addition, subtraction, and
+multiplication, but not division. For example, the integers ($ℤ$) are a ring
+but not a field. Rings are useful in this context because one can generate a
+field from a ring by forming fractions; an alternative approach to defining
+$ℚ[\sqrt{2}][\sqrt{3}]$ would be to take the field of fractions of
+$ℤ[\sqrt{2}][\sqrt{3}]$.
+
+\item A field is a ring that also supports division.
+
+\item A linear order is a type that supports comparisons ($≤$, $<$, etc).
+
+\item A linearly ordered ring is a ring with a linear order that is compatible
+with the ring operations; a linearly ordered field is a field with a linear
+order that is compatible with the field operations.
+\end{enumerate}
+
+Note that we are borrowing all of these definitions from Mathlib, so we are
+leaving the exact definitions a bit vague here.  These definitions can also be
+broken down further (e.g. Monoid, Group, Partial Order, etc) and we do prove
+related intermediate results where possible, but these are probably less useful
+for this library so we don't describe them here.
+
+\section{Adjoining a square root}
+
+%% Definition
 
 \begin{definition}
   \label{def:adjoin}
@@ -19,6 +123,120 @@
   $A[\sqrt{n}]$ is stored as a pair $(a_1, a_n)$, representing the value
   $a_1 + a_n\sqrt{n}$.
 \end{definition}
+
+%% A[√n] is a ring
+
+\begin{lemma}
+  \label{thm:adjoinRing}
+  \lean{instAdjoinCommRing}
+  \leanok
+  \uses{def:adjoin}
+  If $A$ is a (commutative) ring, then we can provide a commutative ring structure
+  on $A[\sqrt{n}]$ in the obvious way.
+\end{lemma}
+
+\begin{proof}
+  TODO
+\end{proof}
+
+%% A[√n] has √n
+
+Of course, the whole point of $A[√n]$ is that it contains a square root of $n$:
+\begin{theorem}
+  \label{thm:adjoinHasSqrtN}
+  \lean{AdjoinSqrt.rootN}
+  \uses{def:adjoin, thm:adjoinRing}
+  If $A$ has multiplication, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
+\end{theorem}
+
+%% A[√n] is a field
+
+\begin{lemma}
+  \label{thm:adjoinField}
+  \lean{instAdjoinField}
+  \leanok
+  \uses{def:adjoin, thm:adjoinRing}
+  If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
+  field.
+\end{lemma}
+
+%% A[√n] is ordered ring
+
+\begin{lemma}
+  \label{thm:adjoinOrderedRing}
+  \lean{instAdjoinLinearOrderedRing}
+  \uses{def:adjoin, thm:adjoinRing}
+
+  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
+  then $A[\sqrt{n}]$ is also linearly ordered.
+\end{lemma}
+
+\begin{proof}
+  TODO
+\end{proof}
+
+%% A[√n] is an ordered field
+
+\begin{theorem}
+  \label{thm:adjoinOrderedField}
+  \lean{instAdjoinLinearOrderedField}
+  \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
+
+  If $A$ is a linearly ordered field, and if $n$ is a positive non-square in $A$
+  then $A[\sqrt{n}]$ is also a linearly ordered field.
+\end{theorem}
+\begin{proof}
+  TODO
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Converting from $A[\sqrt{n}]$ to $ℝ$}
+
+In order to use $A[\sqrt{n}]$ with \code{FilteredEmbedding}, we need to have a way of
+converting values in $A[\sqrt{n}]$ to real numbers, and this conversion has to preserve
+the operations defined on $A[\sqrt{n}]$.
+
+TODO: informal definitions for homs.
+
+%% A[√n] → ℝ
+
+\begin{definition}
+  \label{def:adjoinToReal}
+  \lean{AdjoinRoot.toReal}
+  \uses{def:adjoin}
+  Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
+  there is a corresponding function $AdjoinRoot.toReal : A[√n] → ℝ$ given by
+  $(a_1 + a_n\sqrt{n}).toReal := a_1.toReal + a_n.toReal * \sqrt{n.toReal}$.
+\end{definition}
+
+\begin{lemma}
+  \label{thm:adjoinToRealRingHom}
+  \uses{def:adjoinToReal, thm:adjoinRing}
+  If $A$ is a ring and $toReal : A → ℝ$ is a ring homomorphism, then $AdjoinRoot.toReal$ is a ring
+  homomorphism.
+\end{lemma}
+
+\begin{lemma}
+  \label{thm:adjoinToRealOrderHom}
+  \uses{def:adjoinToReal, thm:adjoinOrderedRing}
+  If $A$ is an ordered ring and $toReal : A → ℝ$ is monotonic then $AdjoinRoot.toReal$ is also monotonic.
+\end{lemma}
+
+
+\begin{lemma}
+  \label{thm:adjoinToRealOrderedFieldHom}
+  \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
+  If $A$ is an ordered field and $toReal : A → ℝ$ is an ordered field homomorphism
+  then $AdjoinRoot.toReal$ is also an ordered field homomorphism.
+\end{lemma}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Converting from $A$ to $A[√n]$}
+
+These are some interesting results that aren't directly needed to use these
+number representations, but are interesting nonetheless.
+
+%% A → A[√n]
 
 \begin{definition}
   \label{def:adjoinEmbedding}
@@ -29,22 +247,23 @@
   $a \mapsto a + 0\sqrt{n}$ (assuming $0 ∈ A$).
 \end{definition}
 
-\begin{theorem}
-  \label{thm:adjoinRing}
-  \lean{instAdjoinCommRing}
-  \leanok
-  \uses{def:adjoinEmbedding}
-  If $A$ is a (commutative) ring, then we can provide a commutative ring structure
-  on $A[\sqrt{n}]$ in the obvious way.
-\end{theorem}
+%% A[√n] is an A-algebra
 
 \begin{lemma}
   \label{thm:adjoinAlgebra}
   \lean{instAdjoinAlgebra}
   \leanok
-  \uses{def:adjoin, def:adjoinEmbedding}
+  \uses{def:adjoin, def:adjoinEmbedding, thm:adjoinRing}
   If $A$ is a ring, then $A[\sqrt{n}]$ is an $A$-algebra.
 \end{lemma}
+
+\begin{lemma}
+  \label{thm:mathlibAdjoin}
+  \uses{def:adjoin}
+  $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
+\end{lemma}
+
+%% A → A[√n] is injective
 
 \begin{lemma}
   \label{thm:adjoinInjective}
@@ -54,39 +273,88 @@
   A[\sqrt{n}]$ is injective.
 \end{lemma}
 
-\begin{proof}
-  TODO
-\end{proof}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Interval arithmetic}
 
-\begin{theorem}
-  \label{thm:adjoinField}
-  \lean{instAdjoinField}
+\begin{definition}
+  \label{def:filtered}
   \leanok
-  \uses{def:adjoin}
-  If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
-  field.
-\end{theorem}
-
-\begin{theorem}
-  \label{thm:adjoinOrder}
-  \lean{instAdjoinLinearOrderedField}
-  \uses{def:adjoin}
-
-  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
-  then $A[\sqrt{n}]$ is also linearly ordered.
-\end{theorem}
-\begin{proof}
-  TODO
-\end{proof}
+  \lean{FilteredEmbedding}
+  Given a function $f : α → ℝ$, a \code{FilteredEmbedding f} value consists of
+  an unevaluated value of type $α$ and a closed floating-point interval that
+  contains $f α$. We consider two values in \code{FilteredEmbedding f} to be
+  equal if the wrapped $α$ values are equal; the intervals are just an
+  approximation.
+\end{definition}
 
 \begin{lemma}
-  \label{thm:mathlibAdjoin}
-  \uses{def:adjoin}
-  $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
+  \label{thm:filteredRing}
+  \lean{instFilteredEmbeddingRing}
+  \uses{def:filtered}
+  If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredEmbedding f}
+  is a ring.
 \end{lemma}
 
-\subsection{Interval arithmetic}
+\begin{lemma}
+  \label{thm:filteredField}
+  \uses{thm:filteredRing}
+  \lean{instFilteredEmbeddingField}
+  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredEmbedding f}
+  is a field.
+\end{lemma}
+
+\begin{lemma}
+  \label{thm:filteredOrderedRing}
+  \uses{thm:filteredRing}
+  \lean{instFilteredEmbeddingLinearOrderedRing}
+  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring homomorphism then
+  \code{FilteredEmbedding f} is a linearly ordered ring.
+\end{lemma}
+
+\begin{theorem}
+  \label{thm:filteredOrderedField}
+  \lean{instFilteredEmbeddingLinearOrderedField}
+  \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
+  If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
+  and ordering properties of $α$, then \code{FilteredEmbedding f} is a linearly
+  ordered field.
+\end{theorem}
+
+\subsection{Converting between $A$ and \code{FilteredEmbedding (f : A → ℝ)}}
+
+The whole point of \code{FilteredEmbedding} is that it encapsulates values of
+$A$.
+
+\begin{definition}
+  \label{def:filteredEquivalent}
+  \uses{def:filtered}
+  \notready
+  There is a nice injection $i$ from \code{FilteredEmbedding (f : A → ℝ)} to
+  $A$, and $f \circ i = toReal$.
+\end{definition}
+
+\subsection{FilteredReal avoids computation}
+
+There's no way to prove in lean that the underlying $A$ values are not computed
+unless strictly necessary, but we can at least prove that the interval
+comparison only fails if the comparison can't be determined just from the
+intervals. We formalize this as follows:
+
+\begin{lemma}
+  \label{thm:compareComplete}
+  \uses{def:filtered}
+  \lean{Interval.compare?_complete}
+  If the function we use to compare intervals indicates that they are
+  incomparable, then we can choose two sets of points in the two intervals that
+  would give different comparison results.
+\end{lemma}
+
+\chapter{Applications}
+
+\section{Collision-Avoiding Drag and Drop}
+
+\section{Origami}
 
 
-\section{Applications}
 
+% vim: ts=2 sw=2 et ai
