@@ -11,7 +11,26 @@
 
 \chapter{Point Location Queries}
 
+\chapter{Convex Hull}
+
 \chapter{Minkowski Sum}
+
+\begin{definition}
+  \label{def:minkowski}
+  Given sets of points $A$ and $B$, the Minkowski sum of $A$ and $B$, written
+  $A ⊕ B$ is the set $\{a + b \mid a ∈ A, b ∈ B\}$.
+\end{definition}
+
+\begin{theorem}
+  \notready
+  If $A$ and $B$ are convex polygons, then you can compute the minkowski sum by
+  taking the convex hull of the sums of the corners.
+\end{theorem}
+
+\begin{theorem}
+  \notready
+  The Minkowski sum of the union is the union of the sums
+\end{theorem}
 
 \chapter{Computational Number Representations}
 
@@ -212,22 +231,26 @@ TODO: informal definitions for homs.
 \begin{lemma}
   \label{thm:adjoinToRealRingHom}
   \uses{def:adjoinToReal, thm:adjoinRing}
-  If $A$ is a ring and $toReal : A → ℝ$ is a ring homomorphism, then $AdjoinRoot.toReal$ is a ring
+  If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
+  ring homomorphism, then $AdjoinRoot.toReal : A[\sqrt{n}] → ℝ$ is a ring
   homomorphism.
 \end{lemma}
 
 \begin{lemma}
   \label{thm:adjoinToRealOrderHom}
   \uses{def:adjoinToReal, thm:adjoinOrderedRing}
-  If $A$ is an ordered ring and $toReal : A → ℝ$ is monotonic then $AdjoinRoot.toReal$ is also monotonic.
+  If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
+  $toReal : A → ℝ$ is monotonic then $AdjoinRoot.toReal : A[\sqrt{n}] → ℝ$ is
+  also monotonic.
 \end{lemma}
 
 
 \begin{lemma}
   \label{thm:adjoinToRealOrderedFieldHom}
   \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
-  If $A$ is an ordered field and $toReal : A → ℝ$ is an ordered field homomorphism
-  then $AdjoinRoot.toReal$ is also an ordered field homomorphism.
+  If $A$ is an ordered field with a positive non-square $n ∈ A$ and $toReal : A
+  → ℝ$ is an ordered field homomorphism then $AdjoinRoot.toReal : A[\sqrt{n}] →
+  ℝ$ is also an ordered field homomorphism.
 \end{lemma}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -355,6 +378,7 @@ intervals. We formalize this as follows:
 
 \section{Origami}
 
+\section{Diagram Widgets}
 
 
 % vim: ts=2 sw=2 et ai
