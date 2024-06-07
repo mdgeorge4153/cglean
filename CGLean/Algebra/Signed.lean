@@ -37,6 +37,7 @@ instance [SignedRing R] : Nontrivial R where
     rw [SignedRing.sign_zero, SignedRing.sign_one] at h
     contradiction
 
+-- TODO: this needs to be LinearOrdered_Comm_Ring to make the end-to-end translation work
 instance [SignedRing R] : LinearOrderedRing R := .mkOfPositiveCone {
   nonneg := fun (x:R) => sign x ≠ .neg
   zero_nonneg := by simp [SignedRing.sign_zero]

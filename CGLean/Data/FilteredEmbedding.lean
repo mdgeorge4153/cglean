@@ -4,6 +4,7 @@ TODO: choose a license
 Author: Michael D. George.
 -/
 import Mathlib.Data.Real.Basic
+import Mathlib.Algebra.Ring.Defs
 import Ray.Approx.Interval.Around
 import Ray.Approx.Interval.Mul
 import CGLean.Data.Interval
@@ -178,6 +179,28 @@ end Mul
 /- TODO: this section only depends on intervals, migrate it somewhere -/
 
 namespace Interval
+
+/-! ## Ring -------------------------------------------------------------------/
+
+section Ring
+
+variable [CommRing α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F)
+
+instance: CommRing (FilteredReal f) := sorry
+
+end Ring
+
+/-! ## Field ------------------------------------------------------------------/
+
+section Field
+
+variable [Field α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F)
+
+instance: Field (FilteredReal f) := sorry
+
+end Field
+
+/-! ## Ord --------------------------------------------------------------------/
 
 /--
 Returns `some o` if `x` is entirely to the left or entirely to the right of `y`

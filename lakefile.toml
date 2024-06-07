@@ -19,6 +19,7 @@ rev = "lean-4.8"
 [[require]]
 name = "checkdecls"
 git = "https://github.com/PatrickMassot/checkdecls.git"
+rev = "lean4.8.0-rc1"
 
 [[require]]
 name = "checkdecls"

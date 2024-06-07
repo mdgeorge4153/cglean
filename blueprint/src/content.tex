@@ -2,6 +2,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
 
 \chapter{Overview}
 
@@ -22,12 +23,16 @@
 \end{definition}
 
 \begin{theorem}
+  \label{thm:minkowski_convex_poly}
+  \uses{def:minkowski}
   \notready
   If $A$ and $B$ are convex polygons, then you can compute the minkowski sum by
   taking the convex hull of the sums of the corners.
 \end{theorem}
 
 \begin{theorem}
+  \label{thm:minkowski_union}
+  \uses{def:minkowski}
   \notready
   The Minkowski sum of the union is the union of the sums
 \end{theorem}
@@ -88,14 +93,14 @@ represent them using $ℚ[\sqrt{2}][\sqrt{3}]$.
 The second implementation is intended to improve performance by using
 floating-point approximations wherever possible, and only falling back on the
 exact computations when the floating-point arithmetic is not precise enough. We
-define \code{FilteredEmbedding α} which wraps deferred values of $α$
+define \code{FilteredReal α} which wraps deferred values of $α$
 inside a floating-point interval.
 
 We can summarize the example from this section in the following corollary:
 \begin{corollary}
   \label{thm:numberType}
   \uses{def:adjoin, def:filtered}
-  \code{FilteredEmbedding $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
+  \code{FilteredReal $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 
 \begin{proof}
@@ -143,75 +148,167 @@ for this library so we don't describe them here.
   $a_1 + a_n\sqrt{n}$.
 \end{definition}
 
+We begin by checking that $A[\sqrt{n}]$ is a ring. We will then proceed to check
+that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
+
+\begin{definition}
+  \label{def:adjoinRingOps}
+  \uses{def:adjoin}
+  We define the basic ring operations of addition, negation, and multiplication
+  in the usual way.
+  For example, $(a_1 + a_n\sqrt{n})(b_1 + b_n\sqrt{n}) = (a_1b_1 + na_nb_n) + (a_1b_n + a_nb_1)\sqrt{n}$.
+
+  Note that this definition only makes sense if $A$ supports these operations.
+\end{definition}
+
 %% A[√n] is a ring
 
-\begin{lemma}
+\begin{proposition}
   \label{thm:adjoinRing}
-  \lean{instAdjoinCommRing}
+  \lean{AdjoinSqrt.instCommRing}
   \leanok
-  \uses{def:adjoin}
-  If $A$ is a (commutative) ring, then we can provide a commutative ring structure
-  on $A[\sqrt{n}]$ in the obvious way.
-\end{lemma}
-
-\begin{proof}
-  TODO
-\end{proof}
+  \uses{def:adjoinRingOps}
+  If $A$ satisfies the ring properties, then so does $A[\sqrt{n}]$.
+\end{proposition}
 
 %% A[√n] has √n
 
 Of course, the whole point of $A[√n]$ is that it contains a square root of $n$:
 \begin{theorem}
   \label{thm:adjoinHasSqrtN}
-  \lean{AdjoinSqrt.rootN}
+  \lean{AdjoinSqrt.root_n_squared}
   \uses{def:adjoin, thm:adjoinRing}
-  If $A$ has multiplication, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
+  If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
 \end{theorem}
 
 %% A[√n] is a field
 
+In order to check that $A[\sqrt{n}]$ is a field, we need to define division. In
+fact, we only need to define $x^{-1}$ for $x ∈ A[\sqrt{n}]$, which we do as
+follows:
+
+\begin{definition}
+  \label{def:adjoinInv}
+  \lean{AdjoinSqrt.instInvOfZeroOfNegOfMulOfAdd}
+  \leanok
+  \uses{def:adjoinRingOps}
+  We define $(a_1 + a_n\sqrt{n})^{-1}$ as follows:
+  \begin{eqnarray*}
+    \frac{1}{a_1 + a_n\sqrt{n}}
+      & = & \frac{1}{a_1 + a_n\sqrt{n}} \cdot \frac{a_1 - a_n\sqrt{n}}{a_1 - a_n\sqrt{n}}
+        =   \frac{a_1 - a_n\sqrt{n}}{a_1^2 - na_n^2} \\ \\
+      & = & a_1(a_1^2 - na_n^2)^{-1} - a_n(a_1^2 - na_n^2)^{-1}\sqrt{n} \\
+  \end{eqnarray*}
+  As long as $A$ has inverses, this is an element of $A[\sqrt{n}]$.
+\end{definition}
+
 \begin{lemma}
   \label{thm:adjoinField}
-  \lean{instAdjoinField}
+  \lean{AdjoinSqrt.instFieldOfNonsquare}
   \leanok
-  \uses{def:adjoin, thm:adjoinRing}
+  \uses{def:adjoin, thm:adjoinRing, def:adjoinInv}
   If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
   field.
 \end{lemma}
 
+\begin{proof}
+  This basically boils down to the computation given in the definition above.
+
+  However, we need the extra condition that $n$ is not a square because
+  otherwise we could define the same number in two different ways. For example,
+  if $n$ was $4$, we would have $0 + 1\sqrt{4} = 2 + 0\sqrt{4}$. This would
+  cause a technical problem with the proof.
+\end{proof}
+
 %% A[√n] is ordered ring
 
-\begin{lemma}
-  \label{thm:adjoinOrderedRing}
-  \lean{instAdjoinLinearOrderedRing}
-  \uses{def:adjoin, thm:adjoinRing}
+Now we can proceed to check the ordering properties on $A[\sqrt{n}]$. Instead
+of defining comparisons like $<$ and $≤$ directly, it is easier to define a
+$sign$ operator that indicates whether a number is greater than, equal to,
+or less than 0 (this reduces the case analysis considerably).
 
-  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
-  then $A[\sqrt{n}]$ is also linearly ordered.
+\begin{definition}
+  \label{def:signedRing}
+  \lean{SignedRing}
+  \leanok
+  A signed ring is a ring $A$ coupled with a function $sign : A → \{0, 1, -1\}$
+  satisfying the following properties: \begin{itemize}
+    \item $sign~0 = 0$
+    \item $sign~1 = 1$
+    \item $sign~(ab) = (sign~a)(sign~b)$
+    \item if $sign~a = 0$ then $a = 0$
+    \item $sign~(-a) = -sign~a$
+    \item if $sign~a \geq 0$ and $sign~b~\geq 0$ then $sign~(a + b) \geq 0$
+  \end{itemize}
+\end{definition}
+
+\begin{lemma}
+  \label{thm:orderFromSign}
+  \uses{def:signedRing}
+  \lean{instLinearOrderedRingOfSignedRing}
+  \leanok
+  Given a signed ring $A$, we can define an ordered ring structure on $A$.
+  Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
+  function.
 \end{lemma}
 
 \begin{proof}
-  TODO
+  \leanok
+  This is mostly borrowed from mathlib.
 \end{proof}
+
+With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
+
+\begin{definition}
+  \label{def:adjoinSign}
+  \lean{AdjoinSqrt.instSignedRingOfNonsquareOfPos}
+  \leanok
+  \uses{def:signedRing, def:adjoin, def:adjoinRingOps}
+  If $A$ is a signed ring and $n ∈ A \geq 0$ is not a square in $A$, then
+  $A[\sqrt{n}]$ is a signed ring.
+\end{definition}
+
+\begin{proof}
+  We want to define $sign : A → \{0,1,-1\}$ which compares $a_1 + a_n\sqrt{n}$
+  with 0. This is the same as comparing $a_1$ with $-a_n\sqrt{n}$. We would
+  like to square both sides, but there's some casework involved, because
+  depending on the signs of $a_1$ and $-a_n$, we may have to flip the
+  inequality.
+
+  If exactly one of $a_1$ and $-a_n$ are negative, the comparison is easy. If they
+  are both positive, then comparing $a_1^2$ and $na_n^2$ gives the right
+  answer. If they are both negative, then comparing $a_1^2$ and $na_n^2$ gives
+  the opposite answer (this arithetic depends on $n$ being nonnegative).
+
+  We can use this algorithm to define the sign function for $A[\sqrt{n}]$.
+  Checking that it satisfies the signed ring properties is tedious but routine.
+\end{proof}
+
+\begin{corollary}
+  \label{thm:adjoinOrderedRing}
+  \lean{AdjoinSqrt.instLinearOrderedRingOfNonsquareOfPos}
+  \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign}
+  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
+  then $A[\sqrt{n}]$ is also linearly ordered.
+\end{corollary}
 
 %% A[√n] is an ordered field
 
+Putting this all together gives the main result of this section:
+
 \begin{theorem}
   \label{thm:adjoinOrderedField}
-  \lean{instAdjoinLinearOrderedField}
+  \lean{AdjoinSqrt.instLinearOrderedFieldOfNonsquareOfPos}
   \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
 
   If $A$ is a linearly ordered field, and if $n$ is a positive non-square in $A$
   then $A[\sqrt{n}]$ is also a linearly ordered field.
 \end{theorem}
-\begin{proof}
-  TODO
-\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A[\sqrt{n}]$ to $ℝ$}
 
-In order to use $A[\sqrt{n}]$ with \code{FilteredEmbedding}, we need to have a way of
+In order to use $A[\sqrt{n}]$ with \code{FilteredReal}, we need to have a way of
 converting values in $A[\sqrt{n}]$ to real numbers, and this conversion has to preserve
 the operations defined on $A[\sqrt{n}]$.
 
@@ -262,8 +359,8 @@ number representations, but are interesting nonetheless.
 %% A → A[√n]
 
 \begin{definition}
-  \label{def:adjoinEmbedding}
-  \lean{instCoeAdjoin}
+  \label{def:adjoinOfA}
+  \lean{AdjoinSqrt.instCoeOfZero}
   \leanok
   \uses{def:adjoin}
   We write $A \hookrightarrow A[\sqrt{n}]$ for the natural embedding
@@ -274,11 +371,16 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:adjoinAlgebra}
-  \lean{instAdjoinAlgebra}
+  \lean{AdjoinSqrt.instAlgebra}
   \leanok
-  \uses{def:adjoin, def:adjoinEmbedding, thm:adjoinRing}
+  \uses{def:adjoin, def:adjoinOfA, thm:adjoinRing}
   If $A$ is a ring, then $A[\sqrt{n}]$ is an $A$-algebra.
 \end{lemma}
+
+\begin{proof}
+  Trivial
+  \leanok
+\end{proof}
 
 \begin{lemma}
   \label{thm:mathlibAdjoin}
@@ -291,7 +393,7 @@ number representations, but are interesting nonetheless.
 \begin{lemma}
   \label{thm:adjoinInjective}
   \lean{instAdjoinInjective}
-  \uses{def:adjoinEmbedding}
+  \uses{def:adjoinOfA}
   If $n$ is not a square in $A$ then the inclusion $A \hookrightarrow
   A[\sqrt{n}]$ is injective.
 \end{lemma}
@@ -302,57 +404,59 @@ number representations, but are interesting nonetheless.
 \begin{definition}
   \label{def:filtered}
   \leanok
-  \lean{FilteredEmbedding}
-  Given a function $f : α → ℝ$, a \code{FilteredEmbedding f} value consists of
+  \lean{FilteredReal}
+  Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
   an unevaluated value of type $α$ and a closed floating-point interval that
-  contains $f α$. We consider two values in \code{FilteredEmbedding f} to be
+  contains $f α$. We consider two values in \code{FilteredReal f} to be
   equal if the wrapped $α$ values are equal; the intervals are just an
   approximation.
 \end{definition}
 
 \begin{lemma}
   \label{thm:filteredRing}
-  \lean{instFilteredEmbeddingRing}
+  \lean{instFilteredRealCommRing}
+  \leanok
   \uses{def:filtered}
-  If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredEmbedding f}
+  If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
 \end{lemma}
 
 \begin{lemma}
   \label{thm:filteredField}
   \uses{thm:filteredRing}
-  \lean{instFilteredEmbeddingField}
-  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredEmbedding f}
+  \lean{instFilteredRealField}
+  \leanok
+  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
   is a field.
 \end{lemma}
 
 \begin{lemma}
   \label{thm:filteredOrderedRing}
   \uses{thm:filteredRing}
-  \lean{instFilteredEmbeddingLinearOrderedRing}
+  \lean{instFilteredRealLinearOrderedRing}
   If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring homomorphism then
-  \code{FilteredEmbedding f} is a linearly ordered ring.
+  \code{FilteredReal f} is a linearly ordered ring.
 \end{lemma}
 
 \begin{theorem}
   \label{thm:filteredOrderedField}
-  \lean{instFilteredEmbeddingLinearOrderedField}
+  \lean{instFilteredRealLinearOrderedField}
   \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
   If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
-  and ordering properties of $α$, then \code{FilteredEmbedding f} is a linearly
+  and ordering properties of $α$, then \code{FilteredReal f} is a linearly
   ordered field.
 \end{theorem}
 
-\subsection{Converting between $A$ and \code{FilteredEmbedding (f : A → ℝ)}}
+\subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
-The whole point of \code{FilteredEmbedding} is that it encapsulates values of
+The whole point of \code{FilteredReal} is that it encapsulates values of
 $A$.
 
 \begin{definition}
   \label{def:filteredEquivalent}
   \uses{def:filtered}
   \notready
-  There is a nice injection $i$ from \code{FilteredEmbedding (f : A → ℝ)} to
+  There is a nice injection $i$ from \code{FilteredReal (f : A → ℝ)} to
   $A$, and $f \circ i = toReal$.
 \end{definition}
 
@@ -367,6 +471,7 @@ intervals. We formalize this as follows:
   \label{thm:compareComplete}
   \uses{def:filtered}
   \lean{Interval.compare?_complete}
+  \leanok
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.

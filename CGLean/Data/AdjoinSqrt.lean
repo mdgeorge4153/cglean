@@ -103,12 +103,18 @@ instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   commutes' := by intros; ext <;> simp <;> ring
   smul_def' := by intros; ext <;> simp
 
+
 instance [CommRing R]: Ring (AdjoinSqrt R n) where
   add_left_neg := by intros; ext <;> simp
   zsmul := zsmulRec
 
 instance [CommRing R]: CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
+
+@[simp] def root (n : A) [Zero A] [One A] : AdjoinSqrt A n := ⟨0, 1⟩
+
+theorem root_n_squared [CommRing A]: root n * root n = (n : AdjoinSqrt A n) := by
+  sorry
 
 class Nonsquare (R : Type) [Mul R] (n : R) where
   not_square : ∀ x : R, x * x ≠ n
@@ -179,8 +185,9 @@ class Pos (R : Type) [Signed R] (n : R) where
 
 open SignedRing
 
+instance [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) := sorry
+
 -- TODO
--- instance [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) where
 --   sign_zero := by simp [SignedRing.sign_zero]
 --   sign_one := by simp [SignedRing.sign_zero, SignedRing.sign_one]
 --   sign_neg := by
@@ -208,5 +215,9 @@ open SignedRing
 -- 
 --   sign_mul := sorry
 --   sign_plus := sorry
-    
+
+-- TODO: this needs to be LinearOrderedCommRing on RHS
+instance [LinearOrderedCommRing A] [Nonsquare A n] [Pos A n]: LinearOrderedRing (AdjoinSqrt A n) := by infer_instance
+
+instance [LinearOrderedField A] [Nonsquare A n] [Pos A n]: LinearOrderedField (AdjoinSqrt A n) := sorry
 
