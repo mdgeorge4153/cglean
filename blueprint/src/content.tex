@@ -434,35 +434,77 @@ number representations, but are interesting nonetheless.
   approximation.
 \end{definition}
 
+\begin{definition}
+  \label{def:filteredRingOps}
+  \uses{def:filtered}
+  \lean{FilteredReal.instRingOps}
+  We define the usual ring operations on \code{FilteredReal} values by storing
+  thunks that perform the corresponding operation on the underlying $α$ value.
+  We also immediately compute a new interval using the corresponding operations
+  on the endpoints of the intervals, taking care to round in the correct
+  direction.
+
+  In order for this definition to work, $f$ must be a ring homomorphism. This is
+  because the $FilteredReal$ type requires a proof that the exact $α$ value lies
+  inside the floating-point interval. Therefore to define addition, for example,
+  we need to prove that the sum of the $α$ values lies inside the sum of the
+  intervals, which we can only do if $f$ preserves sums.
+\end{definition}
+
 \begin{lemma}
   \label{thm:filteredRing}
   \lean{FilteredReal.instCommRing}
   \leanok
-  \uses{def:filtered}
+  \uses{def:filteredRingOps}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
 \end{lemma}
 
+\begin{proof}
+  \notready
+\end{proof}
+
+\begin{definition}
+  \label{def:filteredInv}
+  \lean{FilteredReal.instInv}
+  \uses{def:filtered}
+  If $A$ is a field, and $f$ is a field homomorphism, we can also define
+  division in the same way.
+\end{definition}
+
 \begin{lemma}
   \label{thm:filteredField}
-  \uses{thm:filteredRing}
+  \uses{thm:filteredRing, def:filteredInv}
   \lean{FilteredReal.instField}
   \leanok
   If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
   is a field.
 \end{lemma}
 
+\begin{proof}
+  \notready
+\end{proof}
+
+\begin{definition}
+  \label{def:filteredCompare}
+  \uses{def:filtered}
+  \lean{FilteredReal.instOrd}
+  \notready
+\end{definition}
+
 \begin{lemma}
   \label{thm:filteredOrderedRing}
-  \uses{thm:filteredRing}
+  \uses{thm:filteredRing, def:filteredCompare}
   \lean{FilteredReal.instLinearOrderedRing}
-  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring homomorphism then
-  \code{FilteredReal f} is a linearly ordered ring.
+  \leanok
+  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
+  homomorphism then \code{FilteredReal f} is a linearly ordered ring.
 \end{lemma}
 
 \begin{theorem}
   \label{thm:filteredOrderedField}
   \lean{FilteredReal.instLinearOrderedField}
+  \leanok
   \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
   If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
   and ordering properties of $α$, then \code{FilteredReal f} is a linearly
@@ -475,12 +517,19 @@ The whole point of \code{FilteredReal} is that it encapsulates values of
 $A$.
 
 \begin{definition}
-  \label{def:filteredEquivalent}
+  \label{def:filteredToA}
   \uses{def:filtered}
   \notready
   There is a nice injection $i$ from \code{FilteredReal (f : A → ℝ)} to
   $A$, and $f \circ i = toReal$.
 \end{definition}
+
+\begin{theorem}
+  \label{def:filteredEquivalent}
+  \uses{def:filteredToA, thm:filteredOrderedField}
+  \notready
+  $i$ preserves all of the linearly ordered field operations.
+\end{theorem}
 
 \subsection{FilteredReal avoids computation}
 
@@ -491,7 +540,7 @@ intervals. We formalize this as follows:
 
 \begin{lemma}
   \label{thm:compareComplete}
-  \uses{def:filtered}
+  \uses{def:filteredCompare}
   \lean{Interval.compare?_complete}
   \leanok
   If the function we use to compare intervals indicates that they are

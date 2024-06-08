@@ -8,6 +8,7 @@ import Mathlib.Algebra.Ring.Defs
 import Ray.Approx.Interval.Around
 import Ray.Approx.Interval.Mul
 import CGLean.Data.Interval
+import CGLean.Classes.RingOps
 
 /-!
 # Filtered Real Numbers
@@ -180,6 +181,7 @@ section Ring
 
 variable [CommRing α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F)
 
+instance instRingOps: RingOps (FilteredReal f) := sorry
 instance instCommRing: CommRing (FilteredReal f) := sorry
 
 end Ring
