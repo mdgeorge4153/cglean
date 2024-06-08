@@ -5,6 +5,7 @@ import Mathlib.Mathport.Syntax
 import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Data.Real.Sqrt
 import CGLean.Algebra.Signed
 
 open Mathlib.Tactic.Ring
@@ -46,6 +47,8 @@ abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ�
 
 @[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
+
+def toReal (f : A → ℝ) (x : AdjoinSqrt A n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
 
 open Signed
 
@@ -102,7 +105,6 @@ instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   map_add'  := by intros; ext <;> simp
   commutes' := by intros; ext <;> simp <;> ring
   smul_def' := by intros; ext <;> simp
-
 
 instance [CommRing R]: Ring (AdjoinSqrt R n) where
   add_left_neg := by intros; ext <;> simp

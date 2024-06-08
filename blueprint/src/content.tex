@@ -82,7 +82,7 @@ fields,'' which are types that support addition, multiplication, subtraction,
 division, and computable comparisons (equality and inequality), all of which
 must satisfy certain axioms.
 
-The first implementation is \code{AdjoinRoot A n} (abbreviated $A[\sqrt{n}]$),
+The first implementation is \code{AdjoinSqrt A n} (abbreviated $A[\sqrt{n}]$),
 which represents numbers of the form $a_1 + a_n\sqrt{n}$. Instead of requiring
 $a_1$ and $a_n$ to be rationals, we allow them to be taken from any fixed
 linearly ordered field $A$.  This allows the construction to be repeated. For
@@ -318,10 +318,10 @@ TODO: informal definitions for homs.
 
 \begin{definition}
   \label{def:adjoinToReal}
-  \lean{AdjoinRoot.toReal}
+  \lean{AdjoinSqrt.toReal}
   \uses{def:adjoin}
   Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
-  there is a corresponding function $AdjoinRoot.toReal : A[√n] → ℝ$ given by
+  there is a corresponding function $AdjoinSqrt.toReal : A[√n] → ℝ$ given by
   $(a_1 + a_n\sqrt{n}).toReal := a_1.toReal + a_n.toReal * \sqrt{n.toReal}$.
 \end{definition}
 
@@ -329,7 +329,7 @@ TODO: informal definitions for homs.
   \label{thm:adjoinToRealRingHom}
   \uses{def:adjoinToReal, thm:adjoinRing}
   If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
-  ring homomorphism, then $AdjoinRoot.toReal : A[\sqrt{n}] → ℝ$ is a ring
+  ring homomorphism, then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is a ring
   homomorphism.
 \end{lemma}
 
@@ -337,7 +337,7 @@ TODO: informal definitions for homs.
   \label{thm:adjoinToRealOrderHom}
   \uses{def:adjoinToReal, thm:adjoinOrderedRing}
   If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
-  $toReal : A → ℝ$ is monotonic then $AdjoinRoot.toReal : A[\sqrt{n}] → ℝ$ is
+  $toReal : A → ℝ$ is monotonic then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is
   also monotonic.
 \end{lemma}
 
@@ -346,7 +346,7 @@ TODO: informal definitions for homs.
   \label{thm:adjoinToRealOrderedFieldHom}
   \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
   If $A$ is an ordered field with a positive non-square $n ∈ A$ and $toReal : A
-  → ℝ$ is an ordered field homomorphism then $AdjoinRoot.toReal : A[\sqrt{n}] →
+  → ℝ$ is an ordered field homomorphism then $AdjoinSqrt.toReal : A[\sqrt{n}] →
   ℝ$ is also an ordered field homomorphism.
 \end{lemma}
 
@@ -388,16 +388,6 @@ number representations, but are interesting nonetheless.
   $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
 \end{lemma}
 
-%% A → A[√n] is injective
-
-\begin{lemma}
-  \label{thm:adjoinInjective}
-  \lean{instAdjoinInjective}
-  \uses{def:adjoinOfA}
-  If $n$ is not a square in $A$ then the inclusion $A \hookrightarrow
-  A[\sqrt{n}]$ is injective.
-\end{lemma}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Interval arithmetic}
 
@@ -414,7 +404,7 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:filteredRing}
-  \lean{instFilteredRealCommRing}
+  \lean{FilteredReal.instCommRing}
   \leanok
   \uses{def:filtered}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
@@ -424,7 +414,7 @@ number representations, but are interesting nonetheless.
 \begin{lemma}
   \label{thm:filteredField}
   \uses{thm:filteredRing}
-  \lean{instFilteredRealField}
+  \lean{FilteredReal.instField}
   \leanok
   If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
   is a field.
@@ -433,14 +423,14 @@ number representations, but are interesting nonetheless.
 \begin{lemma}
   \label{thm:filteredOrderedRing}
   \uses{thm:filteredRing}
-  \lean{instFilteredRealLinearOrderedRing}
+  \lean{FilteredReal.instLinearOrderedRing}
   If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring homomorphism then
   \code{FilteredReal f} is a linearly ordered ring.
 \end{lemma}
 
 \begin{theorem}
   \label{thm:filteredOrderedField}
-  \lean{instFilteredRealLinearOrderedField}
+  \lean{FilteredReal.instLinearOrderedField}
   \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
   If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
   and ordering properties of $α$, then \code{FilteredReal f} is a linearly
