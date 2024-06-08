@@ -7,6 +7,7 @@ import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Data.Real.Sqrt
 import CGLean.Algebra.Signed
+import CGLean.Classes.RingOps
 
 open Mathlib.Tactic.Ring
 
@@ -19,25 +20,28 @@ open Mathlib.Tactic.Ring
 
 namespace AdjoinSqrt
 
-@[simps] instance [Zero R] : Zero (AdjoinSqrt R n) where
+@[simps] instance instZero [Zero R] : Zero (AdjoinSqrt R n) where
   zero := ⟨0,0⟩
 
-@[simps] instance [One R] [Zero R] : One (AdjoinSqrt R n) where
+@[simps] instance instOne [One R] [Zero R] : One (AdjoinSqrt R n) where
   one := ⟨1,0⟩
 
-@[simps] instance [Add R] : Add (AdjoinSqrt R n) where
+@[simps] instance instAdd [Add R] : Add (AdjoinSqrt R n) where
   add x y := ⟨ x.a₁ + y.a₁, x.aₙ + y.aₙ ⟩
 
-@[simps] instance [Neg R] : Neg (AdjoinSqrt R n) where
+@[simps] instance instNeg [Neg R] : Neg (AdjoinSqrt R n) where
   neg x := ⟨ -x.a₁, -x.aₙ ⟩
 
-@[simps] instance [Mul R] [Add R] : Mul (AdjoinSqrt R n) where
+@[simps] instance instMul [Mul R] [Add R] : Mul (AdjoinSqrt R n) where
   mul x y := ⟨x.a₁*y.a₁ + n*x.aₙ*y.aₙ, x.a₁*y.aₙ + x.aₙ*y.a₁⟩
 
-@[simps] instance [Mul R] : SMul R (AdjoinSqrt R n) where
+/-- marker instance to encapsulate the above -/
+instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
+
+@[simps] instance instSMul [Mul R] : SMul R (AdjoinSqrt R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
 
-@[simps] instance [Zero R] : Coe R (AdjoinSqrt R n) where
+@[simps] instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
   coe x := ⟨x, 0⟩
 
 abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
@@ -45,14 +49,12 @@ abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ�
 @[simps] instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinSqrt R n) (x * conj x) R where
   coe := (x * conj x).a₁
 
-@[simps] instance [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
+@[simps] instance instInv [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
   inv x := x.conj * (x * x.conj : R)⁻¹
-
-def toReal (f : A → ℝ) (x : AdjoinSqrt A n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
 
 open Signed
 
-@[simps] instance [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
+@[simps] instance instSigned [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
   sign x :=
     match (sign x.a₁, sign x.aₙ) with
       | (.zero, .zero) => .zero
@@ -64,18 +66,18 @@ open Signed
 
 /-- Theorems ------------------------------------------------------------------/
 
-instance [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
+instance instAddSemigroup [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
   add_assoc := by intros; ext <;> apply add_assoc
 
-instance [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
+instance instAddMonoid [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
   zero_add := by intros a; ext <;> simp
   add_zero := by intros; ext <;> simp
   nsmul := nsmulRec
 
-instance [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
+instance instAddCommMonoid [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
   constructor; intros; ext <;> apply add_comm
 
-instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
+instance instNonUnitalAssocSemiring [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
   constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> try conv =>
     -- this proof just involves finding the right places to commute things. We
     -- should just hand this off to something like `ring`, but I don't think
@@ -90,14 +92,14 @@ instance [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R 
     rw [add_comm]
     all_goals rfl
 
-instance [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
+instance instNonUnitalSemiring [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
 
-instance [CommSemiring R]: Semiring (AdjoinSqrt R n) where
+instance instSemiring [CommSemiring R]: Semiring (AdjoinSqrt R n) where
   one_mul := by intros; ext <;> simp
   mul_one := by intros; ext <;> simp
 
-instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
+instance instAlgebra [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   toFun (x : R) := x
   map_one'  := by rfl
   map_mul'  := by intros; ext <;> simp
@@ -106,17 +108,12 @@ instance [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   commutes' := by intros; ext <;> simp <;> ring
   smul_def' := by intros; ext <;> simp
 
-instance [CommRing R]: Ring (AdjoinSqrt R n) where
+instance instRing [CommRing R]: Ring (AdjoinSqrt R n) where
   add_left_neg := by intros; ext <;> simp
   zsmul := zsmulRec
 
-instance [CommRing R]: CommRing (AdjoinSqrt R n) where
+instance instCommRing [CommRing R]: CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
-
-@[simp] def root (n : A) [Zero A] [One A] : AdjoinSqrt A n := ⟨0, 1⟩
-
-theorem root_n_squared [CommRing A]: root n * root n = (n : AdjoinSqrt A n) := by
-  sorry
 
 class Nonsquare (R : Type) [Mul R] (n : R) where
   not_square : ∀ x : R, x * x ≠ n
@@ -149,7 +146,7 @@ lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R
     apply Nonsquare.not_square at H''
     exfalso; assumption
 
-instance [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
+instance instField [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
     -- TODO: this proof is a bit nasty I think
     intros x xne0; ext
@@ -187,7 +184,7 @@ class Pos (R : Type) [Signed R] (n : R) where
 
 open SignedRing
 
-instance [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) := sorry
+instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) := sorry
 
 -- TODO
 --   sign_zero := by simp [SignedRing.sign_zero]
@@ -222,4 +219,11 @@ instance [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n
 instance [LinearOrderedCommRing A] [Nonsquare A n] [Pos A n]: LinearOrderedRing (AdjoinSqrt A n) := by infer_instance
 
 instance [LinearOrderedField A] [Nonsquare A n] [Pos A n]: LinearOrderedField (AdjoinSqrt A n) := sorry
+
+def toReal (f : A → ℝ) (x : AdjoinSqrt A n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
+
+@[simp] def root (n : A) [Zero A] [One A] : AdjoinSqrt A n := ⟨0, 1⟩
+
+theorem root_n_squared [CommRing A]: root n * root n = (n : AdjoinSqrt A n) := by
+  sorry
 

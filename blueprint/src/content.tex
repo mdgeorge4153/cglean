@@ -154,6 +154,8 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
 \begin{definition}
   \label{def:adjoinRingOps}
   \uses{def:adjoin}
+  \lean{AdjoinSqrt.ringOps}
+  \leanok
   We define the basic ring operations of addition, negation, and multiplication
   in the usual way.
   For example, $(a_1 + a_n\sqrt{n})(b_1 + b_n\sqrt{n}) = (a_1b_1 + na_nb_n) + (a_1b_n + a_nb_1)\sqrt{n}$.
@@ -171,6 +173,11 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
   If $A$ satisfies the ring properties, then so does $A[\sqrt{n}]$.
 \end{proposition}
 
+\begin{proof}
+  \leanok
+  Follows immediately from the definitions.
+\end{proof}
+
 %% A[√n] has √n
 
 Of course, the whole point of $A[√n]$ is that it contains a square root of $n$:
@@ -178,8 +185,13 @@ Of course, the whole point of $A[√n]$ is that it contains a square root of $n$
   \label{thm:adjoinHasSqrtN}
   \lean{AdjoinSqrt.root_n_squared}
   \uses{def:adjoin, thm:adjoinRing}
+  \leanok
   If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
 \end{theorem}
+
+\begin{proof}
+  Follows immediately from the definitions.
+\end{proof}
 
 %% A[√n] is a field
 
@@ -189,7 +201,7 @@ follows:
 
 \begin{definition}
   \label{def:adjoinInv}
-  \lean{AdjoinSqrt.instInvOfZeroOfNegOfMulOfAdd}
+  \lean{AdjoinSqrt.instInv}
   \leanok
   \uses{def:adjoinRingOps}
   We define $(a_1 + a_n\sqrt{n})^{-1}$ as follows:
@@ -204,7 +216,7 @@ follows:
 
 \begin{lemma}
   \label{thm:adjoinField}
-  \lean{AdjoinSqrt.instFieldOfNonsquare}
+  \lean{AdjoinSqrt.instField}
   \leanok
   \uses{def:adjoin, thm:adjoinRing, def:adjoinInv}
   If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
@@ -212,6 +224,7 @@ follows:
 \end{lemma}
 
 \begin{proof}
+  \leanok
   This basically boils down to the computation given in the definition above.
 
   However, we need the extra condition that $n$ is not a square because
@@ -248,20 +261,31 @@ or less than 0 (this reduces the case analysis considerably).
   \lean{instLinearOrderedRingOfSignedRing}
   \leanok
   Given a signed ring $A$, we can define an ordered ring structure on $A$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  This is mostly borrowed from Mathlib.
+\end{proof}
+\begin{lemma}
+  \label{thm:signFromOrder}
+  \uses{def:signedRing}
+  \lean{instSignedRingOfLinearOrderedCommRing}
+  \leanok
   Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
   function.
 \end{lemma}
-
 \begin{proof}
   \leanok
-  This is mostly borrowed from mathlib.
+  This follows immediately from the definitions.
 \end{proof}
+
+%% Ordering on A[√n]
 
 With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 
 \begin{definition}
   \label{def:adjoinSign}
-  \lean{AdjoinSqrt.instSignedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instSignedRing}
   \leanok
   \uses{def:signedRing, def:adjoin, def:adjoinRingOps}
   If $A$ is a signed ring and $n ∈ A \geq 0$ is not a square in $A$, then
@@ -287,10 +311,17 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 \begin{corollary}
   \label{thm:adjoinOrderedRing}
   \lean{AdjoinSqrt.instLinearOrderedRingOfNonsquareOfPos}
-  \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign}
+  \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign, thm:signFromOrder}
+  \leanok
   If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
   then $A[\sqrt{n}]$ is also linearly ordered.
 \end{corollary}
+
+\begin{proof}
+  \leanok
+  Since $A$ is a linearly ordered ring, it is a signed ring. Therefore $A[\sqrt{n}]$ is signed,
+  which implies that it is a linearly ordered ring.
+\end{proof}
 
 %% A[√n] is an ordered field
 
@@ -300,6 +331,7 @@ Putting this all together gives the main result of this section:
   \label{thm:adjoinOrderedField}
   \lean{AdjoinSqrt.instLinearOrderedFieldOfNonsquareOfPos}
   \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
+  \leanok
 
   If $A$ is a linearly ordered field, and if $n$ is a positive non-square in $A$
   then $A[\sqrt{n}]$ is also a linearly ordered field.
@@ -360,7 +392,7 @@ number representations, but are interesting nonetheless.
 
 \begin{definition}
   \label{def:adjoinOfA}
-  \lean{AdjoinSqrt.instCoeOfZero}
+  \lean{AdjoinSqrt.instCoe}
   \leanok
   \uses{def:adjoin}
   We write $A \hookrightarrow A[\sqrt{n}]$ for the natural embedding
