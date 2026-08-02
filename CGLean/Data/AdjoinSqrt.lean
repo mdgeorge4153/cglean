@@ -177,8 +177,8 @@ open SignedRing
 instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
-  sign_zero := by sorry
-  sign_one  := by sorry
+  sign_zero := by simp [SignedRing.sign_zero]
+  sign_one  := by simp [SignedRing.sign_zero, SignedRing.sign_one]
   sign_mul  := by sorry
   zero_sign := by sorry
   sign_neg  := by sorry
@@ -215,12 +215,12 @@ instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
 
 /-- The order on `A[√n]`, obtained from its `SignedRing` structure via
 `CGLean.Algebra.Signed`. -/
-def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+@[reducible] def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
     LinearOrder (AdjoinSqrt R n) := inferInstance
 
 /-- That order is compatible with the ring operations, so `A[√n]` is a linearly
 ordered ring whenever `A` is one and `n` is a positive non-square. -/
-def isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+theorem isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
     IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
 
 def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))

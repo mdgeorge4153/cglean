@@ -130,6 +130,7 @@ latter makes every consumer assume more.
 \end{theorem}
 
 \chapter{Computational Number Representations}
+\label{chap:numbers}
 
 For our computational geometry algorithms to be correct, we need to use exact
 number representations --- roundoff error introduced by floating-point
@@ -647,6 +648,68 @@ intervals. We formalize this as follows:
 \section{Origami}
 
 \section{Diagram Widgets}
+
+\chapter{Future Work}
+
+\section{A structural account of $A[\sqrt{n}]$}
+
+The development of $A[\sqrt{n}]$ in this document is deliberately elementary:
+elements are pairs, and the ring and field laws are checked coordinatewise. That
+is easy to follow and easy to compute with, but it obscures a good deal of
+structure, and the proofs feel more laborious than the mathematics warrants.
+
+The construction has a distinctly linear-algebraic character. $A[\sqrt{n}]$ is a
+free $A$-module of rank two; multiplication is $A$-bilinear and so is determined
+by its values on a basis; conjugation is an $A$-linear involution fixing $1$ and
+negating $\sqrt{n}$; and the quantity $x \cdot \overline{x}$, which the ordering
+and the inverse both depend on, behaves exactly like a determinant --- it is
+multiplicative, and it vanishes only at zero.
+
+This suggests an alternative development in which $A[\sqrt{n}]$ is presented as
+$A[x]/(x^2 - n)$, and its properties are inherited from general facts about
+quotients of polynomial rings rather than verified by hand. Mathlib has the
+machinery for this, and the relationship is already recorded as
+Lemma~\ref{thm:mathlibAdjoin}, currently unproved. The \code{Algebra} instance
+this development registers is the beginning of such an account but is not yet
+used for anything.
+
+It is not obvious that this would be simpler overall. The elementary
+presentation is what makes the sign computation transparent, and that
+computation is the part this library actually needs; a quotient presentation may
+well make the ordering harder to reason about even as it makes the ring
+structure easier. It seems worth attempting on a branch to find out.
+
+\section{Deferred components}
+
+Interval arithmetic, and with it the \code{FilteredReal} layer of
+Chapter~\ref{chap:numbers} is not currently built. It depends on an external
+floating-point interval library which lags the Mathlib version used here.
+
+Extraction of a reasonably efficient executable has not been attempted. The
+ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone
+membership is what makes it so --- but no attention has yet been paid to whether
+the compiled code is fast, and some of the algebraic instances inherit
+deliberately naive default implementations from Mathlib.
+
+The rendering support is presently limited to producing static diagrams. The
+interactive widget infrastructure available in Lean would permit dragging shapes
+directly in the editor, which is the natural presentation for the drag-and-drop
+application.
+
+\chapter{References}
+
+\begin{itemize}
+\item Mark de Berg, Otfried Cheong, Marc van Kreveld and Mark Overmars,
+  \emph{Computational Geometry: Algorithms and Applications}, 3rd edition,
+  Springer, 2008. The primary source for the algorithms formalised here,
+  including planar arrangements, the sweep-line method, point location and
+  convex hulls.
+
+\item The \link{https://www.cgal.org/}{CGAL} project, \emph{The Computational
+  Geometry Algorithms Library}. Influential on the design of this library,
+  particularly its separation of geometric algorithms from the arithmetic
+  used to instantiate them, and its treatment of exact predicates.
+\end{itemize}
 
 
 % vim: ts=2 sw=2 et ai
