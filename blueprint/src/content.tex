@@ -742,6 +742,25 @@ application.
   time, with executable code extracted and benchmarked against handwritten
   implementations. A useful reference point for the choices discussed in
   Chapter~\ref{chap:arrangements}.
+
+\item Tobias Nipkow, Manuel Eberl and Maximilian P.\ L.\ Haslbeck,
+  \emph{Verified Textbook Algorithms: A Biased Survey}, ATVA 2020, LNCS 12302.
+  \link{https://doi.org/10.1007/978-3-030-59152-6_2}{doi:10.1007/978-3-030-59152-6\_2}.
+  Surveys what has been achieved in verifying standard algorithms, covering both
+  correctness and running time, and is the most direct discussion of the
+  trade-offs weighed in Chapter~\ref{chap:arrangements}: how much of a
+  specification to state abstractly, when to refine a clean definition into an
+  efficient implementation, and what is lost either way.
+
+\item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
+  Pragmatic Introduction to the Coq Proof Assistant}, MIT Press, 2013.
+  \link{https://adam.chlipala.net/cpdt/}{adam.chlipala.net/cpdt}.
+  Written for Coq rather than Lean, but its subject is proof engineering rather
+  than any particular prover: how to structure a development so that it survives
+  change. Its treatment of dependently typed programming --- when to push
+  correctness into the type of a function and when to keep it in a separate
+  theorem --- is the question Chapter~\ref{chap:arrangements} has to answer for
+  each algorithm.
 \end{itemize}
 
 
