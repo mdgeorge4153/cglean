@@ -199,6 +199,24 @@ lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
   simp [conj]
   ring
 
+/-- The norm `a₁² - n·aₙ²`, written out. -/
+abbrev norm [CommRing R] (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
+
+lemma norm_eq [CommRing R] (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
+  simp [conj, norm]; ring
+
+/-- Non-negativity of `a₁ + aₙ√n`, phrased with `R`'s order rather than with
+`SignType`. Both disjuncts are needed: the first covers `aₙ < 0`, where `a₁`
+must dominate `aₙ√n`, and the second covers `a₁ < 0`, where `aₙ√n` must
+dominate.
+
+This is the form `sign_mul` and `sign_plus` want, since it puts them in reach of
+the ordered-field lemmas. Each of the nine sign combinations reduces to an
+inequality about `a₁²` and `n·aₙ²`. -/
+lemma nonneg_iff [SignedField R] [Pos R n] (x : AdjoinSqrt R n) :
+    Signed.sign x ≠ .neg ↔ (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0) := by
+  sorry
+
 instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
