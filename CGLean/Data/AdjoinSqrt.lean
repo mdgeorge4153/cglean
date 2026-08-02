@@ -189,19 +189,32 @@ lemma sign_eq [Signed R] [Mul R] [Add R] [Neg R] (x : AdjoinSqrt R n) :
   simp [conj]
   ring
 
-instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
+instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
   sign_zero := by simp [SignedRing.sign_zero]
   sign_one  := by simp [SignedRing.sign_zero, SignedRing.sign_one]
   sign_mul  := by sorry
-  zero_sign := by sorry
+  zero_sign := by
+    intro a h
+    rw [sign_eq] at h
+    cases h1 : sign a.a₁ <;> cases hn : sign a.aₙ <;> rw [h1, hn] at h <;>
+      simp at h
+    case zero.zero =>
+      ext
+      · exact SignedRing.zero_sign _ h1
+      · exact SignedRing.zero_sign _ hn
+    case pos.neg =>
+      refine conj_0 a (SignedRing.zero_sign _ ?_)
+      simpa using h
+    case neg.pos =>
+      refine conj_0 a (SignedRing.zero_sign _ ?_)
+      simpa using h
   sign_neg  := by
     intro a
     rw [sign_eq, sign_eq, show (-a).a₁ = -a.a₁ from rfl,
       show (-a).aₙ = -a.aₙ from rfl, SignedRing.sign_neg, SignedRing.sign_neg]
-    cases h1 : sign a.a₁ <;> cases hn : sign a.aₙ <;> simp [h1, hn] <;>
-      congr 1 <;> ring
+    cases sign a.a₁ <;> cases sign a.aₙ <;> simp <;> congr 1 <;> ring
   sign_plus := by sorry
 
 -- TODO
@@ -235,12 +248,12 @@ instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
 
 /-- The order on `A[√n]`, obtained from its `SignedRing` structure via
 `CGLean.Algebra.Signed`. -/
-@[reducible] def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+@[reducible] def linearOrderOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
     LinearOrder (AdjoinSqrt R n) := inferInstance
 
 /-- That order is compatible with the ring operations, so `A[√n]` is a linearly
 ordered ring whenever `A` is one and `n` is a positive non-square. -/
-theorem isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+theorem isStrictOrderedRingOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
     IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
 
 def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))

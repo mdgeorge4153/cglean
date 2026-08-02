@@ -1,3 +1,4 @@
+import Mathlib.Algebra.Field.Defs
 import Mathlib.Data.Sign.Basic
 import Mathlib.Algebra.Order.Ring.Cone
 
@@ -20,6 +21,11 @@ class SignedRing (R : Type) extends CommRing R, Signed R where
  zero_sign : ∀ (a : R), sign a = 0 → a = 0
  sign_neg  : ∀ (a : R), sign (-a) = -sign a
  sign_plus : ∀ (a b : R), sign a ≠ .neg → sign b ≠ .neg → sign (a + b) ≠ .neg
+
+/-- A field whose sign function is well behaved. Mathlib's own `Field` extends
+both `CommRing` and `DivisionRing`, so the shared ring structure is flattened
+rather than duplicated. -/
+class SignedField (R : Type) extends SignedRing R, Field R
 
 open SignedRing
 
