@@ -408,6 +408,30 @@ lemma norm_mul_norm_eq [CommRing R] (x y : AdjoinSqrt R n) :
         - n * (x.a₁*y.aₙ - x.aₙ*y.a₁) * (x.a₁*y.aₙ - x.aₙ*y.a₁) := by
   simp only [norm]; ring
 
+/-- The easy half of the mixed case: when `x`'s `√n` part is also non-negative,
+the sum lands on the `√n`-dominated side by a chain of square comparisons, with
+no `√n` reasoning needed.
+
+The remaining half, `x.aₙ < 0`, is the outstanding gap in `sign_plus`. Writing
+`u = -x.aₙ > 0` and `v = -y.a₁ ≥ 0` it asks for `(v - a)² ≤ n·(d - u)²` given
+`a² ≥ n·u²`, `v² ≤ n·d²`, `v ≥ a ≥ 0` and `d ≥ u ≥ 0`. That follows in one step
+from `v ≤ √n·d` and `a ≥ √n·u` by subtraction, but the resulting certificate
+lives in `R[√n]` rather than `R`, which is why `nlinarith` does not find it. -/
+lemma norm_add_nonpos_of_aₙ_nonneg [SignedField R] [Pos R n]
+    {x y : AdjoinSqrt R n} (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ)
+    (hyN : norm y ≤ 0) (hb : 0 ≤ x.aₙ) (h : x.a₁ + y.a₁ ≤ 0) :
+    norm (x+y) ≤ 0 := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hsum : norm (x+y)
+      = (x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) := by simp [norm]
+  rw [hsum]
+  simp only [norm] at hyN
+  have k1 : (-(x.a₁+y.a₁)) * (-(x.a₁+y.a₁)) ≤ (-y.a₁) * (-y.a₁) :=
+    mul_self_le_mul_self (by linarith) (by linarith)
+  have k2 : y.aₙ * y.aₙ ≤ (x.aₙ+y.aₙ) * (x.aₙ+y.aₙ) :=
+    mul_self_le_mul_self hy1 (by linarith)
+  nlinarith [k1, k2, hyN, hn, mul_le_mul_of_nonneg_left k2 hn.le]
+
 /-- Sign is multiplicative. The zero cases follow from `A[√n]` being a field,
 hence a domain; the rest reduce to closure of the non-negative elements under
 multiplication, with `sign_neg_eq` covering the negative combinations. -/
