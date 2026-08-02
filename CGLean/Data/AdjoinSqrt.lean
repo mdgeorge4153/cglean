@@ -346,6 +346,68 @@ lemma sign_neg_eq [SignedField R] (a : AdjoinSqrt R n) :
     show (-a).aₙ = -a.aₙ from rfl, SignedRing.sign_neg, SignedRing.sign_neg]
   cases sign a.a₁ <;> cases sign a.aₙ <;> simp <;> congr 1 <;> ring
 
+/-- Comparison of squares reflects, given the larger side is non-negative.
+Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
+lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
+    (h : a * a ≤ b * b) : a ≤ b :=
+  le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
+
+/-- Equality of squares reflects, given both sides are non-negative. -/
+lemma eq_of_mul_self_eq [SignedField R] {a b : R} (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (h : a * a = b * b) : a = b :=
+  le_antisymm (le_of_mul_self_le hb h.le) (le_of_mul_self_le ha h.ge)
+
+/-- The norm vanishes only at zero. -/
+lemma norm_eq_zero_iff [SignedField R] [Nonsquare R n] (z : AdjoinSqrt R n) :
+    norm z = 0 ↔ z = 0 := by
+  refine ⟨fun h => conj_0 z ?_, fun h => by rw [h]; simp [norm]⟩
+  rw [norm_eq]; exact h
+
+/-- When both norms are non-negative and both rational parts are, the rational
+part dominates the cross term. -/
+lemma cross_le [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
+    n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
+    mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
+    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+
+/-- Dual of `cross_le`. -/
+lemma cross_ge [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
+    x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  nlinarith [mul_nonneg (mul_nonneg hn.le hx) hy,
+    mul_nonneg (neg_nonneg.mpr hxN) (mul_self_nonneg y.aₙ),
+    mul_nonneg (mul_self_nonneg x.aₙ) (neg_nonneg.mpr hyN),
+    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+
+/-- In a mixed pair, if the rational parts sum to something non-positive then the
+`√n` parts sum to something non-negative. -/
+lemma aₙ_add_nonneg [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
+    (h : x.a₁ + y.a₁ ≤ 0) : 0 ≤ x.aₙ + y.aₙ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  have h1 : x.a₁ * x.a₁ ≤ (-y.a₁) * (-y.a₁) :=
+    mul_self_le_mul_self hx1 (by linarith)
+  have h2 : n * (x.aₙ * x.aₙ) ≤ n * (y.aₙ * y.aₙ) := by nlinarith [h1]
+  have h3 : x.aₙ * x.aₙ ≤ y.aₙ * y.aₙ := le_of_mul_le_mul_left h2 hn
+  have h4 : -x.aₙ ≤ y.aₙ := le_of_mul_self_le hy1 (by nlinarith [h3])
+  linarith
+
+/-- The governing identity for the mixed cases: the product of the two norms is
+the norm of `x * conj y`. It is what makes the remaining inequality tight, since
+both sides vanish together. -/
+lemma norm_mul_norm_eq [CommRing R] (x y : AdjoinSqrt R n) :
+    norm x * norm y
+      = (x.a₁*y.a₁ - n*x.aₙ*y.aₙ) * (x.a₁*y.a₁ - n*x.aₙ*y.aₙ)
+        - n * (x.a₁*y.aₙ - x.aₙ*y.a₁) * (x.a₁*y.aₙ - x.aₙ*y.a₁) := by
+  simp only [norm]; ring
+
 /-- Sign is multiplicative. The zero cases follow from `A[√n]` being a field,
 hence a domain; the rest reduce to closure of the non-negative elements under
 multiplication, with `sign_neg_eq` covering the negative combinations. -/
