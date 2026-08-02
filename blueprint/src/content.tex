@@ -9,6 +9,7 @@
 \chapter{2D Planar Geometry Primitives}
 
 \chapter{Planar Arrangements}
+\label{chap:arrangements}
 
 \section{What it means for a geometric algorithm to be correct}
 
@@ -709,6 +710,38 @@ application.
   Geometry Algorithms Library}. Influential on the design of this library,
   particularly its separation of geometric algorithms from the arithmetic
   used to instantiate them, and its treatment of exact predicates.
+
+\item Lutz Kettner, Kurt Mehlhorn, Sylvain Pion, Stefan Schirra and Chee Yap,
+  \emph{Classroom examples of robustness problems in geometric computations},
+  Computational Geometry \textbf{40}(1):61--78, 2008.
+  \link{https://doi.org/10.1016/j.comgeo.2007.06.003}{doi:10.1016/j.comgeo.2007.06.003}.
+  Exhibits concrete inputs on which floating-point implementations of convex
+  hull and Delaunay triangulation fail, and analyses the geometry of the
+  floating-point orientation predicate. This is the empirical case for
+  Chapter~\ref{chap:numbers}.
+
+\item The mathlib Community, \emph{The Lean Mathematical Library}, CPP 2020,
+  pp.\ 367--381.
+  \link{https://doi.org/10.1145/3372885.3373824}{doi:10.1145/3372885.3373824}.
+  The source of the algebraic and order hierarchies used throughout, and of the
+  \code{Set}-level definitions against which the geometric results are
+  ultimately stated.
+
+\item Leonardo de Moura and Sebastian Ullrich, \emph{The Lean 4 Theorem Prover
+  and Programming Language}, CADE 28, LNCS 12699, pp.\ 625--635, Springer, 2021.
+  \link{https://doi.org/10.1007/978-3-030-79876-5_37}{doi:10.1007/978-3-030-79876-5\_37}.
+  Describes the system, including its treatment of Lean as a programming
+  language, which is what makes it reasonable to expect these algorithms to run
+  as well as to be proved correct.
+
+\item Martin Rau and Tobias Nipkow, \emph{Verification of Closest Pair of Points
+  Algorithms}, IJCAR 2020, LNCS 12167, pp.\ 341--357.
+  \link{https://doi.org/10.1007/978-3-030-51054-1_20}{doi:10.1007/978-3-030-51054-1\_20}.
+  The closest published analogue to this project: divide-and-conquer geometric
+  algorithms verified for both functional correctness and asymptotic running
+  time, with executable code extracted and benchmarked against handwritten
+  implementations. A useful reference point for the choices discussed in
+  Chapter~\ref{chap:arrangements}.
 \end{itemize}
 
 

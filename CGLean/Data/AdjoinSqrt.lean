@@ -174,6 +174,21 @@ class Pos (R : Type) [Signed R] (n : R) where
 
 open SignedRing
 
+/-- `sign` on `A[√n]`, unfolded. -/
+lemma sign_eq [Signed R] [Mul R] [Add R] [Neg R] (x : AdjoinSqrt R n) :
+    Signed.sign x = match (sign x.a₁, sign x.aₙ) with
+      | (.zero, .zero) => .zero
+      | (.pos, .pos) | (.pos,.zero) | (.zero, .pos) => .pos
+      | (.neg, .neg) | (.neg,.zero) | (.zero, .neg) => .neg
+      | (.pos, .neg) =>  sign (x * x.conj : R)
+      | (.neg, .pos) => -sign (x * x.conj : R) := rfl
+
+/-- The norm is invariant under negation, since conjugation is linear. -/
+@[simp] lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) :
+    ((-x) * conj (-x)).a₁ = (x * conj x).a₁ := by
+  simp [conj]
+  ring
+
 instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
@@ -181,7 +196,12 @@ instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
   sign_one  := by simp [SignedRing.sign_zero, SignedRing.sign_one]
   sign_mul  := by sorry
   zero_sign := by sorry
-  sign_neg  := by sorry
+  sign_neg  := by
+    intro a
+    rw [sign_eq, sign_eq, show (-a).a₁ = -a.a₁ from rfl,
+      show (-a).aₙ = -a.aₙ from rfl, SignedRing.sign_neg, SignedRing.sign_neg]
+    cases h1 : sign a.a₁ <;> cases hn : sign a.aₙ <;> simp [h1, hn] <;>
+      congr 1 <;> ring
   sign_plus := by sorry
 
 -- TODO
