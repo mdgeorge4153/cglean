@@ -125,8 +125,12 @@ lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
   rw [← H']
   ring
 
--- TODO: need this for a CommRing, not just a field
--- should be possible just using cancellation maybe? Might need a UFD or something
+/-- A field is more than this needs: an integrally closed domain, a UFD say,
+would do. There `a₁ / aₙ` is integral over `R`, being a root of `X² - n`, so it
+already lies in `R` and `n` is a square after all. A bare domain is not enough
+--- in `k[x², x³]`, `n = x²` has no square root, yet `a₁ = x³`, `aₙ = x²` gives
+`a₁² = n * aₙ²`. Every intended instance is a field, so the generality is not
+worth the proof. -/
 lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R) = 0 → x = 0 := by
   intros x H
   simp at H
@@ -182,6 +186,12 @@ lemma sign_eq [Signed R] [Mul R] [Add R] [Neg R] (x : AdjoinSqrt R n) :
       | (.neg, .neg) | (.neg,.zero) | (.zero, .neg) => .neg
       | (.pos, .neg) =>  sign (x * x.conj : R)
       | (.neg, .pos) => -sign (x * x.conj : R) := rfl
+
+/-- The norm is multiplicative. -/
+lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
+    ((x * y) * conj (x * y)).a₁ = (x * conj x).a₁ * (y * conj y).a₁ := by
+  simp [conj]
+  ring
 
 /-- The norm is invariant under negation, since conjugation is linear. -/
 @[simp] lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) :
