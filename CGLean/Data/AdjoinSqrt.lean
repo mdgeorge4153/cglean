@@ -205,6 +205,22 @@ abbrev norm [CommRing R] (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.a�
 lemma norm_eq [CommRing R] (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
   simp [conj, norm]; ring
 
+/-- With no rational part, `a₁ + aₙ√n` is a nonzero multiple of `√n`, so its
+norm is strictly negative. -/
+lemma norm_neg_of_a₁_eq_zero [SignedField R] [Pos R n] (x : AdjoinSqrt R n)
+    (h1 : x.a₁ = 0) (hd : x.aₙ ≠ 0) : norm x < 0 := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hsq : 0 < x.aₙ * x.aₙ := mul_self_pos.mpr hd
+  simp only [norm, h1]
+  nlinarith
+
+/-- With no `√n` part, the norm is the square of the rational part. -/
+lemma norm_pos_of_aₙ_eq_zero [SignedField R] (x : AdjoinSqrt R n)
+    (hd : x.aₙ = 0) (h1 : x.a₁ ≠ 0) : 0 < norm x := by
+  have hsq : 0 < x.a₁ * x.a₁ := mul_self_pos.mpr h1
+  simp only [norm, hd]
+  nlinarith
+
 /-- Non-negativity of `a₁ + aₙ√n`, phrased with `R`'s order rather than with
 `SignType`. Both disjuncts are needed: the first covers `aₙ < 0`, where `a₁`
 must dominate `aₙ√n`, and the second covers `a₁ < 0`, where `aₙ√n` must
@@ -216,27 +232,52 @@ inequality about `a₁²` and `n·aₙ²`. -/
 lemma nonneg_iff [SignedField R] [Pos R n] (x : AdjoinSqrt R n) :
     Signed.sign x ≠ .neg ↔ (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0) := by
   have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
-  rcases le_total 0 (norm x) with hN | hN <;>
-  rw [sign_eq] <;>
+  rw [sign_eq]
   cases h1 : sign x.a₁ <;> cases hd : sign x.aₙ <;>
     simp only [norm_eq] <;>
     simp only [SignedRing.sign_eq_pos_iff, SignedRing.sign_eq_neg_iff,
-      SignedRing.sign_eq_zero_iff] at h1 hd <;>
-    simp only [norm, SignedRing.mem_nonnegCone_iff, ne_eq, reduceCtorEq,
-      not_false_eq_true, not_true_eq_false, iff_true, iff_false, true_and,
-      and_true, true_or, or_true] <;>
-    first
-      | rfl
-      | (simp_all; done)
-      | (constructor <;> intro <;> simp_all; done)
-      | (nlinarith [mul_self_nonneg x.a₁, mul_self_nonneg x.aₙ, hn,
-          mul_nonneg hn.le (mul_self_nonneg x.aₙ)]; done)
-      -- Seventeen of the eighteen subgoals close above. The exception is
-      -- `inl.zero.neg.mpr`, whose hypotheses are contradictory -- `0 ≤ N` with
-      -- `a₁ = 0`, `aₙ < 0` and `n > 0` forces `n * aₙ² ≤ 0` -- but `0 ≤ N`
-      -- arrives already unfolded into cone membership, which `nlinarith`
-      -- cannot read.
-      | sorry
+      SignedRing.sign_eq_zero_iff] at h1 hd
+  case zero.zero => simp [norm, h1, hd]
+  case zero.neg =>
+    have hN := norm_neg_of_a₁_eq_zero x h1 (ne_of_lt hd)
+    simp only [ne_eq, not_true_eq_false, false_iff, not_or, not_and]
+    exact ⟨fun _ => not_le.mpr hN, fun h => absurd h (not_le.mpr hd)⟩
+  case zero.pos =>
+    have hN := norm_neg_of_a₁_eq_zero x h1 (ne_of_gt hd)
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, true_iff]
+    exact Or.inr ⟨le_of_lt hd, le_of_lt hN⟩
+  case neg.zero =>
+    have hN := norm_pos_of_aₙ_eq_zero x hd (ne_of_lt h1)
+    simp only [ne_eq, not_true_eq_false, false_iff, not_or, not_and]
+    exact ⟨fun h => absurd h (not_le.mpr h1), fun _ => not_le.mpr hN⟩
+  case neg.neg =>
+    simp only [ne_eq, not_true_eq_false, false_iff, not_or, not_and]
+    exact ⟨fun h => absurd h (not_le.mpr h1), fun h => absurd h (not_le.mpr hd)⟩
+  case neg.pos =>
+    simp only [ne_eq, neg_eq_iff_eq_neg]
+    rw [show -SignType.neg = SignType.pos from rfl, SignedRing.sign_eq_pos_iff]
+    constructor
+    · intro h
+      exact Or.inr ⟨le_of_lt hd, not_lt.mp h⟩
+    · rintro (⟨h, -⟩ | ⟨-, h⟩)
+      · exact absurd h (not_le.mpr h1)
+      · exact not_lt.mpr h
+  case pos.zero =>
+    have hN := norm_pos_of_aₙ_eq_zero x hd (ne_of_gt h1)
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, true_iff]
+    exact Or.inl ⟨le_of_lt h1, le_of_lt hN⟩
+  case pos.neg =>
+    rw [SignedRing.nonneg_iff.symm]
+    constructor
+    · intro h; exact Or.inl ⟨le_of_lt h1, h⟩
+    · rintro (⟨-, h⟩ | ⟨h, -⟩)
+      · exact h
+      · exact absurd h (not_le.mpr hd)
+  case pos.pos =>
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, true_iff]
+    rcases le_total 0 (norm x) with hN | hN
+    · exact Or.inl ⟨le_of_lt h1, hN⟩
+    · exact Or.inr ⟨le_of_lt hd, hN⟩
 
 instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
