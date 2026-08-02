@@ -13,7 +13,7 @@ class Signed (R : Type) where
 open Signed
 
 -- TODO: start higher in the hierarchy - e.g. SignedGroup etc
-class SignedRing (R : Type) extends Ring R, Signed R where
+class SignedRing (R : Type) extends CommRing R, Signed R where
  sign_zero : sign 0 = 0
  sign_one  : sign 1 = 1
  sign_mul  : ∀ (a b : R), sign (a * b) = sign a * sign b
@@ -105,7 +105,7 @@ instance instIsStrictOrderedRingOfSignedRing [SignedRing R] :
 
 /-- Conversely, a linearly ordered ring has a well-behaved sign function. -/
 instance instSignedRingOfLinearOrderedRing
-    [Ring R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
+    [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
   sign := SignType.sign
   sign_zero := sign_zero
   sign_one  := sign_one

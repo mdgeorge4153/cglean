@@ -174,7 +174,15 @@ class Pos (R : Type) [Signed R] (n : R) where
 
 open SignedRing
 
-instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) := sorry
+instance instSignedRing [SignedRing R] [Nonsquare R n] [Pos R n] :
+    SignedRing (AdjoinSqrt R n) where
+  __ := instCommRing
+  sign_zero := by sorry
+  sign_one  := by sorry
+  sign_mul  := by sorry
+  zero_sign := by sorry
+  sign_neg  := by sorry
+  sign_plus := by sorry
 
 -- TODO
 --   sign_zero := by simp [SignedRing.sign_zero]
