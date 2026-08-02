@@ -210,19 +210,15 @@ instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing 
 --   sign_mul := sorry
 --   sign_plus := sorry
 
-/-! Once `AdjoinSqrt R n` is a `SignedRing`, `CGLean.Algebra.Signed` supplies
-its `LinearOrder` and `IsStrictOrderedRing` by instance resolution. These
-examples record that, and are what the blueprint calls `thm:adjoinOrderedRing`
-and `thm:adjoinOrderedField`. -/
-
-example [SignedRing R] [Nonsquare R n] [Pos R n] :
+/-- The order on `A[√n]`, obtained from its `SignedRing` structure via
+`CGLean.Algebra.Signed`. -/
+def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
     LinearOrder (AdjoinSqrt R n) := inferInstance
 
-example [SignedRing R] [Nonsquare R n] [Pos R n] :
+/-- That order is compatible with the ring operations, so `A[√n]` is a linearly
+ordered ring whenever `A` is one and `n` is a positive non-square. -/
+def isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
     IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
-
-example [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-    [Nonsquare R n] [Pos R n] : Field (AdjoinSqrt R n) := inferInstance
 
 def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
 
