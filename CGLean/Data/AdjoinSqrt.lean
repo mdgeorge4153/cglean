@@ -205,6 +205,10 @@ abbrev norm [CommRing R] (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.a�
 lemma norm_eq [CommRing R] (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
   simp [conj, norm]; ring
 
+lemma norm_mul' [CommRing R] (x y : AdjoinSqrt R n) :
+    norm (x * y) = norm x * norm y := by
+  simp [norm]; ring
+
 /-- With no rational part, `a₁ + aₙ√n` is a nonzero multiple of `√n`, so its
 norm is strictly negative. -/
 lemma norm_neg_of_a₁_eq_zero [SignedField R] [Pos R n] (x : AdjoinSqrt R n)
@@ -279,32 +283,134 @@ lemma nonneg_iff [SignedField R] [Pos R n] (x : AdjoinSqrt R n) :
     · exact Or.inl ⟨le_of_lt h1, hN⟩
     · exact Or.inr ⟨le_of_lt hd, hN⟩
 
+/-- The non-negative elements are closed under multiplication. Each case turns
+on comparing `(x.a₁*y.a₁)²` with `(n*x.aₙ*y.aₙ)²`, whose difference factors
+through the two norms. -/
+lemma nonneg_mul [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
+    (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
+    (0 ≤ (x*y).a₁ ∧ 0 ≤ norm (x*y)) ∨ (0 ≤ (x*y).aₙ ∧ norm (x*y) ≤ 0) := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hprod : norm (x*y) = norm x * norm y := norm_mul' x y
+  have ha : (x*y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := rfl
+  have hb : (x*y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁ := rfl
+  rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
+  · left
+    refine ⟨?_, by rw [hprod]; exact mul_nonneg hxN hyN⟩
+    rw [ha]
+    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hxN (mul_self_nonneg y.a₁),
+      mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
+      sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+  · right
+    refine ⟨?_, by rw [hprod]; exact mul_nonpos_of_nonneg_of_nonpos hxN hyN⟩
+    rw [hb]
+    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hxN (mul_self_nonneg y.aₙ),
+      mul_nonneg (mul_self_nonneg x.aₙ) (neg_nonneg.mpr hyN),
+      sq_nonneg (x.a₁*y.aₙ - x.aₙ*y.a₁), sq_nonneg (x.a₁*y.aₙ + x.aₙ*y.a₁)]
+  · right
+    refine ⟨?_, by rw [hprod]; exact mul_nonpos_of_nonpos_of_nonneg hxN hyN⟩
+    rw [hb]
+    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hyN (mul_self_nonneg x.aₙ),
+      mul_nonneg (mul_self_nonneg y.aₙ) (neg_nonneg.mpr hxN),
+      sq_nonneg (x.a₁*y.aₙ - x.aₙ*y.a₁), sq_nonneg (x.a₁*y.aₙ + x.aₙ*y.a₁)]
+  · left
+    refine ⟨?_, by
+      rw [hprod]; nlinarith [mul_nonneg (neg_nonneg.mpr hxN) (neg_nonneg.mpr hyN)]⟩
+    rw [ha]
+    nlinarith [mul_nonneg (mul_nonneg hn.le hx1) hy1,
+      mul_nonneg (neg_nonneg.mpr hxN) (mul_self_nonneg y.a₁),
+      mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) (neg_nonneg.mpr hyN),
+      sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ),
+      mul_nonneg hn.le (mul_nonneg hx1 hy1)]
+
+/-- Only zero has zero sign. -/
+lemma eq_zero_of_sign_eq_zero [SignedField R] [Nonsquare R n] (a : AdjoinSqrt R n)
+    (h : Signed.sign a = 0) : a = 0 := by
+  rw [sign_eq] at h
+  cases h1 : sign a.a₁ <;> cases hd : sign a.aₙ <;> rw [h1, hd] at h <;> simp at h
+  case zero.zero =>
+    ext
+    · exact SignedRing.zero_sign _ h1
+    · exact SignedRing.zero_sign _ hd
+  case pos.neg =>
+    refine conj_0 a (SignedRing.zero_sign _ ?_)
+    simpa using h
+  case neg.pos =>
+    refine conj_0 a (SignedRing.zero_sign _ ?_)
+    simpa using h
+
+/-- Negation flips the sign. -/
+lemma sign_neg_eq [SignedField R] (a : AdjoinSqrt R n) :
+    Signed.sign (-a) = -Signed.sign a := by
+  rw [sign_eq, sign_eq, show (-a).a₁ = -a.a₁ from rfl,
+    show (-a).aₙ = -a.aₙ from rfl, SignedRing.sign_neg, SignedRing.sign_neg]
+  cases sign a.a₁ <;> cases sign a.aₙ <;> simp <;> congr 1 <;> ring
+
+/-- Sign is multiplicative. The zero cases follow from `A[√n]` being a field,
+hence a domain; the rest reduce to closure of the non-negative elements under
+multiplication, with `sign_neg_eq` covering the negative combinations. -/
+lemma sign_mul_eq [SignedField R] [Nonsquare R n] [Pos R n] (x y : AdjoinSqrt R n) :
+    Signed.sign (x * y) = Signed.sign x * Signed.sign y := by
+  have hz : ∀ u : AdjoinSqrt R n, Signed.sign u = 0 ↔ u = 0 := fun u =>
+    ⟨eq_zero_of_sign_eq_zero u, fun h => by rw [h]; simp [SignedRing.sign_zero]⟩
+  have hclosed : ∀ u v : AdjoinSqrt R n,
+      Signed.sign u ≠ .neg → Signed.sign v ≠ .neg → Signed.sign (u * v) ≠ .neg :=
+    fun u v hu hv =>
+      (nonneg_iff _).mpr (nonneg_mul ((nonneg_iff u).mp hu) ((nonneg_iff v).mp hv))
+  have hpos : ∀ u : AdjoinSqrt R n, Signed.sign u ≠ .neg → u ≠ 0 →
+      Signed.sign u = .pos := by
+    intro u h1 h2
+    cases hs : Signed.sign u
+    · exact absurd ((hz u).mp hs) h2
+    · exact absurd hs h1
+    · rfl
+  have hflip : ∀ u : AdjoinSqrt R n, Signed.sign u = .neg → Signed.sign (-u) = .pos := by
+    intro u h; rw [sign_neg_eq, h]; rfl
+  have hdicho : ∀ u : AdjoinSqrt R n, u ≠ 0 →
+      Signed.sign u = .pos ∨ Signed.sign u = .neg := by
+    intro u hu
+    cases hs : Signed.sign u
+    · exact absurd ((hz u).mp hs) hu
+    · exact Or.inr rfl
+    · exact Or.inl rfl
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [zero_mul, (hz 0).mpr rfl, zero_mul]
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [mul_zero, (hz 0).mpr rfl, mul_zero]
+  have hxy : x * y ≠ 0 := mul_ne_zero hx hy
+  rcases hdicho x hx with hsx | hsx <;> rcases hdicho y hy with hsy | hsy
+  · rw [hsx, hsy,
+      hpos _ (hclosed _ _ (by rw [hsx]; decide) (by rw [hsy]; decide)) hxy]
+    rfl
+  · have h := hpos (x * -y)
+      (hclosed _ _ (by rw [hsx]; decide) (by rw [hflip y hsy]; decide))
+      (by simpa using hxy)
+    rw [mul_neg, sign_neg_eq] at h
+    rw [hsx, hsy]
+    cases hm : Signed.sign (x*y) <;> rw [hm] at h <;>
+      first | rfl | exact absurd h (by decide)
+  · have h := hpos (-x * y)
+      (hclosed _ _ (by rw [hflip x hsx]; decide) (by rw [hsy]; decide))
+      (by simpa using hxy)
+    rw [neg_mul, sign_neg_eq] at h
+    rw [hsx, hsy]
+    cases hm : Signed.sign (x*y) <;> rw [hm] at h <;>
+      first | rfl | exact absurd h (by decide)
+  · have h := hpos (-x * -y)
+      (hclosed _ _ (by rw [hflip x hsx]; decide) (by rw [hflip y hsy]; decide))
+      (by simpa using hxy)
+    rw [neg_mul_neg] at h
+    rw [hsx, hsy, h]
+    rfl
+
 instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
   sign_zero := by simp [SignedRing.sign_zero]
   sign_one  := by simp [SignedRing.sign_zero, SignedRing.sign_one]
-  sign_mul  := by sorry
-  zero_sign := by
-    intro a h
-    rw [sign_eq] at h
-    cases h1 : sign a.a₁ <;> cases hn : sign a.aₙ <;> rw [h1, hn] at h <;>
-      simp at h
-    case zero.zero =>
-      ext
-      · exact SignedRing.zero_sign _ h1
-      · exact SignedRing.zero_sign _ hn
-    case pos.neg =>
-      refine conj_0 a (SignedRing.zero_sign _ ?_)
-      simpa using h
-    case neg.pos =>
-      refine conj_0 a (SignedRing.zero_sign _ ?_)
-      simpa using h
-  sign_neg  := by
-    intro a
-    rw [sign_eq, sign_eq, show (-a).a₁ = -a.a₁ from rfl,
-      show (-a).aₙ = -a.aₙ from rfl, SignedRing.sign_neg, SignedRing.sign_neg]
-    cases sign a.a₁ <;> cases sign a.aₙ <;> simp <;> congr 1 <;> ring
+  sign_mul  := sign_mul_eq
+  zero_sign := eq_zero_of_sign_eq_zero
+  sign_neg  := sign_neg_eq
   sign_plus := by sorry
 
 -- TODO
