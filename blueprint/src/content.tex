@@ -10,6 +10,98 @@
 
 \chapter{Planar Arrangements}
 
+\section{What it means for a geometric algorithm to be correct}
+
+Before describing arrangements themselves, it is worth being explicit about the
+shape of the correctness statements in this chapter, because there is a real
+choice to be made and it determines how the rest of the development is
+organised.
+
+A geometric algorithm here has two audiences. It must \emph{run} --- an
+arrangement is a finite data structure, and computing the union of two of them
+is a program that terminates and produces another arrangement. It must also be
+\emph{right}, and ``right'' has to be measured against something that is not
+itself a program, or we have only shown that our code agrees with our code.
+
+\subsection{Two levels of specification}
+
+There are two distinct things we could measure an implementation against, and
+they are not equally strong.
+
+The first is an \emph{internal} specification, phrased in terms of the
+operations this library provides. The \code{Region} interface exposes a
+\code{location} function assigning each point one of \emph{inside},
+\emph{boundary} or \emph{outside}, and we can say how union must behave on those
+three values --- this is \code{union\_spec}, and \code{LawfulRegion} demands that
+\code{location} of a union agrees with it pointwise. This is a genuine
+specification: it constrains observable behaviour rather than internal
+structure, so two different representations of a region can be held to the same
+standard, and an implementation cannot satisfy it by accident.
+
+It has one weakness. If \code{union\_spec} is subtly wrong --- if it mishandles
+the boundary case, say --- then every implementation we verify against it is
+wrong in exactly the same way, consistently and provably.
+
+The second is an \emph{external} specification, phrased in terms Mathlib already
+defines. A region determines a set of points, and \code{Region.interior} already
+exposes it as a \code{Set}. At that level, union really is $\cup$, Minkowski sum
+really is pointwise addition of sets, and the convex hull really is Mathlib's
+\code{convexHull}. A theorem stating that our computed hull has the same
+interior as Mathlib's \code{convexHull} says that ours is \emph{the} convex hull,
+not that ours satisfies our definition of one.
+
+Mathlib's \code{convexHull} is defined as the intersection of all convex sets
+containing its argument. It cannot be executed, and that is precisely why it
+makes a good referee: it is a definition nobody would mistake for an algorithm,
+agreed on by a large community, and it cannot have been tailored to make our
+implementation look correct.
+
+The two levels are complementary rather than competing. The internal
+specification is what one actually reasons with when proving a sweep line
+correct, since it is stated in terms the algorithm manipulates. The external
+one is what makes the result mean something. The intended structure is therefore
+to prove the internal specification directly, and separately to prove that the
+internal specification implies the external one --- so that each algorithm
+proof is tractable, while the top-level claim is stated in Mathlib's language.
+
+\subsection{Where the algorithm lives}
+
+Given a specification, there are several ways to relate it to code, and the
+choice is not obvious.
+
+One option is to make the implementation carry its own correctness, returning a
+value bundled with a proof that it satisfies the specification. Nothing
+incorrect can then escape. This works well for small functions, but for a sweep
+line it fuses the algorithm and its proof into a single artifact, and every
+change to the algorithm disturbs the proof.
+
+A second option is to define the operation twice: once in whatever form is
+easiest to reason about, and once in the form we actually want to run, together
+with a theorem that the two agree. Lean supports this directly --- a
+\code{csimp} lemma causes the compiler to substitute the efficient version at
+runtime while every proof continues to refer to the clean one. This is how the
+Lean standard library treats its own primitives. The cost is that proving two
+algorithms extensionally equal can be harder than proving one of them correct,
+particularly when they have quite different shapes, as a naive quadratic union
+and a sweep line do.
+
+A third option applies specifically to decision problems. Point location asks a
+question with a yes-or-no answer, so instead of writing a function and proving
+it correct, we can state the question as a proposition and supply a decision
+procedure for it. The algorithm is then the proof, and no separate agreement
+theorem is required at all. This is available for \code{location} but not for
+union or convex hull, which produce data rather than answers.
+
+These options are not exclusive, and a fourth concern cuts across all of them:
+how much of an arrangement's validity is enforced by its type. The invariants
+listed with the \code{Arrangement} definition --- that edges point
+lexicographically downwards, that every target is a vertex of the map, that
+edges around a vertex are sorted, and that edges and vertices are
+interior-disjoint --- could be carried in the structure, making malformed
+arrangements unrepresentable, or stated as a separate predicate that operations
+are proved to preserve. The former makes every constructor prove more; the
+latter makes every consumer assume more.
+
 \chapter{Point Location Queries}
 
 \chapter{Convex Hull}
@@ -269,7 +361,7 @@ or less than 0 (this reduces the case analysis considerably).
 \begin{lemma}
   \label{thm:signFromOrder}
   \uses{def:signedRing}
-  \lean{instSignedRingOfLinearOrderedRing}
+  \lean{instSignedRingOfLinearOrderedCommRing}
   \leanok
   Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
   function.

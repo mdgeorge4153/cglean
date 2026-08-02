@@ -103,8 +103,9 @@ instance instIsStrictOrderedRingOfSignedRing [SignedRing R] :
   · rw [SignedRing.le_iff, sub_zero, hprod]; decide
   · intro h; rw [← h, SignedRing.sign_zero] at hprod; exact absurd hprod (by decide)
 
-/-- Conversely, a linearly ordered ring has a well-behaved sign function. -/
-instance instSignedRingOfLinearOrderedRing
+/-- Conversely, a linearly ordered commutative ring has a well-behaved sign
+function. -/
+instance instSignedRingOfLinearOrderedCommRing
     [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
   sign := SignType.sign
   sign_zero := sign_zero
