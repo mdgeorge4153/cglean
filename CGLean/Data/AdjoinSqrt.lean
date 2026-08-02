@@ -215,7 +215,28 @@ the ordered-field lemmas. Each of the nine sign combinations reduces to an
 inequality about `a₁²` and `n·aₙ²`. -/
 lemma nonneg_iff [SignedField R] [Pos R n] (x : AdjoinSqrt R n) :
     Signed.sign x ≠ .neg ↔ (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0) := by
-  sorry
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  rcases le_total 0 (norm x) with hN | hN <;>
+  rw [sign_eq] <;>
+  cases h1 : sign x.a₁ <;> cases hd : sign x.aₙ <;>
+    simp only [norm_eq] <;>
+    simp only [SignedRing.sign_eq_pos_iff, SignedRing.sign_eq_neg_iff,
+      SignedRing.sign_eq_zero_iff] at h1 hd <;>
+    simp only [norm, SignedRing.mem_nonnegCone_iff, ne_eq, reduceCtorEq,
+      not_false_eq_true, not_true_eq_false, iff_true, iff_false, true_and,
+      and_true, true_or, or_true] <;>
+    first
+      | rfl
+      | (simp_all; done)
+      | (constructor <;> intro <;> simp_all; done)
+      | (nlinarith [mul_self_nonneg x.a₁, mul_self_nonneg x.aₙ, hn,
+          mul_nonneg hn.le (mul_self_nonneg x.aₙ)]; done)
+      -- Seventeen of the eighteen subgoals close above. The exception is
+      -- `inl.zero.neg.mpr`, whose hypotheses are contradictory -- `0 ≤ N` with
+      -- `a₁ = 0`, `aₙ < 0` and `n > 0` forces `n * aₙ² ≤ 0` -- but `0 ≤ N`
+      -- arrives already unfolded into cone membership, which `nlinarith`
+      -- cannot read.
+      | sorry
 
 instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
