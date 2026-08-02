@@ -1,6 +1,5 @@
 import Mathlib.Data.Sign.Basic
 import Mathlib.Algebra.Order.Ring.Cone
-import Mathlib.Tactic.Linarith.Frontend
 
 -- goals:
 --   given a ordered structure, produce a signed structure
@@ -104,9 +103,9 @@ instance instIsStrictOrderedRingOfSignedRing [SignedRing R] :
   · rw [SignedRing.le_iff, sub_zero, hprod]; decide
   · intro h; rw [← h, SignedRing.sign_zero] at hprod; exact absurd hprod (by decide)
 
--- TODO: I think we don't need Comm, except it allows for linarith
-instance instSignedRingOfLinearOrderedCommRing
-    [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
+/-- Conversely, a linearly ordered ring has a well-behaved sign function. -/
+instance instSignedRingOfLinearOrderedRing
+    [Ring R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
   sign := SignType.sign
   sign_zero := sign_zero
   sign_one  := sign_one

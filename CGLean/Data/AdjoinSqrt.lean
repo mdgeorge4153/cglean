@@ -1,15 +1,10 @@
 import Mathlib.Algebra.Ring.Basic
-import Mathlib.Algebra.Field.IsField
 import Mathlib.Tactic.Ring.RingNF
-import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
-import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Tactic.LinearCombination
 import CGLean.Algebra.Signed
 import CGLean.Classes.RingOps
-
-open Mathlib.Tactic.Ring
 
 /-- Definitions ---------------------------------------------------------------/
 
