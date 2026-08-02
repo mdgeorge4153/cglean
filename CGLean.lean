@@ -1,5 +1,4 @@
-import «CGLean».Data.AdjoinSqrt
-import «CGLean».Data.FilteredEmbedding
-import «CGLean».Geometry.Arrangement
-import CGLean.Playground
-
+import CGLean.Classes.Floatable
+import CGLean.Classes.RingOps
+import CGLean.Algebra.Signed
+import CGLean.Data.AdjoinSqrt
