@@ -1,8 +1,12 @@
-import Mathlib.Data.Rat.Field
+import Mathlib.Data.Prod.Lex
 import Mathlib.Algebra.Ring.Prod
+import Mathlib.Algebra.Order.Ring.Defs
+-- `Lex` is a type synonym and inherits no instances of its own; this supplies
+-- the algebraic structure that gives `Point` its `+`.
+import Mathlib.Algebra.Order.Group.Synonym
 
 variable (k : Type)
-variable [LinearOrderedRing k]
+variable [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 
 -- Points are pairs of numbers. We use lexicographic ordering for <, so that
 -- we first sort by x coordinate and then y coordinate. You can think of this

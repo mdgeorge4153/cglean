@@ -1,12 +1,8 @@
-import Mathlib.Data.Rat.Field
-import Mathlib.Algebra.Ring.Prod
-import LeanColls.Data.RBMap
+import Mathlib.Data.List.Monad
 import CGLean.Classes.Region
 import CGLean.Geometry.Point2D
 
-open LeanColls
-
-variable (k : Type) [LinearOrderedRing k]
+variable (k : Type) [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 
 structure Edge : Type where
   target   : Point k

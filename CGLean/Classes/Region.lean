@@ -1,4 +1,4 @@
-import LeanColls
+import Mathlib.Data.Set.Defs
 
 inductive Location :=
   | inside
@@ -38,6 +38,8 @@ class Region (ρ : Type) (π : outParam Type)
   -- the edges on the boundary of the region
   segments : ρ → List (π × π)
 
+
+variable {ρ π : Type}
 
 def Region.interior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .inside}
 def Region.exterior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .outside}

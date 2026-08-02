@@ -20,8 +20,6 @@ open Mathlib.Tactic.Ring
 
 namespace AdjoinSqrt
 
--- Bound explicitly: with `autoImplicit` off these are no longer conjured up at
--- each declaration.
 variable {R : Type} {n : R}
 
 @[simps] instance instZero [Zero R] : Zero (AdjoinSqrt R n) where
@@ -50,8 +48,7 @@ instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
 
 abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
-/-- The norm `x * conj x`, which lies in `R` rather than `R[√n]`. Named, and
-with `x` bound explicitly, since `autoImplicit` no longer conjures it. -/
+/-- The norm `x * conj x`, which lies in `R` rather than `R[√n]`. -/
 @[simps] instance instCoeDepNorm [Mul R] [Add R] [Neg R] {x : AdjoinSqrt R n} :
     CoeDep (AdjoinSqrt R n) (x * conj x) R where
   coe := (x * conj x).a₁
@@ -148,8 +145,6 @@ lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R
     have H'' : (x.a₁ * x.aₙ⁻¹) * (x.a₁  * x.aₙ⁻¹) = n := by
       field_simp
       apply cancel_neg
-      -- `field_simp` now normalises to powers, so the goal and `H` differ by
-      -- ring rearrangement rather than a single associativity step.
       linear_combination H
     apply Nonsquare.not_square at H''
     exfalso; assumption
@@ -215,11 +210,10 @@ instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing 
 --   sign_mul := sorry
 --   sign_plus := sorry
 
-/-! The order on `A[√n]` no longer needs its own construction: once
-`AdjoinSqrt R n` is a `SignedRing`, `CGLean.Algebra.Signed` supplies the
-`LinearOrder` and `IsStrictOrderedRing` by instance resolution. These examples
-record that, and stand in for what the blueprint calls
-`thm:adjoinOrderedRing` and `thm:adjoinOrderedField`. -/
+/-! Once `AdjoinSqrt R n` is a `SignedRing`, `CGLean.Algebra.Signed` supplies
+its `LinearOrder` and `IsStrictOrderedRing` by instance resolution. These
+examples record that, and are what the blueprint calls `thm:adjoinOrderedRing`
+and `thm:adjoinOrderedField`. -/
 
 example [SignedRing R] [Nonsquare R n] [Pos R n] :
     LinearOrder (AdjoinSqrt R n) := inferInstance

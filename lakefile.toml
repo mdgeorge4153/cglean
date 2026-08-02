@@ -1,19 +1,13 @@
 name = "cglean"
 defaultTargets = ["CGLean"]
 
-# Matches Mathlib. Without it an unknown identifier is silently bound as an
-# implicit variable of unknown type, turning "this name no longer exists" into
-# a confusing downstream type error.
+# An unknown identifier is otherwise silently bound as an implicit variable of
+# unknown type, reporting a confusing downstream type error instead.
 [leanOptions]
 autoImplicit = false
 
-# A Reservoir git dependency: `scope` + `rev` resolves the URL through the
-# registry but pins an exact tag. (The `version` field is for Reservoir semver
-# releases instead, and would reject a leading "v".) The tag must agree with
-# lean-toolchain -- Mathlib only supports the toolchain it was built against.
-#
-# ProofWidgets, Batteries and Aesop arrive transitively via Mathlib, so
-# requiring them here would only risk pinning them inconsistently.
+# `rev` must agree with lean-toolchain: Mathlib only supports the toolchain it
+# was built against.
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
