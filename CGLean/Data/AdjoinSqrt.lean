@@ -626,10 +626,14 @@ ordered ring whenever `A` is one and `n` is a positive non-square. -/
 theorem isStrictOrderedRingOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
     IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
 
-def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
+/-- The real value of `a₁ + aₙ√n`, given a real value for each element of `R`.
+Noncomputable, since it lands in `ℝ`: this exists to state the homomorphism
+properties of the embedding, not to be evaluated. -/
+noncomputable def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ :=
+  f x.a₁ + f x.aₙ * Real.sqrt (f n)
 
 @[simp] def root (n : R) [Zero R] [One R] : AdjoinSqrt R n := ⟨0, 1⟩
 
 theorem root_n_squared [CommRing R]: root n * root n = (n : AdjoinSqrt R n) := by
-  sorry
+  ext <;> simp
 
