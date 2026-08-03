@@ -468,6 +468,8 @@ TODO: informal definitions for homs.
 
 \begin{lemma}
   \label{thm:adjoinToRealRingHom}
+  \lean{AdjoinSqrt.toReal_zero, AdjoinSqrt.toReal_one, AdjoinSqrt.toReal_add, AdjoinSqrt.toReal_mul}
+  \leanok
   \uses{def:adjoinToReal, thm:adjoinRing}
   If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
   ring homomorphism, then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is a ring
@@ -476,6 +478,8 @@ TODO: informal definitions for homs.
 
 \begin{lemma}
   \label{thm:adjoinToRealOrderHom}
+  \lean{AdjoinSqrt.toReal_monotone}
+  \leanok
   \uses{def:adjoinToReal, thm:adjoinOrderedRing}
   If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
   $toReal : A → ℝ$ is monotonic then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is
