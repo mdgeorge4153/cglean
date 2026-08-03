@@ -187,17 +187,6 @@ lemma sign_eq [Signed R] [Mul R] [Add R] [Neg R] (x : AdjoinSqrt R n) :
       | (.pos, .neg) =>  sign (x * x.conj : R)
       | (.neg, .pos) => -sign (x * x.conj : R) := rfl
 
-/-- The norm is multiplicative. -/
-lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
-    ((x * y) * conj (x * y)).a₁ = (x * conj x).a₁ * (y * conj y).a₁ := by
-  simp [conj]
-  ring
-
-/-- The norm is invariant under negation, since conjugation is linear. -/
-@[simp] lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) :
-    ((-x) * conj (-x)).a₁ = (x * conj x).a₁ := by
-  simp [conj]
-  ring
 
 /-- The norm `a₁² - n·aₙ²`, written out. -/
 abbrev norm [CommRing R] (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
@@ -205,7 +194,7 @@ abbrev norm [CommRing R] (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.a�
 lemma norm_eq [CommRing R] (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
   simp [conj, norm]; ring
 
-lemma norm_mul' [CommRing R] (x y : AdjoinSqrt R n) :
+lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
     norm (x * y) = norm x * norm y := by
   simp [norm]; ring
 
@@ -291,7 +280,7 @@ lemma nonneg_mul [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
     (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
     (0 ≤ (x*y).a₁ ∧ 0 ≤ norm (x*y)) ∨ (0 ≤ (x*y).aₙ ∧ norm (x*y) ≤ 0) := by
   have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
-  have hprod : norm (x*y) = norm x * norm y := norm_mul' x y
+  have hprod : norm (x*y) = norm x * norm y := norm_mul x y
   have ha : (x*y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := rfl
   have hb : (x*y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁ := rfl
   rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
@@ -352,16 +341,7 @@ lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
     (h : a * a ≤ b * b) : a ≤ b :=
   le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
 
-/-- Equality of squares reflects, given both sides are non-negative. -/
-lemma eq_of_mul_self_eq [SignedField R] {a b : R} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (h : a * a = b * b) : a = b :=
-  le_antisymm (le_of_mul_self_le hb h.le) (le_of_mul_self_le ha h.ge)
 
-/-- The norm vanishes only at zero. -/
-lemma norm_eq_zero_iff [SignedField R] [Nonsquare R n] (z : AdjoinSqrt R n) :
-    norm z = 0 ↔ z = 0 := by
-  refine ⟨fun h => conj_0 z ?_, fun h => by rw [h]; simp [norm]⟩
-  rw [norm_eq]; exact h
 
 /-- When both norms are non-negative and both rational parts are, the rational
 part dominates the cross term. -/
@@ -399,24 +379,15 @@ lemma aₙ_add_nonneg [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
   have h4 : -x.aₙ ≤ y.aₙ := le_of_mul_self_le hy1 (by nlinarith [h3])
   linarith
 
-/-- The governing identity for the mixed cases: the product of the two norms is
-the norm of `x * conj y`. It is what makes the remaining inequality tight, since
-both sides vanish together. -/
-lemma norm_mul_norm_eq [CommRing R] (x y : AdjoinSqrt R n) :
-    norm x * norm y
-      = (x.a₁*y.a₁ - n*x.aₙ*y.aₙ) * (x.a₁*y.a₁ - n*x.aₙ*y.aₙ)
-        - n * (x.a₁*y.aₙ - x.aₙ*y.a₁) * (x.a₁*y.aₙ - x.aₙ*y.a₁) := by
-  simp only [norm]; ring
 
-/-- The easy half of the mixed case: when `x`'s `√n` part is also non-negative,
-the sum lands on the `√n`-dominated side by a chain of square comparisons, with
-no `√n` reasoning needed.
+/-- The half of the mixed case where `x`'s `√n` part is also non-negative. Here
+the rational part alone dominates and the sum lands on the `√n`-dominated side
+by a chain of square comparisons:
 
-The remaining half, `x.aₙ < 0`, is the outstanding gap in `sign_plus`. Writing
-`u = -x.aₙ > 0` and `v = -y.a₁ ≥ 0` it asks for `(v - a)² ≤ n·(d - u)²` given
-`a² ≥ n·u²`, `v² ≤ n·d²`, `v ≥ a ≥ 0` and `d ≥ u ≥ 0`. That follows in one step
-from `v ≤ √n·d` and `a ≥ √n·u` by subtraction, but the resulting certificate
-lives in `R[√n]` rather than `R`, which is why `nlinarith` does not find it. -/
+    (a+c)² ≤ c² ≤ n·d² ≤ n·(b+d)²
+
+using `0 ≤ -(a+c) ≤ -c` for the first step and `0 ≤ d ≤ b+d` for the last. The
+opposite half is `norm_add_nonpos_of_aₙ_nonpos`, which needs a multiplier. -/
 lemma norm_add_nonpos_of_aₙ_nonneg [SignedField R] [Pos R n]
     {x y : AdjoinSqrt R n} (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ)
     (hyN : norm y ≤ 0) (hb : 0 ≤ x.aₙ) (h : x.a₁ + y.a₁ ≤ 0) :
@@ -489,7 +460,7 @@ lemma sign_mul_eq [SignedField R] [Nonsquare R n] [Pos R n] (x y : AdjoinSqrt R 
     rw [hsx, hsy, h]
     rfl
 
-/-- The remaining half of the mixed case, `x.aₙ ≤ 0`.
+/-- The half of the mixed case where `x`'s `√n` part is negative.
 
 Writing `a = x.a₁`, `u = -x.aₙ`, `v = -y.a₁`, `d = y.aₙ`, the goal is
 `(v-a)² ≤ n(d-u)²`. Multiplying by `d+u` makes it provable in `R`:
@@ -634,7 +605,6 @@ lemma sign_plus_eq [SignedField R] [Nonsquare R n] [Pos R n]
   (nonneg_iff _).mpr (nonneg_add ((nonneg_iff a).mp ha) ((nonneg_iff b).mp hb))
 
 
-
 instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
     SignedRing (AdjoinSqrt R n) where
   __ := instCommRing
@@ -645,34 +615,6 @@ instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
   sign_neg  := sign_neg_eq
   sign_plus := sign_plus_eq
 
--- TODO
---   sign_zero := by simp [SignedRing.sign_zero]
---   sign_one := by simp [SignedRing.sign_zero, SignedRing.sign_one]
---   sign_neg := by
---     intros a
---     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignedRing.sign_neg, h1, hn]
--- 
---   zero_sign := by
---     intro a
---     cases asign : sign (a.a₁) <;> cases bsign : sign (a.aₙ) <;> simp [asign, bsign]
---     case zero.zero => apply SignedRing.zero_sign at asign; apply SignedRing.zero_sign at bsign; ext <;> trivial
--- 
---     case neg.pos =>
---       intro h
---       rw [← SignedRing.sign_neg] at h
---       apply SignedRing.zero_sign at h
---       rw [neg_eq_zero] at h
---       apply conj_0
---       simp; trivial
--- 
---     case pos.neg =>
---       intro h
---       apply SignedRing.zero_sign at h
---       apply @conj_0 _ _ f.toField _ a
---       simp; trivial
--- 
---   sign_mul := sorry
---   sign_plus := sorry
 
 /-- The order on `A[√n]`, obtained from its `SignedRing` structure via
 `CGLean.Algebra.Signed`. -/
