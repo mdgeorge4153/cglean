@@ -476,6 +476,14 @@ TODO: informal definitions for homs.
   homomorphism.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Zero, one and addition are immediate from $toReal$ being one. Multiplication
+  is the only case with content: the cross terms match only because
+  $\sqrt{n.toReal}$ squares back to $n.toReal$, which is where the hypothesis
+  $n.toReal \geq 0$ is used.
+\end{proof}
+
 \begin{lemma}
   \label{thm:adjoinToRealOrderHom}
   \lean{AdjoinSqrt.toReal_monotone}
@@ -486,14 +494,30 @@ TODO: informal definitions for homs.
   also monotonic.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  It suffices that non-negative elements map to non-negative reals, and each
+  disjunct of Definition~\ref{def:adjoinSign} gives that directly: $\sqrt{n.toReal}$
+  exists in $ℝ$, so the comparison of $a_1$ with $a_n\sqrt{n}$ that had to be
+  made indirectly inside $A$ can here be made outright.
+\end{proof}
+
 
 \begin{lemma}
   \label{thm:adjoinToRealOrderedFieldHom}
+  \lean{AdjoinSqrt.toReal_mul, AdjoinSqrt.toReal_monotone}
+  \leanok
   \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
   If $A$ is an ordered field with a positive non-square $n ∈ A$ and $toReal : A
   → ℝ$ is an ordered field homomorphism then $AdjoinSqrt.toReal : A[\sqrt{n}] →
   ℝ$ is also an ordered field homomorphism.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  The two preceding lemmas together, there being nothing more to an ordered
+  field homomorphism than preserving the operations and the order.
+\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A$ to $A[√n]$}
