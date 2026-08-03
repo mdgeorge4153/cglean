@@ -581,6 +581,30 @@ number representations, but are interesting nonetheless.
   division in the same way.
 \end{definition}
 
+Division is the one operation that does not follow the pattern of the others,
+because an interval containing zero has no reciprocal that is again an interval.
+Two shapes of answer are possible: a distinguished value standing for ``no
+information'', or a type of intervals that are known not to contain zero, with
+inversion defined only on those. The interval library used here takes the
+second, and offers reciprocals only for rational intervals, not the dyadic ones
+used elsewhere.
+
+For a filter the second shape is the better fit, and not only on grounds of
+taste. A ``no information'' value propagates silently: an operation on it
+returns another one, and the fact that nothing is known any longer is
+discovered, if at all, much later. Requiring a proof that the divisor is
+bounded away from zero instead forces the question at the point of division ---
+and the answer there is exactly what a filter should do anyway, namely stop
+trusting the approximation and evaluate the underlying value.
+
+Doing that requires something the current interface does not provide. To
+produce an interval around a freshly evaluated value, one needs to approximate
+an element of $A$, and the embedding $f : A → ℝ$ does not do that: it names the
+real number, it does not bracket it. So \code{FilteredEmbedding} needs either a
+separate approximation function on $A$, in the manner of \code{Floatable}, or an
+embedding that yields intervals rather than reals. Which of these to adopt is
+open, and should be settled before the layer is built rather than after.
+
 \begin{lemma}
   \label{thm:filteredField}
   \uses{thm:filteredRing, def:filteredInv}
