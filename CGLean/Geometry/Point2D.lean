@@ -28,5 +28,5 @@ public abbrev Point.x (p : Point k) := p.fst
 public abbrev Point.y (p : Point k) := p.snd
 
 -- TODO: notation typeclass for this:
-public def dotProduct (p q : Point k) : k := p.x * q.x + p.y * q.y
-infixl:72 " ⬝ " => dotProduct _
+public def Point.dot (p q : Point k) : k := p.x * q.x + p.y * q.y
+infixl:72 " ⬝ " => Point.dot _
