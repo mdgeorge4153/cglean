@@ -657,34 +657,88 @@ intervals. We formalize this as follows:
 The development of $A[\sqrt{n}]$ in this document is deliberately elementary:
 elements are pairs, and the ring and field laws are checked coordinatewise. That
 is easy to follow and easy to compute with, but it obscures a good deal of
-structure, and the proofs feel more laborious than the mathematics warrants.
+structure, and the ring proofs feel more laborious than the mathematics
+warrants.
 
-The construction has a distinctly linear-algebraic character. $A[\sqrt{n}]$ is a
-free $A$-module of rank two; multiplication is $A$-bilinear and so is determined
-by its values on a basis; conjugation is an $A$-linear involution fixing $1$ and
-negating $\sqrt{n}$; and the quantity $x \cdot \overline{x}$, which the ordering
-and the inverse both depend on, behaves exactly like a determinant --- it is
-multiplicative, and it vanishes only at zero.
+What the construction really is, is the \emph{regular representation}. Every
+element $z$ of $A[\sqrt{n}]$ acts on $A[\sqrt{n}]$ by multiplication, and that
+action is $A$-linear, so in the basis $\{1, \sqrt{n}\}$ it is a matrix over $A$:
+\begin{displaymath}
+  M(z) \;=\;
+  \begin{pmatrix} z_1 & n z_2 \\ z_2 & z_1 \end{pmatrix},
+  \qquad z = z_1 + z_2\sqrt{n}.
+\end{displaymath}
+The second column is where $n$ enters, and it is the only place. Since
+$(zw)x = z(wx)$, the map $z \mapsto M(z)$ is a ring homomorphism, and
+multiplying the matrices out reproduces the multiplication formula this
+development defines by hand. Under this correspondence:
+\begin{itemize}
+\item the norm $z \cdot \overline{z}$ is $\det M(z)$, so its multiplicativity is
+      that of the determinant;
+\item $2z_1$ is $\operatorname{tr} M(z)$;
+\item conjugation is the adjugate, so the formula for the inverse is Cramer's
+      rule, and the fact that the norm vanishes only at zero is the statement
+      that a matrix is invertible exactly when its determinant is not;
+\item the characteristic polynomial is
+      $\lambda^2 - 2z_1\lambda + (z_1^2 - n z_2^2)$, whose coefficients lie in
+      $A$ while its roots are $z_1 \pm z_2\sqrt{n}$ --- the two conjugate
+      embeddings.
+\end{itemize}
 
-This suggests an alternative development in which $A[\sqrt{n}]$ is presented as
-$A[x]/(x^2 - n)$, and its properties are inherited from general facts about
-quotients of polynomial rings rather than verified by hand. Mathlib has the
-machinery for this, and the relationship is already recorded as
-Lemma~\ref{thm:mathlibAdjoin}, currently unproved. The \code{Algebra} instance
-this development registers is the beginning of such an account but is not yet
-used for anything.
+That last point explains why the ordering can be described at all. The order
+asks whether one particular eigenvalue is non-negative, and $\sqrt{n}$ appears
+in the roots but never in the coefficients; the criterion of
+Definition~\ref{def:adjoinSign} is the standard way of locating a root of a
+quadratic from its coefficients. It also explains the shape of the argument for
+closure under addition, which pairs $(v-a)(v+a)$ against $(d-u)(d+u)$: those are
+the elementary symmetric combinations through which roots and coefficients
+communicate.
 
-It is not obvious that this would be simpler overall. The elementary
-presentation is what makes the sign computation transparent, and that
-computation is the part this library actually needs; a quotient presentation may
-well make the ordering harder to reason about even as it makes the ring
-structure easier. It seems worth attempting on a branch to find out.
+This suggests presenting $A[\sqrt{n}]$ as $A[x]/(x^2 - n)$ and inheriting its
+structure rather than verifying it. Mathlib's \code{AdjoinRoot} supplies the
+commutative ring, the algebra structure, decidable equality, a power basis, and
+--- given irreducibility, which is what the non-square hypothesis amounts to ---
+the field structure. That would remove essentially all of the ring boilerplate
+here, including the one proof in this development that has to navigate
+associativity and commutativity by hand. Mathlib also defines \code{Algebra.norm}
+as precisely the determinant of the multiplication map, so the norm and its
+multiplicativity would come from the same place.
+
+What it would \emph{not} simplify is the ordering, which is the bulk of the work
+and was the difficult part. Mathlib supplies the ring and field theory of an
+extension but no order theory for one: that is Artin--Schreier territory, and
+the results are not there. The matrix picture explains what the sign function is
+doing without providing a theorem one can cite in its place.
+
+So the honest assessment is that the refactor is worth doing for the algebra and
+irrelevant to the analysis. There is a second reason to want it, though, which
+has nothing to do with brevity: the elementary presentation is a completely
+concrete instance of a construction usually met in the abstract, and the two
+side by side --- pairs of numbers on one hand, a quotient of a polynomial ring
+on the other, provably the same --- would make a good introduction to the
+commutative algebra involved.
+
+One caveat for whoever attempts it: \code{AdjoinRoot} is a quotient type and its
+field structure is noncomputable, so it would serve for reasoning while the
+existing pair representation continued to serve for computation, the two related
+by a theorem. That is the same division discussed in
+Chapter~\ref{chap:arrangements}, and it recurs often enough in this project to
+be worth naming as a habit rather than rediscovering each time.
 
 \section{Deferred components}
 
 Interval arithmetic, and with it the \code{FilteredReal} layer of
-Chapter~\ref{chap:numbers} is not currently built. It depends on an external
+Chapter~\ref{chap:numbers}, is not currently built. It depends on an external
 floating-point interval library which lags the Mathlib version used here.
+
+There is a difficulty of principle behind that, not merely of packaging. Sound
+interval arithmetic requires reasoning about floating-point, and Lean's
+\code{Float} is an opaque primitive with no specification --- fast, but nothing
+can be proved about it. A library that wants proofs must therefore supply its own
+software floating-point, which costs exactly the speed that made the filtering
+worth doing. The way out is to axiomatise \code{Float} against IEEE~754, as
+Flocq does for Coq, so that the containment proofs become theorems relative to a
+published standard rather than to bespoke code.
 
 Extraction of a reasonably efficient executable has not been attempted. The
 ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone
