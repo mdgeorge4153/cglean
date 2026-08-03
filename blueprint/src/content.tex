@@ -399,7 +399,13 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
   the opposite answer (this arithetic depends on $n$ being nonnegative).
 
   We can use this algorithm to define the sign function for $A[\sqrt{n}]$.
-  Checking that it satisfies the signed ring properties is tedious but routine.
+
+  Checking the signed ring properties is not entirely routine. Multiplicativity
+  of the sign reduces to closure of the non-negative elements under
+  multiplication, where the norms compose. Closure under addition is harder,
+  since they do not; the argument there compares $(v-a)(v+a)$ with $(d-u)(d+u)$
+  and multiplies through by $d+u$ to stay inside $A$.
+  \leanok
 \end{proof}
 
 \begin{corollary}
@@ -519,7 +525,7 @@ number representations, but are interesting nonetheless.
 
 \begin{definition}
   \label{def:filtered}
-  \leanok
+  \notready
   \lean{FilteredReal}
   Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
   an unevaluated value of type $α$ and a closed floating-point interval that
@@ -548,7 +554,7 @@ number representations, but are interesting nonetheless.
 \begin{lemma}
   \label{thm:filteredRing}
   \lean{FilteredReal.instCommRing}
-  \leanok
+  \notready
   \uses{def:filteredRingOps}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
@@ -570,7 +576,7 @@ number representations, but are interesting nonetheless.
   \label{thm:filteredField}
   \uses{thm:filteredRing, def:filteredInv}
   \lean{FilteredReal.instField}
-  \leanok
+  \notready
   If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
   is a field.
 \end{lemma}
@@ -590,7 +596,7 @@ number representations, but are interesting nonetheless.
   \label{thm:filteredOrderedRing}
   \uses{thm:filteredRing, def:filteredCompare}
   \lean{FilteredReal.instLinearOrderedRing}
-  \leanok
+  \notready
   If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
   homomorphism then \code{FilteredReal f} is a linearly ordered ring.
 \end{lemma}
@@ -598,7 +604,7 @@ number representations, but are interesting nonetheless.
 \begin{theorem}
   \label{thm:filteredOrderedField}
   \lean{FilteredReal.instLinearOrderedField}
-  \leanok
+  \notready
   \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
   If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
   and ordering properties of $α$, then \code{FilteredReal f} is a linearly
@@ -636,7 +642,7 @@ intervals. We formalize this as follows:
   \label{thm:compareComplete}
   \uses{def:filteredCompare}
   \lean{Interval.compare?_complete}
-  \leanok
+  \notready
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
