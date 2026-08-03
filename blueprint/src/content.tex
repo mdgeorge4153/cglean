@@ -692,6 +692,13 @@ intervals. We formalize this as follows:
   would give different comparison results.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Declining means the intervals overlap, so the larger of the two lower bounds
+  lies in both. That point compares equal to itself, while a suitable pair of
+  endpoints compares strictly; the two pairs are the required witnesses.
+\end{proof}
+
 \chapter{Applications}
 
 \section{Collision-Avoiding Drag and Drop}
