@@ -101,8 +101,6 @@ into inequality reasoning, where the ordered-field lemmas apply. -/
 theorem SignedRing.nonneg_iff [SignedRing R] {a : R} : 0 ≤ a ↔ sign a ≠ .neg := by
   rw [SignedRing.le_iff, sub_zero]
 
-theorem SignedRing.mem_nonnegCone_iff [SignedRing R] {a : R} :
-    a ∈ SignedRing.nonnegCone R ↔ 0 ≤ a := SignedRing.nonneg_iff.symm
 
 theorem SignedRing.sign_eq_zero_iff [SignedRing R] {a : R} : sign a = .zero ↔ a = 0 :=
   ⟨SignedRing.zero_sign a, fun h => by rw [h]; exact SignedRing.sign_zero⟩
