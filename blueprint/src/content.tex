@@ -620,6 +620,41 @@ number representations, but are interesting nonetheless.
   ordered field.
 \end{theorem}
 
+\subsection{Comparing intervals}
+
+Before the wrapper itself, the comparison it relies on. Two intervals that do
+not overlap determine the order of everything inside them; two that do overlap
+determine nothing.
+
+\begin{definition}
+  \label{def:intervalCompare}
+  \lean{CGLean.compare?}
+  \leanok
+  \code{compare? x y} returns the order shared by every member of $x$ and every
+  member of $y$ when the intervals are separated, and nothing when they overlap.
+\end{definition}
+
+\begin{lemma}
+  \label{thm:compareSound}
+  \uses{def:intervalCompare}
+  \lean{CGLean.compare_of_compare?}
+  \leanok
+  If \code{compare?} returns an order, then every member of $x$ compares that
+  way with every member of $y$.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Each of the three cases chains the interval bounds: if $x$'s upper bound is
+  below $y$'s lower bound then any $a ∈ x$ satisfies $a ≤ x.hi < y.lo ≤ b$ for
+  any $b ∈ y$, and symmetrically.
+\end{proof}
+
+This is the property the filtered representation needs in order to be correct.
+The converse, that \code{compare?} declines only when it must, is not needed for
+correctness but is what makes the filtering worthwhile; it appears as
+Lemma~\ref{thm:compareComplete} below.
+
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
 The whole point of \code{FilteredReal} is that it encapsulates values of
@@ -649,7 +684,7 @@ intervals. We formalize this as follows:
 
 \begin{lemma}
   \label{thm:compareComplete}
-  \uses{def:filteredCompare}
+  \uses{def:intervalCompare}
   \lean{CGLean.compare?_complete}
   \leanok
   If the function we use to compare intervals indicates that they are
