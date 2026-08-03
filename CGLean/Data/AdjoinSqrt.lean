@@ -1,8 +1,12 @@
 import Mathlib.Algebra.Ring.Basic
+import Mathlib.Algebra.Algebra.Defs
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Algebra.Order.Ring.Defs
-import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
 import CGLean.Algebra.Signed
 import CGLean.Classes.RingOps
 
@@ -342,7 +346,6 @@ lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
   le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
 
 
-
 /-- When both norms are non-negative and both rational parts are, the rational
 part dominates the cross term. -/
 lemma cross_le [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
@@ -626,11 +629,6 @@ ordered ring whenever `A` is one and `n` is a positive non-square. -/
 theorem isStrictOrderedRingOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
     IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
 
-/-- The real value of `a₁ + aₙ√n`, given a real value for each element of `R`.
-Noncomputable, since it lands in `ℝ`: this exists to state the homomorphism
-properties of the embedding, not to be evaluated. -/
-noncomputable def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ :=
-  f x.a₁ + f x.aₙ * Real.sqrt (f n)
 
 @[simp] def root (n : R) [Zero R] [One R] : AdjoinSqrt R n := ⟨0, 1⟩
 
