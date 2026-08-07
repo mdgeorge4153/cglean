@@ -915,7 +915,21 @@ application.
   specification to state abstractly, when to refine a clean definition into an
   efficient implementation, and what is lost either way.
 
-\item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
+\item Yves Bertot and Thomas Portet, \emph{Formally Verifying a Vertical Cell
+  Decomposition Algorithm}, ITP 2025, LIPIcs vol.\ 352, 24:1--24:18.
+  \link{https://doi.org/10.4230/LIPIcs.ITP.2025.24}{doi:10.4230/LIPIcs.ITP.2025.24},
+  development at \link{https://github.com/math-comp/trajectories}{math-comp/trajectories}.
+  The closest existing work to the arrangements chapter: a sweep line verified
+  in Rocq, for decomposing a region containing obstacles into safe cells. Two
+  choices there differ from the ones here and are worth weighing. Coordinates
+  come from a discrete real closed field rather than a tower of square roots,
+  which is more general but pays for it in the cost of arithmetic. More
+  importantly, the algorithm is proved against Knuth's axioms for the
+  orientation predicate rather than against any particular arithmetic, so that
+  any implementation satisfying the axioms inherits the correctness proof. Three
+  separate files are given over to degenerate positions.
+
+\item \item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
   Pragmatic Introduction to the Coq Proof Assistant}, MIT Press, 2013.
   \link{https://adam.chlipala.net/cpdt/}{adam.chlipala.net/cpdt}.
   Written for Coq rather than Lean, but its subject is proof engineering rather
