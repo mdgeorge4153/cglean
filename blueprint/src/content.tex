@@ -581,103 +581,54 @@ number representations, but are interesting nonetheless.
   division in the same way.
 \end{definition}
 
-Division is the one operation that does not follow the pattern of the others,
-because an interval containing zero has no reciprocal that is again an interval.
-Two shapes of answer are possible: a distinguished value standing for ``no
-information'', or a type of intervals that are known not to contain zero, with
-inversion defined only on those. The interval library used here takes the
-second, and offers reciprocals only for rational intervals, not the dyadic ones
-used elsewhere.
-
-For a filter the second shape is the better fit, and not only on grounds of
-taste. A ``no information'' value propagates silently: an operation on it
-returns another one, and the fact that nothing is known any longer is
-discovered, if at all, much later. Requiring a proof that the divisor is
-bounded away from zero instead forces the question at the point of division ---
-and the answer there is exactly what a filter should do anyway, namely stop
-trusting the approximation and evaluate the underlying value.
-
-Doing that requires something the current interface does not provide. To
-produce an interval around a freshly evaluated value, one needs to approximate
-an element of $A$, and the embedding $f : A → ℝ$ does not do that: it names the
-real number, it does not bracket it. So \code{FilteredEmbedding} needs either a
-separate approximation function on $A$, in the manner of \code{Floatable}, or an
-embedding that yields intervals rather than reals. Which of these to adopt is
-open, and should be settled before the layer is built rather than after.
-
-\begin{lemma}
-  \label{thm:filteredField}
-  \uses{thm:filteredRing, def:filteredInv}
-  \lean{FilteredReal.instField}
-  \notready
-  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
-  is a field.
-\end{lemma}
-
-\begin{proof}
-  \notready
-\end{proof}
-
-\begin{definition}
-  \label{def:filteredCompare}
-  \uses{def:filtered}
-  \lean{FilteredReal.instOrd}
-  \notready
-\end{definition}
-
-\begin{lemma}
-  \label{thm:filteredOrderedRing}
-  \uses{thm:filteredRing, def:filteredCompare}
-  \lean{FilteredReal.instLinearOrderedRing}
-  \notready
-  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
-  homomorphism then \code{FilteredReal f} is a linearly ordered ring.
-\end{lemma}
-
-\begin{theorem}
-  \label{thm:filteredOrderedField}
-  \lean{FilteredReal.instLinearOrderedField}
-  \notready
-  \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
-  If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
-  and ordering properties of $α$, then \code{FilteredReal f} is a linearly
-  ordered field.
-\end{theorem}
-
-\subsection{Comparing intervals}
-
-Before the wrapper itself, the comparison it relies on. Two intervals that do
-not overlap determine the order of everything inside them; two that do overlap
-determine nothing.
-
-\begin{definition}
-  \label{def:intervalCompare}
-  \lean{CGLean.compare?}
-  \leanok
-  \code{compare? x y} returns the order shared by every member of $x$ and every
-  member of $y$ when the intervals are separated, and nothing when they overlap.
-\end{definition}
-
-\begin{lemma}
-  \label{thm:compareSound}
-  \uses{def:intervalCompare}
-  \lean{CGLean.compare_of_compare?}
-  \leanok
-  If \code{compare?} returns an order, then every member of $x$ compares that
-  way with every member of $y$.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  Each of the three cases chains the interval bounds: if $x$'s upper bound is
-  below $y$'s lower bound then any $a ∈ x$ satisfies $a ≤ x.hi < y.lo ≤ b$ for
-  any $b ∈ y$, and symmetrically.
-\end{proof}
-
-This is the property the filtered representation needs in order to be correct.
-The converse, that \code{compare?} declines only when it must, is not needed for
-correctness but is what makes the filtering worthwhile; it appears as
-Lemma~\ref{thm:compareComplete} below.
+% TODO (prose): the filter's escape hatch. Division and overflow are the same
+% event, so this should be one discussion rather than two.
+%
+%  * An interval containing zero has no reciprocal that is again an interval.
+%    Two shapes of answer: a value meaning "no information", or a type of
+%    intervals known to exclude zero. LeanCert takes the second
+%    (`IntervalRatNonzero`), and offers reciprocals only for rational intervals,
+%    not the dyadic ones used here.
+%
+%  * The subtype is the better fit, and not only on taste. A no-information
+%    value propagates silently; requiring the divisor to be bounded away from
+%    zero forces the question at the point of division, and the answer there is
+%    what a filter should do anyway --- stop trusting the approximation and
+%    evaluate.
+%
+%  * Doing that needs something the current interface lacks. To bracket a
+%    freshly evaluated value one must approximate an element of $A$, and
+%    $f : A \to \R$ does not do that: it names the real, it does not bound it.
+%    So `FilteredEmbedding` needs either a separate approximation function, in
+%    the manner of `Floatable`, or an embedding yielding intervals.
+%
+%  * Rounding belongs in the number layer, not the interval layer. LeanCert puts
+%    it in the interval (`roundOut` takes a minimum exponent), which is
+%    meaningful for dyadics and meaningless for floats. A class of numbers with
+%    directed rounding, with the interval layer merely choosing a direction per
+%    endpoint, is what survives swapping the representation.
+%
+%  * That class needs only directedness --- `addDown x y <= x + y <= addUp x y`
+%    in $\R$ --- not correct rounding. IEEE implies it comfortably.
+%
+%  * For hardware floats the obstacle is that Lean's `Float` is opaque with no
+%    theorems, so it has no real-valued semantics to reason from. One would
+%    define `toReal` and assert a relative-error bound against it, in the manner
+%    of Flocq for Coq, and derive the directed operations rather than asserting
+%    them.
+%
+%  * NaN needs no embedding in $\R$: condition each specification on the
+%    *output* being finite, and it is never mentioned. Where the condition
+%    fails, the interval carries no information --- the same escape hatch as
+%    division above.
+%
+%  * Consequence: the interval type needs a no-information case exactly when the
+%    number type can overflow. Vacuous for dyadics, whose exponent is unbounded.
+%
+%  * Mathlib's `Mathlib/Data/FP/Basic.lean` is not a shortcut. Its `FP.Float` is
+%    a separate inductive modelling inf, nan and finite values, unconnected to
+%    the hardware `Float`, carrying one theorem. Its `toRat` does take a
+%    finiteness proof, which is the same instinct as the above.
 
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
