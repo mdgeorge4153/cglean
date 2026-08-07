@@ -707,6 +707,63 @@ The converse, that \code{compare?} declines only when it must, is not needed for
 correctness but is what makes the filtering worthwhile; it appears as
 Lemma~\ref{thm:compareComplete} below.
 
+% TODO (prose): the arithmetic the filter runs on.
+%
+%  * Two concrete choices. Dyadic rationals $m \cdot 2^e$ are exact, decidable
+%    and already formalised, and cheaper than $\Q$ because there is no gcd to
+%    take; but the arithmetic is on unbounded integers, so it allocates, and
+%    without rounding the mantissa doubles on every multiplication. Hardware
+%    floats are enormously faster and have no theory at all: Lean's `Float` is
+%    `opaque` with zero theorems, so nothing can be proved about it without
+%    first giving it real-valued semantics and asserting conformance.
+%
+%  * One interface over both. Call it `RoundedField`: directionally rounded
+%    operations (`addUp`, `addDown`, `mulUp`, `mulDown`, ...), a `toReal`, and
+%    axioms saying each operation errs in the stated direction. Only
+%    directedness is needed --- `addDown x y <= x + y <= addUp x y` in $\R$ ---
+%    not correct rounding, so the axioms are far weaker than IEEE and
+%    correspondingly safer to assert.
+%
+%  * Representability rather than finiteness. The predicate should say "this
+%    value denotes a real number", not "this is not a NaN": the latter is an
+%    IEEE encoding notion with no meaning for dyadics, and the former leaves
+%    room for other failure modes. It must be decidable, since the interval
+%    layer branches on it. Every axiom is conditioned on the operands *and the
+%    result* being representable --- finite floats can overflow --- and NaN is
+%    then never mentioned, so `toReal` may be total with junk values.
+%
+%  * The two instances differ in where rounding lives. For floats it is
+%    unavoidable and fixed at the hardware's precision. For dyadics it is
+%    optional and must be imposed deliberately: `addUp` and `addDown` would
+%    apply a `roundOut`-style truncation internally, at a precision fixed by the
+%    instance, since otherwise the mantissas grow without bound and the
+%    representation is slower than the rationals it was meant to beat. Note this
+%    is the one point on which the abstraction costs LeanCert something: their
+%    `roundOut` takes the precision per call, which a bounds-proving tactic
+%    wants and a filter does not.
+%
+%  * Division is the awkward operation for dyadics, and not because of
+%    representability: exact dyadic division does not exist, since $1/3$ is not
+%    a dyadic. So `divUp` and `divDown` must round, which the interface permits
+%    anyway. LeanCert offers no dyadic division at all.
+%
+%  * Intervals sit on top, generic in the `RoundedField`. Addition is
+%    endpoint-wise; multiplication is not, and needs the extremes of the four
+%    corner products. This is also the layer that decides when the
+%    approximation has failed --- a straddling divisor, an unrepresentable
+%    result --- and defers to exact evaluation.
+%
+%  * One piece connects nothing else: recovering after that deferral needs to
+%    bracket the exactly computed value, which is a map $A \to$ interval, not
+%    $f : A \to \R$. Some `Approximable` class, in the manner of `Floatable`.
+%
+%  * On reuse: the dyadic side plausibly belongs with the interval library, if
+%    they will take the precision-per-call loss. The float axioms do not belong
+%    in Mathlib --- asserting IEEE conformance for an opaque primitive is a
+%    trust extension, and Flocq is a separate library from Coq's standard one
+%    for that reason. The bulk of the work either way is `toReal` for `Float`,
+%    which must exist before a single axiom can be stated.
+
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
 The whole point of \code{FilteredReal} is that it encapsulates values of
