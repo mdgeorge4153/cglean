@@ -35,6 +35,27 @@ jobs:
       - name: Build
         run: lake build
 
+      # doc-gen4 records every declaration it sees in a SQLite database and
+      # only then renders HTML from it. Filling the database for Mathlib and
+      # the Lean core takes far longer than rendering, so the database and the
+      # per-module marker files that tell Lake it is current are cached. The
+      # markers for CGLean itself are excluded, which forces its own entries to
+      # be regenerated while everything else is replayed.
+      - name: Cache the documentation database
+        uses: actions/cache@v4
+        with:
+          path: |
+            docbuild/.lake/build/api-docs.db
+            docbuild/.lake/build/doc-data
+            !docbuild/.lake/build/doc-data/CGLean*
+          key: DocData-${{ hashFiles('lake-manifest.json', 'docbuild/lake-manifest.json') }}
+          restore-keys: |
+            DocData-
+
+      - name: Build documentation
+        run: lake build CGLean:docs
+        working-directory: docbuild
+
       # No TeX: the blueprint contains no TikZ or included graphics, so plasTeX
       # renders it unaided. Graphviz is for the dependency graph.
       # A venv rather than pipx: leanblueprint shells out to `plastex`, which
@@ -54,9 +75,17 @@ jobs:
       - name: Check the blueprint against the library
         run: python3 scripts/check-blueprint.py
 
+      # The blueprint sits at the root and the API documentation under `docs/`,
+      # which is where the blueprint's `\dochome` points its statement links.
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp -r blueprint/web/. _site/
+          cp -r docbuild/.lake/build/doc _site/docs
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: blueprint/web
+          path: _site
 
   deploy:
     needs: build

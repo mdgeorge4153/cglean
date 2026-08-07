@@ -1,0 +1,18 @@
+# doc-gen4 pulls in dependencies that the library itself does not need, so it
+# lives in a nested package rather than in the root lakefile. `packagesDir`
+# points at the parent's package directory so both share one Mathlib checkout.
+name = "docbuild"
+version = "0.1.0"
+reservoir = false
+packagesDir = "../.lake/packages"
+
+# `rev` must agree with lean-toolchain: doc-gen4 tracks the compiler's
+# internals and only builds against the toolchain it was tagged for.
+[[require]]
+name = "doc-gen4"
+scope = "leanprover"
+rev = "v4.32.2"
+
+[[require]]
+name = "cglean"
+path = "../"
