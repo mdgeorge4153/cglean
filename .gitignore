@@ -1,4 +1,6 @@
 /.lake
+/docbuild/.lake
+/_site
 ocaml
 blueprint/lean_decls
 blueprint/src/web.paux

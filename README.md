@@ -52,6 +52,24 @@ distribution, but the dependency graph appears only in the web version.
 [leanblueprint]: https://github.com/PatrickMassot/leanblueprint
 
 
+Building the API documentation
+------------------------------
+
+[doc-gen4][] lives in its own package under `docbuild/` so that its
+dependencies stay out of the library's. It shares the parent's package
+directory, so Mathlib is not checked out twice.
+
+    (cd docbuild && lake build CGLean:docs)
+
+Output lands in `docbuild/.lake/build/doc/`, which is gitignored. The first
+build also renders Mathlib and the Lean core and takes on the order of an hour;
+afterwards the SQLite database next to it lets subsequent builds re-render only
+what changed. The blueprint's `\dochome` points at where CI publishes this, so
+its statement links resolve only on the deployed site.
+
+[doc-gen4]: https://github.com/leanprover/doc-gen4
+
+
 Related work
 ------------
 
