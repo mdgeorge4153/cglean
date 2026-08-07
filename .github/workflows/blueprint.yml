@@ -1,87 +1,70 @@
+name: Blueprint
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Let a running deployment finish rather than cancelling it part-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
-  build_project:
+  build:
     runs-on: ubuntu-latest
-    name: Build project
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
+      # elan reads lean-toolchain, so the version lives in one place.
       - name: Install elan
-        run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.5.0
-
-      - name: Get cache
-        run: ~/.elan/bin/lake exe cache get || true
-
-      - name: Build project
-        run: ~/.elan/bin/lake build CGLean
-
-      - name: Cache mathlib docs
-        uses: actions/cache@v3
-        with:
-          path: |
-            .lake/build/doc/Init
-            .lake/build/doc/Lake
-            .lake/build/doc/Lean
-            .lake/build/doc/Std
-            .lake/build/doc/Mathlib
-            .lake/build/doc/declarations
-            !.lake/build/doc/declarations/declaration-data-CGLean*
-          key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
-          restore-keys: |
-            MathlibDoc-
-
-      - name: Build documentation
-        run: ~/.elan/bin/lake -R -Kenv=dev build CGLean:docs
-
-      - name: Build blueprint and copy to `docs/blueprint`
-        uses: xu-cheng/texlive-action@v2
-        with:
-          docker_image: ghcr.io/xu-cheng/texlive-full:20231201
-          run: |
-            apk update
-            apk add --update make py3-pip git pkgconfig graphviz graphviz-dev gcc musl-dev
-            git config --global --add safe.directory $GITHUB_WORKSPACE
-            git config --global --add safe.directory `pwd`
-            python3 -m venv env
-            source env/bin/activate
-            pip install --upgrade pip requests wheel
-            pip install pygraphviz --global-option=build_ext --global-option="-L/usr/lib/graphviz/" --global-option="-R/usr/lib/graphviz/"
-            pip install git+https://github.com/mdgeorge4153/leanblueprint-toml.git
-            mkdir docs
-            leanblueprint web
-            cp -r blueprint/web docs/blueprint
-
-      - name: Check declarations
         run: |
-            ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Move documentation to `docs/docs`
+      - name: Fetch Mathlib build cache
+        run: lake exe cache get
+
+      - name: Build
+        run: lake build
+
+      # No TeX: the blueprint contains no TikZ or included graphics, so plasTeX
+      # renders it unaided. Graphviz is for the dependency graph.
+      # A venv rather than pipx: leanblueprint shells out to `plastex`, which
+      # pipx would not put on PATH since it is a dependency's entry point.
+      - name: Install blueprint tooling
         run: |
-          sudo chown -R runner docs
-          cp -r .lake/build/doc docs/docs
+          sudo apt-get update
+          sudo apt-get install -y graphviz libgraphviz-dev
+          python3 -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install leanblueprint
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
-      - name: Upload docs & blueprint artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Build blueprint
+        run: leanblueprint web
+
+      - name: Check the blueprint against the library
+        run: python3 scripts/check-blueprint.py
+
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/
+          path: blueprint/web
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
-
-      - name: Make sure the cache works
-        run: |
-          mv docs/docs .lake/build/doc
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
