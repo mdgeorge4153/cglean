@@ -742,6 +742,19 @@ Lemma~\ref{thm:compareComplete} below.
 %    `roundOut` takes the precision per call, which a bounds-proving tactic
 %    wants and a filter does not.
 %
+%  * How cheap dyadic arithmetic is depends on a threshold that is easy to get
+%    wrong. Lean stores an `Int` unboxed in a machine word when it fits, and
+%    falls back to GMP otherwise, but the cutoff is `LEAN_MAX_SMALL_INT`, which
+%    on a 64-bit platform is `INT_MAX` --- about 31 bits, not 63. So rounding
+%    mantissas to double precision, the obvious choice, lands every value
+%    *outside* the fast path. Rounding to around 30 bits instead keeps addition
+%    and comparison in machine words with no allocation. Note also that the
+%    product of two 31-bit mantissas needs 62, so multiplication escapes the
+%    fast path even when its operands do not, and has to round immediately
+%    afterwards rather than periodically. None of this has been measured; the
+%    point is only that the precision parameter should be chosen against this
+%    threshold rather than against IEEE double.
+%
 %  * Division is the awkward operation for dyadics, and not because of
 %    representability: exact dyadic division does not exist, since $1/3$ is not
 %    a dyadic. So `divUp` and `divDown` must round, which the interface permits
