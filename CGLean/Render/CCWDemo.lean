@@ -27,19 +27,23 @@ def cyclic : Svg frame :=
   let q : Float × Float := (1.4, 1.4)
   let r : Float × Float := (-1.8, 0.0)
   turnsSvg frame
-    #[ {p := p, q := q, r := r},
-       {p := q, q := r, r := p, isGoal := true} ]
+    #[ {p := p, q := q, r := r, offset := 0.09},
+       {p := q, q := r, r := p, isGoal := true, offset := 0.09} ]
     #[("p", p), ("q", q), ("r", r)]
 
-/-- Antisymmetry, in the reversed form `ccw p q r → ¬ ccw r q p`: the same walk
-taken backwards, which is easier to see than transposing two of the three. -/
-def reversal : Svg frame :=
+/-- Antisymmetry: `ccw p q r → ¬ ccw p r q`. Both claims stand at the pivot `p`
+and use the same two rays, so the picture is one wedge holding two arcs: the
+hypothesis sweeping from `q` to `r` the short way, and the conclusion it denies
+sweeping from `r` to `q` the long way. Together they make one revolution, which
+is the axiom — of the two orders on a pair of rays exactly one is
+counterclockwise. -/
+def antisymmetry : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
   let q : Float × Float := (1.4, 1.4)
   let r : Float × Float := (-1.8, 0.0)
   turnsSvg frame
-    #[ {p := p, q := q, r := r},
-       {p := r, q := q, r := p, isGoal := true, ρ := 0.5} ]
+    #[ {p := p, q := q, r := r, offset := 0.09},
+       {p := p, q := r, r := q, isGoal := true, ρ := 0.62, offset := -0.09} ]
     #[("p", p), ("q", q), ("r", r)]
 
 /-- Interiority: `ccw t q r → ccw t r p → ccw t p q → ccw p q r`. The three
@@ -50,9 +54,9 @@ def interiority : Svg frame :=
   let r : Float × Float := (-2.0, 0.6)
   let t : Float × Float := (0.0, 0.0)
   turnsSvg frame
-    #[ {p := t, q := q, r := r, ρ := 0.42},
-       {p := t, q := r, r := p, ρ := 0.42},
-       {p := t, q := p, r := q, ρ := 0.42},
+    #[ {p := t, q := q, r := r, ρ := 0.42, offset := 0.08},
+       {p := t, q := r, r := p, ρ := 0.42, offset := 0.08},
+       {p := t, q := p, r := q, ρ := 0.42, offset := 0.08},
        {p := p, q := q, r := r, isGoal := true} ]
     #[("p", p), ("q", q), ("r", r), ("t", t)]
 
@@ -72,12 +76,12 @@ def transitivity : Svg frame :=
   let r : Float × Float := (1.1, 1.7)
   let side : Color := (0.55, 0.71, 0.87)
   turnsSvg frame
-    #[ {p := s, q := t, r := p, ρ := 0.50, colour := some side},
-       {p := s, q := t, r := q, ρ := 0.75, colour := some side},
-       {p := s, q := t, r := r, ρ := 1.00, colour := some side},
-       {p := s, q := p, r := q, ρ := 1.35},
-       {p := s, q := q, r := r, ρ := 1.35},
-       {p := s, q := p, r := r, isGoal := true, ρ := 1.75} ]
+    #[ {p := s, q := t, r := p, ρ := 0.50, colour := some side, offset := 0.07},
+       {p := s, q := t, r := q, ρ := 0.75, colour := some side, offset := 0.07},
+       {p := s, q := t, r := r, ρ := 1.00, colour := some side, offset := 0.07},
+       {p := s, q := p, r := q, ρ := 1.35, offset := 0.07},
+       {p := s, q := q, r := r, ρ := 1.35, offset := 0.07},
+       {p := s, q := p, r := r, isGoal := true, ρ := 1.75, offset := -0.07} ]
     #[("s", s), ("t", t), ("p", p), ("q", q), ("r", r)]
 
 end CGLean.Render
@@ -86,7 +90,7 @@ open CGLean.Render ProofWidgets in
 #html cyclic.toHtml
 
 open CGLean.Render ProofWidgets in
-#html reversal.toHtml
+#html antisymmetry.toHtml
 
 open CGLean.Render ProofWidgets in
 #html interiority.toHtml
