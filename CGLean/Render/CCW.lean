@@ -5,11 +5,12 @@ import ProofWidgets.Component.HtmlDisplay
 # Drawing counterclockwise claims
 
 A `Turn p q r` is drawn as the two rays leaving the pivot `p` towards `q` and
-`r`, together with an arc at `p` sweeping from the first to the second. The arc
-carries an arrowhead, so the direction of the turn is shown rather than
-inferred from the order of the labels; and since a counterclockwise turn is by
-definition one of less than half a revolution, the arc drawn is always the
-minor one and always sweeps anticlockwise.
+`r`, together with an arc at `p` sweeping from the first to the second. Only
+the ray to `r` carries a head, since what has to be shown is which of the two
+the turn ends on; the arc carries one as well, so the direction is shown rather
+than inferred from the order of the labels. Since a counterclockwise turn is by
+definition one of less than half a revolution, the arc always sweeps
+anticlockwise and is the minor one exactly when the claim holds of the points.
 
 Drawing at the pivot is what makes several claims about a common pivot
 comparable. Their arcs share a centre and nest, so a picture of `ccw t p q`,
@@ -98,13 +99,10 @@ private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : 
   let back := dir + 3.14159265358979
   #[ line tip (polar tip s (back + 0.4)), line tip (polar tip s (back - 0.4)) ]
 
-/-- One ray of a claim: a segment from the pivot `a` stopping short of `b` and
-ending in an arrowhead. Stopping short leaves the dot at `b` clear, and the
-head names `b` as the far point of the ray. -/
-private def ray (frame : Frame) (a b : Float × Float) : Array (Element frame) :=
-  let u := unit (sub b a)
-  let tip := sub b (smul 0.13 u)
-  #[line a tip] ++ arrowHead frame tip (angle u) 0.11
+/-- Where a ray from `a` towards `b` stops: short of `b`, so that the dot there
+stays clear. -/
+private def rayEnd (a b : Float × Float) : Float × Float :=
+  sub b (smul 0.13 (unit (sub b a)))
 
 /-- The elements of one turn: the two rays from the pivot, and the arc between
 them with its arrowhead. -/
@@ -119,7 +117,11 @@ def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   let c : Color := t.colour.getD (if t.isGoal then (0.93, 0.53, 0.11) else (0.16, 0.48, 0.84))
   let arcStroke : Element frame → Element frame := fun e => e.setStroke c (.px 3)
   let stroke : Element frame → Element frame := fun e => e.setStroke (0.55, 0.57, 0.62) (.px 2)
-  let mut out : Array (Element frame) := (ray frame p q ++ ray frame p r).map stroke
+  -- only the ray to `r` carries a head, marking where the turn ends; that is
+  -- what tells the two rays apart, so a head on both would say nothing
+  let mut out : Array (Element frame) :=
+    (#[line p (rayEnd p q), line p (rayEnd p r)]
+      ++ arrowHead frame (rayEnd p r) (angle (sub r p)) 0.11).map stroke
   -- the arc at the pivot, from the ray towards q to the ray towards r
   let a0 := angle (sub q p)
   let a1 := angle (sub r p)
