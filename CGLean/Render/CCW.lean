@@ -4,16 +4,25 @@ import ProofWidgets.Component.HtmlDisplay
 /-!
 # Drawing counterclockwise claims
 
-A `Turn p q r` is drawn as the two segments meeting at `q` together with an arc
-sweeping from `qp` to `qr`, which is where the orientation is legible: the arc
+A `Turn p q r` is drawn as the two rays leaving the pivot `p` towards `q` and
+`r`, together with an arc at `p` sweeping from the first to the second. The arc
 carries an arrowhead, so the direction of the turn is shown rather than
-inferred from the order of the labels.
+inferred from the order of the labels; and since a counterclockwise turn is by
+definition one of less than half a revolution, the arc drawn is always the
+minor one and always sweeps anticlockwise.
 
-Goals and hypotheses are told apart by colour, in mid-tone hues that hold up
+Drawing at the pivot is what makes several claims about a common pivot
+comparable. Their arcs share a centre and nest, so a picture of `ccw t p q`,
+`ccw t q r` and `ccw t p r` can be read as an angular order around `t` rather
+than as three unrelated wedges.
+
+Colour distinguishes goals from hypotheses, in mid-tone hues that hold up
 against either a light or a dark background since the diagram supplies none of
-its own. Where two claims would coincide, each carries a small offset applied
-to its segments and arc but not to the points: the points are the data and stay
-where they are, while the lines joining them are annotation and may slide.
+its own. Only the arcs are coloured. The rays are drawn in a neutral grey
+because they belong to the points rather than to any one claim — two claims
+about a common pivot draw the same ray, and colouring it would mean whichever
+was drawn last won. Claims sharing a pivot are separated by giving their arcs
+different radii, which also lets a chain of them be read as an angular order.
 -/
 
 namespace CGLean.Render
@@ -21,19 +30,19 @@ namespace CGLean.Render
 open ProofWidgets Svg
 
 /-- A claim that `p`, `q`, `r` make a counterclockwise turn, positioned for
-drawing. `isGoal` selects the dashed rendering. -/
+drawing, with `p` as the pivot. `isGoal` selects the conclusion colour. -/
 structure Turn where
   p : Float × Float
   q : Float × Float
   r : Float × Float
   isGoal : Bool := false
-  /-- Radius of the arc at `q`. -/
+  /-- Radius of the arc at the pivot `p`. -/
   ρ : Float := 0.35
   /-- Colour of this claim's connectors. Defaults by `isGoal`; set it to tell
   several hypotheses in one picture apart. -/
   colour : Option Color := none
   /-- How far to slide this claim's connectors along the bisector of the angle
-  at `q`, positive being into the wedge. The points themselves do not move:
+  at the pivot, positive being into the wedge. The points themselves do not move:
   they are the data, while the lines joining them are annotation.
 
   The bisector is the right axis because it is the one direction determined by
@@ -81,33 +90,34 @@ private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : 
   let back := dir + 3.14159265358979
   #[ line tip (polar tip s (back + 0.4)), line tip (polar tip s (back - 0.4)) ]
 
-/-- The elements of one turn: two segments, the arc at `q` with its arrowhead,
-and a dot and label at each point. -/
+/-- The elements of one turn: the two rays from the pivot, and the arc between
+them with its arrowhead. -/
 def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   let ρ := t.ρ
-  let off := smul t.offset (bisector t.p t.q t.r)
+  let off := smul t.offset (bisector t.q t.p t.r)
   let p := add t.p off
   let q := add t.q off
   let r := add t.r off
   -- blue and orange: mid-luminance, so legible on either background, and the
   -- usual pair that survives the common colour blindnesses
   let c : Color := t.colour.getD (if t.isGoal then (0.93, 0.53, 0.11) else (0.16, 0.48, 0.84))
-  let stroke : Element frame → Element frame := fun e => e.setStroke c (.px 2)
-  let arcStroke := stroke
-  -- the two segments
-  let mut out : Array (Element frame) := #[stroke (line p q), stroke (line q r)]
-  -- the arc at q, from the ray towards p to the ray towards r, the short way
-  let a0 := angle (sub p q)
-  let a1 := angle (sub r q)
+  let arcStroke : Element frame → Element frame := fun e => e.setStroke c (.px 3)
+  -- the rays are shared scaffolding: two claims about the same pivot draw the
+  -- same ray, so colouring them would let whichever is drawn last win
+  let stroke : Element frame → Element frame := fun e => e.setStroke (0.55, 0.57, 0.62) (.px 2)
+  let mut out : Array (Element frame) := #[stroke (line p q), stroke (line p r)]
+  -- the arc at the pivot, from the ray towards q to the ray towards r
+  let a0 := angle (sub q p)
+  let a1 := angle (sub r p)
   let Δ  := sweep a0 a1
   let steps := 24
   let raw : Array (Float × Float) := (Array.range (steps + 1)).map fun i =>
-    polar q ρ (a0 + Δ * i.toFloat / steps.toFloat)
+    polar p ρ (a0 + Δ * i.toFloat / steps.toFloat)
   let pts : Array (Point frame) := raw.map fun (x, y) => .abs x y
   out := out.push (arcStroke (polyline pts))
   -- arrowhead at the far end, tangent to the arc
   let tangent := a1 + (if Δ ≥ 0 then 1.5707963 else -1.5707963)
-  out := out ++ (arrowHead frame (polar q ρ a1) tangent 0.12).map arcStroke
+  out := out ++ (arrowHead frame (polar p ρ a1) tangent 0.12).map arcStroke
   return out
 
 /-- Dots and labels for the points, drawn last so that they sit above the
