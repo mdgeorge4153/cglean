@@ -24,6 +24,9 @@ structure Turn where
   q : Float × Float
   r : Float × Float
   isGoal : Bool := false
+  /-- Radius of the arc at `q`. Two claims about the same vertex and the same
+  pair of rays draw coincident arcs, so the radius has to be settable. -/
+  ρ : Float := 0.35
   deriving Inhabited
 
 namespace Turn
@@ -60,7 +63,8 @@ private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : 
 
 /-- The elements of one turn: two segments, the arc at `q` with its arrowhead,
 and a dot and label at each point. -/
-def elements (frame : Frame) (t : Turn) (ρ : Float := 0.35) : Array (Element frame) := Id.run do
+def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
+  let ρ := t.ρ
   let stroke : Element frame → Element frame := fun e =>
     e.setStroke (if t.isGoal then (0.35, 0.35, 0.45) else (0.1, 0.1, 0.2)) (.px 2)
   let arcStroke : Element frame → Element frame := fun e =>
