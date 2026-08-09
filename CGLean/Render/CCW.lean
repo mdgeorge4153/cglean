@@ -97,19 +97,30 @@ def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   out := out ++ (arrowHead frame (polar q ρ a1) tangent 0.12).map arcStroke
   return out
 
-/-- Dots and labels for the three points. Kept separate so that several turns
-sharing points do not stack labels on top of one another. -/
-def marks (frame : Frame) (named : Array (String × (Float × Float))) :
-    Array (Element frame) :=
+/-- Dots and labels for the points, drawn last so that they sit above the
+connectors. Each label is backed by a patch of the diagram's own background,
+so that a line passing behind it is interrupted rather than crossing the
+glyph. -/
+def marks (frame : Frame) (named : Array (String × (Float × Float)))
+    (bg : Color := (1.0, 1.0, 1.0)) : Array (Element frame) :=
+  let ink : Color := (0.1, 0.1, 0.2)
+  let size := 0.28
   named.flatMap fun (nm, pt) =>
-    #[ (circle pt (.abs 0.06)).setFill (0.1, 0.1, 0.2),
-       text (add pt (0.12, 0.12)) nm (.abs 0.28) |>.setFill (0.1, 0.1, 0.2) ]
+    let anchor := add pt (0.11, 0.09)
+    let w := 0.62 * size * nm.length.toFloat + 0.1
+    #[ (rect (add anchor (-0.05, -0.06)) (.abs w) (.abs (size + 0.12))).setFill bg,
+       text anchor nm (.abs size) |>.setFill ink,
+       (circle pt (.abs 0.06)).setFill ink ]
 
 end Turn
 
-/-- Several claims in one picture. -/
+/-- Several claims in one picture: a solid ground, then the connectors, then
+the points and their labels on top. -/
 def turnsSvg (frame : Frame) (ts : Array Turn)
-    (named : Array (String × (Float × Float))) : Svg frame :=
-  { elements := ts.flatMap (Turn.elements frame) ++ Turn.marks frame named }
+    (named : Array (String × (Float × Float)))
+    (bg : Color := (1.0, 1.0, 1.0)) : Svg frame :=
+  let ground : Element frame :=
+    (rect (.abs frame.xmin frame.ymin) (.abs frame.xSize) (.abs frame.ySize)).setFill bg
+  { elements := #[ground] ++ ts.flatMap (Turn.elements frame) ++ Turn.marks frame named bg }
 
 end CGLean.Render
