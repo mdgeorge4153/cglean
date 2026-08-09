@@ -35,7 +35,9 @@ def reversal : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
   let q : Float × Float := (-1.8, 0.0)
   let r : Float × Float := (1.4, 1.4)
-  turnsSvg frame #[ {p := p, q := q, r := r}, {p := r, q := q, r := p, isGoal := true, ρ := 0.62} ]
+  turnsSvg frame
+    #[ {p := p, q := q, r := r, offset := (-0.07, 0.07)},
+       {p := r, q := q, r := p, isGoal := true, offset := (0.07, -0.07), ρ := 0.5} ]
     #[("p", p), ("q", q), ("r", r)]
 
 /-- Interiority: `ccw t q r → ccw t r p → ccw t p q → ccw p q r`. The three
@@ -46,8 +48,10 @@ def interiority : Svg frame :=
   let r : Float × Float := (1.9, 1.2)
   let t : Float × Float := (0.0, 0.0)
   turnsSvg frame
-    #[ {p := t, q := q, r := r, ρ := 0.30}, {p := t, q := r, r := p, ρ := 0.45},
-       {p := t, q := p, r := q, ρ := 0.60}, {p := p, q := q, r := r, isGoal := true} ]
+    #[ {p := t, q := q, r := r, ρ := 0.30, offset := (0.0, 0.07)},
+       {p := t, q := r, r := p, ρ := 0.44, offset := (0.06, -0.04)},
+       {p := t, q := p, r := q, ρ := 0.58, offset := (-0.06, -0.04)},
+       {p := p, q := q, r := r, isGoal := true} ]
     #[("p", p), ("q", q), ("r", r), ("t", t)]
 
 /-- Transitivity: with `p`, `q`, `r` all on one side of `s t`, angular order
@@ -59,8 +63,10 @@ def transitivity : Svg frame :=
   let q : Float × Float := (2.0, 0.4)
   let r : Float × Float := (1.1, 1.7)
   turnsSvg frame
-    #[ {p := s, q := t, r := p, ρ := 0.30}, {p := s, q := p, r := q, ρ := 0.45},
-       {p := s, q := q, r := r, ρ := 0.60}, {p := s, q := p, r := r, isGoal := true, ρ := 0.80} ]
+    #[ {p := s, q := t, r := p, ρ := 0.32, offset := (0.0, -0.08)},
+       {p := s, q := p, r := q, ρ := 0.46, offset := (0.0, 0.0)},
+       {p := s, q := q, r := r, ρ := 0.60, offset := (0.0, 0.08)},
+       {p := s, q := p, r := r, isGoal := true, ρ := 0.82, offset := (0.0, 0.16)} ]
     #[("s", s), ("t", t), ("p", p), ("q", q), ("r", r)]
 
 end CGLean.Render
