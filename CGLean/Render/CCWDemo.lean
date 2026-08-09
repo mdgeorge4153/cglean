@@ -24,8 +24,8 @@ def frame : Frame where
 read from a different starting vertex. -/
 def cyclic : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
-  let q : Float × Float := (-1.8, 0.0)
-  let r : Float × Float := (1.4, 1.4)
+  let q : Float × Float := (1.4, 1.4)
+  let r : Float × Float := (-1.8, 0.0)
   turnsSvg frame
     #[ {p := p, q := q, r := r},
        {p := q, q := r, r := p, isGoal := true} ]
@@ -35,8 +35,8 @@ def cyclic : Svg frame :=
 taken backwards, which is easier to see than transposing two of the three. -/
 def reversal : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
-  let q : Float × Float := (-1.8, 0.0)
-  let r : Float × Float := (1.4, 1.4)
+  let q : Float × Float := (1.4, 1.4)
+  let r : Float × Float := (-1.8, 0.0)
   turnsSvg frame
     #[ {p := p, q := q, r := r},
        {p := r, q := q, r := p, isGoal := true, ρ := 0.5} ]
@@ -46,8 +46,8 @@ def reversal : Svg frame :=
 hypotheses share the pivot `t`, which sits inside the triangle. -/
 def interiority : Svg frame :=
   let p : Float × Float := (0.4, -1.7)
-  let q : Float × Float := (-2.0, 0.6)
-  let r : Float × Float := (1.9, 1.2)
+  let q : Float × Float := (1.9, 1.2)
+  let r : Float × Float := (-2.0, 0.6)
   let t : Float × Float := (0.0, 0.0)
   turnsSvg frame
     #[ {p := t, q := q, r := r, ρ := 0.42},
@@ -56,19 +56,28 @@ def interiority : Svg frame :=
        {p := p, q := q, r := r, isGoal := true} ]
     #[("p", p), ("q", q), ("r", r), ("t", t)]
 
-/-- Transitivity: with `p`, `q`, `r` all on one side of `s t`, angular order
-around `s` is transitive. -/
+/-- Transitivity: `ccw s t p → ccw s t q → ccw s t r → ccw s p q → ccw s q r →
+ccw s p r`. The first three premises confine `p`, `q` and `r` to one side of
+`s t`, and are drawn in a lighter blue since they are what makes the angular
+order around `s` linear rather than cyclic; the last two are the order itself.
+
+Without them the conclusion is false, so they are not decoration: three points
+spread over more than half a revolution around `s` step forwards twice and
+still arrive behind where they started. -/
 def transitivity : Svg frame :=
   let s : Float × Float := (-2.2, -0.2)
   let t : Float × Float := (0.2, -1.9)
   let p : Float × Float := (1.9, -0.9)
   let q : Float × Float := (2.0, 0.4)
   let r : Float × Float := (1.1, 1.7)
+  let side : Color := (0.55, 0.71, 0.87)
   turnsSvg frame
-    #[ {p := s, q := t, r := p, ρ := 0.55},
-       {p := s, q := p, r := q, ρ := 0.90},
-       {p := s, q := q, r := r, ρ := 1.25},
-       {p := s, q := p, r := r, isGoal := true, ρ := 1.70} ]
+    #[ {p := s, q := t, r := p, ρ := 0.50, colour := some side},
+       {p := s, q := t, r := q, ρ := 0.75, colour := some side},
+       {p := s, q := t, r := r, ρ := 1.00, colour := some side},
+       {p := s, q := p, r := q, ρ := 1.35},
+       {p := s, q := q, r := r, ρ := 1.35},
+       {p := s, q := p, r := r, isGoal := true, ρ := 1.75} ]
     #[("s", s), ("t", t), ("p", p), ("q", q), ("r", r)]
 
 end CGLean.Render
