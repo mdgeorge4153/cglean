@@ -52,14 +52,32 @@ private def sweep (a b : Float) : Float :=
   let d := b - a
   if d > π then d - 2*π else if d ≤ -π then d + 2*π else d
 
-/-- A segment broken into dashes, since `Element` carries no dash pattern. -/
-private def dashes (frame : Frame) (a b : Float × Float) (n : Nat) :
-    Array (Element frame) := Id.run do
+private def dist (a b : Float × Float) : Float :=
+  let d := sub b a
+  Float.sqrt (d.1 * d.1 + d.2 * d.2)
+
+/-- Round dots evenly spaced along a path, `Element` carrying no dash pattern.
+Dots rather than short dashes: on an arc, and at these lengths, a dash is only
+distinguishable from a solid line by looking closely, whereas a dot is not. -/
+private def dotted (frame : Frame) (path : Array (Float × Float))
+    (gap : Float := 0.16) (ρ : Float := 0.035) : Array (Element frame) := Id.run do
+  let total := (Array.range (path.size - 1)).foldl
+    (fun acc i => acc + dist path[i]! path[i+1]!) 0.0
+  if total ≤ 0.0 then return #[]
+  let n := max 2 (total / gap).toUInt32.toNat
   let mut out := #[]
-  for i in [:n] do
-    let t0 := i.toFloat / n.toFloat
-    let t1 := (i.toFloat + 0.55) / n.toFloat
-    out := out.push (line (add a (smul t0 (sub b a))) (add a (smul t1 (sub b a))))
+  let mut seg := 0
+  let mut used := 0.0
+  for k in [:n+1] do
+    let want := total * k.toFloat / n.toFloat
+    while seg + 1 < path.size - 1 && used + dist path[seg]! path[seg+1]! < want do
+      used := used + dist path[seg]! path[seg+1]!
+      seg := seg + 1
+    let a := path[seg]!
+    let b := path[seg+1]!
+    let len := dist a b
+    let t := if len ≤ 0.0 then 0.0 else min 1.0 ((want - used) / len)
+    out := out.push ((circle (add a (smul t (sub b a))) (.abs ρ)))
   return out
 
 /-- Two short strokes closing back on the arc, marking its far end. -/
@@ -81,17 +99,22 @@ def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
     e.setStroke (if t.isGoal then (0.55, 0.3, 0.75) else (0.85, 0.2, 0.15)) (.px 2)
   -- the two segments
   let mut out : Array (Element frame) :=
-    if t.isGoal then (dashes frame p q 7 ++ dashes frame q r 7).map stroke
+    if t.isGoal then
+      (dotted frame #[p, q] ++ dotted frame #[q, r]).map (fun e =>
+        e.setFill (0.35, 0.35, 0.45))
     else #[stroke (line p q), stroke (line q r)]
   -- the arc at q, from the ray towards p to the ray towards r, the short way
   let a0 := angle (sub p q)
   let a1 := angle (sub r q)
   let Δ  := sweep a0 a1
   let steps := 24
-  let pts : Array (Point frame) := (Array.range (steps + 1)).map fun i =>
-    let (x, y) := polar q ρ (a0 + Δ * i.toFloat / steps.toFloat)
-    .abs x y
-  out := out.push (arcStroke (polyline pts))
+  let raw : Array (Float × Float) := (Array.range (steps + 1)).map fun i =>
+    polar q ρ (a0 + Δ * i.toFloat / steps.toFloat)
+  let pts : Array (Point frame) := raw.map fun (x, y) => .abs x y
+  out := out ++
+    (if t.isGoal then
+      (dotted frame raw 0.12 0.03).map (fun e => e.setFill (0.55, 0.3, 0.75))
+     else #[arcStroke (polyline pts)])
   -- arrowhead at the far end, tangent to the arc
   let tangent := a1 + (if Δ ≥ 0 then 1.5707963 else -1.5707963)
   out := out ++ (arrowHead frame (polar q ρ a1) tangent 0.12).map arcStroke
