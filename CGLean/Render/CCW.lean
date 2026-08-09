@@ -77,12 +77,17 @@ private def bisector (p q r : Float × Float) : Float × Float :=
     (-u.2, u.1)
   else unit b
 
-/-- The signed angle from `a` to `b`, in `(-π, π]`, so that the arc drawn is
-always the minor one. -/
+/-- The counterclockwise angle from `a` to `b`, in `[0, 2π)`.
+
+Always counterclockwise, never the minor arc: a `Turn` asserts that its three
+points make a counterclockwise turn, so the sweep is under half a revolution
+whenever the claim holds of the coordinates given. Points that in fact turn
+clockwise draw a reflex arc, which is the diagram reporting that it has been
+asked to picture something false. -/
 private def sweep (a b : Float) : Float :=
-  let π := 3.14159265358979
+  let τ := 6.28318530717959
   let d := b - a
-  if d > π then d - 2*π else if d ≤ -π then d + 2*π else d
+  if d < 0 then d + τ else d
 
 /-- Two short strokes closing back on the arc, marking its far end. -/
 private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : Float) :
@@ -116,7 +121,7 @@ def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   let pts : Array (Point frame) := raw.map fun (x, y) => .abs x y
   out := out.push (arcStroke (polyline pts))
   -- arrowhead at the far end, tangent to the arc
-  let tangent := a1 + (if Δ ≥ 0 then 1.5707963 else -1.5707963)
+  let tangent := a1 + 1.5707963
   out := out ++ (arrowHead frame (polar p ρ a1) tangent 0.12).map arcStroke
   return out
 
