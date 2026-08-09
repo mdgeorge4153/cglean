@@ -29,11 +29,16 @@ structure Turn where
   isGoal : Bool := false
   /-- Radius of the arc at `q`. -/
   ρ : Float := 0.35
-  /-- Translation applied to this claim's segments and arc, but not to the
-  points themselves. Several claims about the same points would otherwise draw
-  on top of one another; the points stay where they are, and only the
-  annotation connecting them moves. -/
-  offset : Float × Float := (0.0, 0.0)
+  /-- How far to slide this claim's connectors along the bisector of the angle
+  at `q`, positive being into the wedge. The points themselves do not move:
+  they are the data, while the lines joining them are annotation.
+
+  The bisector is the right axis because it is the one direction determined by
+  the claim itself. Two claims sharing a vertex and a pair of rays share a
+  bisector, so opposite offsets separate them symmetrically; claims sharing
+  only a pivot have bisectors that already point apart, and fan without being
+  told to. -/
+  offset : Float := 0.0
   deriving Inhabited
 
 namespace Turn
@@ -44,6 +49,21 @@ private def smul (s : Float) (a : Float × Float) : Float × Float := (s * a.1, 
 private def angle (v : Float × Float) : Float := Float.atan2 v.2 v.1
 private def polar (c : Float × Float) (ρ θ : Float) : Float × Float :=
   add c (ρ * Float.cos θ, ρ * Float.sin θ)
+
+private def norm (v : Float × Float) : Float := Float.sqrt (v.1 * v.1 + v.2 * v.2)
+private def unit (v : Float × Float) : Float × Float :=
+  let n := norm v
+  if n ≤ 1e-9 then (0.0, 0.0) else smul (1.0 / n) v
+
+/-- Unit vector along the bisector of the angle `p q r`, pointing into the
+wedge. Degenerates when the rays are opposed, where the wedge has no interior;
+the perpendicular is used instead so that an offset still does something. -/
+private def bisector (p q r : Float × Float) : Float × Float :=
+  let b := add (unit (sub p q)) (unit (sub r q))
+  if norm b ≤ 1e-6 then
+    let u := unit (sub p q)
+    (-u.2, u.1)
+  else unit b
 
 /-- The signed angle from `a` to `b`, in `(-π, π]`, so that the arc drawn is
 always the minor one. -/
@@ -90,9 +110,10 @@ private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : 
 and a dot and label at each point. -/
 def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   let ρ := t.ρ
-  let p := add t.p t.offset
-  let q := add t.q t.offset
-  let r := add t.r t.offset
+  let off := smul t.offset (bisector t.p t.q t.r)
+  let p := add t.p off
+  let q := add t.q off
+  let r := add t.r off
   let stroke : Element frame → Element frame := fun e =>
     e.setStroke (if t.isGoal then (0.35, 0.35, 0.45) else (0.1, 0.1, 0.2)) (.px 2)
   let arcStroke : Element frame → Element frame := fun e =>
