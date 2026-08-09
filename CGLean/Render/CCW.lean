@@ -18,11 +18,14 @@ than as three unrelated wedges.
 
 Colour distinguishes goals from hypotheses, in mid-tone hues that hold up
 against either a light or a dark background since the diagram supplies none of
-its own. Only the arcs are coloured. The rays are drawn in a neutral grey
-because they belong to the points rather than to any one claim — two claims
-about a common pivot draw the same ray, and colouring it would mean whichever
-was drawn last won. Claims sharing a pivot are separated by giving their arcs
-different radii, which also lets a chain of them be read as an angular order.
+its own, and is carried by the arcs; the rays stay a neutral grey, so that a
+ray two claims have in common is not painted by whichever was drawn last.
+
+Claims that would otherwise coincide are told apart twice over. Each carries a
+small offset applied to its rays and arc but not to the points — the points are
+the data and stay where they are, while the lines joining them are annotation
+and may slide — and claims sharing a pivot are given arcs of different radii,
+which additionally lets a chain of them be read as an angular order.
 -/
 
 namespace CGLean.Render
@@ -95,6 +98,14 @@ private def arrowHead (frame : Frame) (tip : Float × Float) (dir : Float) (s : 
   let back := dir + 3.14159265358979
   #[ line tip (polar tip s (back + 0.4)), line tip (polar tip s (back - 0.4)) ]
 
+/-- One ray of a claim: a segment from the pivot `a` stopping short of `b` and
+ending in an arrowhead. Stopping short leaves the dot at `b` clear, and the
+head names `b` as the far point of the ray. -/
+private def ray (frame : Frame) (a b : Float × Float) : Array (Element frame) :=
+  let u := unit (sub b a)
+  let tip := sub b (smul 0.13 u)
+  #[line a tip] ++ arrowHead frame tip (angle u) 0.11
+
 /-- The elements of one turn: the two rays from the pivot, and the arc between
 them with its arrowhead. -/
 def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
@@ -107,10 +118,8 @@ def elements (frame : Frame) (t : Turn) : Array (Element frame) := Id.run do
   -- usual pair that survives the common colour blindnesses
   let c : Color := t.colour.getD (if t.isGoal then (0.93, 0.53, 0.11) else (0.16, 0.48, 0.84))
   let arcStroke : Element frame → Element frame := fun e => e.setStroke c (.px 3)
-  -- the rays are shared scaffolding: two claims about the same pivot draw the
-  -- same ray, so colouring them would let whichever is drawn last win
   let stroke : Element frame → Element frame := fun e => e.setStroke (0.55, 0.57, 0.62) (.px 2)
-  let mut out : Array (Element frame) := #[stroke (line p q), stroke (line p r)]
+  let mut out : Array (Element frame) := (ray frame p q ++ ray frame p r).map stroke
   -- the arc at the pivot, from the ray towards q to the ray towards r
   let a0 := angle (sub q p)
   let a1 := angle (sub r p)
