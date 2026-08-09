@@ -22,7 +22,7 @@ private def frame : Frame where
 
 /-- Cyclic symmetry: `ccw p q r → ccw q r p`. Same three points, same turn,
 read from a different starting vertex. -/
-def axiom1 : Svg frame :=
+def cyclic : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
   let q : Float × Float := (-1.8, 0.0)
   let r : Float × Float := (1.4, 1.4)
@@ -31,48 +31,48 @@ def axiom1 : Svg frame :=
 
 /-- Antisymmetry, in the reversed form `ccw p q r → ¬ ccw r q p`: the same walk
 taken backwards, which is easier to see than transposing two of the three. -/
-def axiom2 : Svg frame :=
+def reversal : Svg frame :=
   let p : Float × Float := (1.4, -1.4)
   let q : Float × Float := (-1.8, 0.0)
   let r : Float × Float := (1.4, 1.4)
-  turnsSvg frame #[ {p := p, q := q, r := r}, {p := r, q := q, r := p, isGoal := true} ]
+  turnsSvg frame #[ {p := p, q := q, r := r}, {p := r, q := q, r := p, isGoal := true, ρ := 0.62} ]
     #[("p", p), ("q", q), ("r", r)]
 
 /-- Interiority: `ccw t q r → ccw t r p → ccw t p q → ccw p q r`. The three
 hypotheses share the pivot `t`, which sits inside the triangle. -/
-def axiom4 : Svg frame :=
+def interiority : Svg frame :=
   let p : Float × Float := (0.4, -1.7)
   let q : Float × Float := (-2.0, 0.6)
   let r : Float × Float := (1.9, 1.2)
   let t : Float × Float := (0.0, 0.0)
   turnsSvg frame
-    #[ {p := t, q := q, r := r}, {p := t, q := r, r := p}, {p := t, q := p, r := q},
-       {p := p, q := q, r := r, isGoal := true} ]
+    #[ {p := t, q := q, r := r, ρ := 0.30}, {p := t, q := r, r := p, ρ := 0.45},
+       {p := t, q := p, r := q, ρ := 0.60}, {p := p, q := q, r := r, isGoal := true} ]
     #[("p", p), ("q", q), ("r", r), ("t", t)]
 
 /-- Transitivity: with `p`, `q`, `r` all on one side of `s t`, angular order
 around `s` is transitive. -/
-def axiom5 : Svg frame :=
+def transitivity : Svg frame :=
   let s : Float × Float := (-2.2, -0.2)
   let t : Float × Float := (0.2, -1.9)
   let p : Float × Float := (1.9, -0.9)
   let q : Float × Float := (2.0, 0.4)
   let r : Float × Float := (1.1, 1.7)
   turnsSvg frame
-    #[ {p := s, q := t, r := p}, {p := s, q := p, r := q}, {p := s, q := q, r := r},
-       {p := s, q := p, r := r, isGoal := true} ]
+    #[ {p := s, q := t, r := p, ρ := 0.30}, {p := s, q := p, r := q, ρ := 0.45},
+       {p := s, q := q, r := r, ρ := 0.60}, {p := s, q := p, r := r, isGoal := true, ρ := 0.80} ]
     #[("s", s), ("t", t), ("p", p), ("q", q), ("r", r)]
 
 end CGLean.Render
 
 open CGLean.Render ProofWidgets in
-#html axiom1.toHtml
+#html cyclic.toHtml
 
 open CGLean.Render ProofWidgets in
-#html axiom2.toHtml
+#html reversal.toHtml
 
 open CGLean.Render ProofWidgets in
-#html axiom4.toHtml
+#html interiority.toHtml
 
 open CGLean.Render ProofWidgets in
-#html axiom5.toHtml
+#html transitivity.toHtml
