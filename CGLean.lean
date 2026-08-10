@@ -1,3 +1,4 @@
+import CGLean.Classes.OrientationSystem
 import CGLean.Classes.Floatable
 import CGLean.Classes.Region
 import CGLean.Classes.RingOps
@@ -6,6 +7,7 @@ import CGLean.Data.AdjoinSqrt
 import CGLean.Data.Interval
 import CGLean.Data.AdjoinSqrt.ToReal
 import CGLean.Geometry.Point2D
+import CGLean.Geometry.Orientation
 import CGLean.Geometry.Arrangement
 import CGLean.Render.CCW
 import CGLean.Render.Region

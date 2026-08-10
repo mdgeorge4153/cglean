@@ -1,5 +1,5 @@
 import CGLean.Geometry.Point2D
-import CGLean.Classes.CCWSystem
+import CGLean.Classes.OrientationSystem
 import CGLean.Algebra.Signed
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
@@ -7,20 +7,16 @@ import Mathlib.Tactic.Linarith
 /-!
 # Orientation of a triple of points
 
-Which way the plane turns, as the sign of a determinant. Because the sign is
-three-valued, collinearity is reported rather than excluded: `orientation` is
-`.zero` exactly when the three points lie on a line, and no general-position
-assumption is needed anywhere below.
+Points with coordinates in a `SignedRing` form an `OrientationSystem`, the
+orientation of a triple being the sign of a determinant. Since the sign is
+three-valued, collinearity is reported rather than excluded, and no
+general-position assumption appears anywhere below.
 
-Cyclic symmetry and antisymmetry hold at this level as equations between signs,
-true of collinear triples as well. Knuth's axioms, which speak only of turns
-that are counterclockwise, follow as corollaries and are packaged as the
-`CCWSystem` instance at the end.
-
-Two polynomial identities carry all the work. Interiority comes from the
-signed areas about an interior point summing to the whole, and transitivity
-from the three-term Plücker relation, which turns five positive determinants
-into a positive product.
+Two polynomial identities carry all the work, and each axiom is a law of
+`Signed` applied to one of them. Interiority comes from the signed areas about
+a fourth point summing to the whole, together with `sign_plus`; transitivity
+from the three-term Plücker relation, together with `sign_mul`. Cyclic symmetry
+and antisymmetry are the identities themselves, under `sign_neg`.
 -/
 
 open Signed
@@ -34,13 +30,6 @@ three points are traversed counterclockwise and zero exactly when they are
 collinear. -/
 def det (p q r : Point k) : k :=
   (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
-
-/-- Which way the plane turns at `p q r`: `.pos` counterclockwise, `.neg`
-clockwise, `.zero` collinear. -/
-def orientation (p q r : Point k) : SignType := sign (det p q r)
-
-/-- `p`, `q`, `r` make a counterclockwise turn, with `p` as the pivot. -/
-def CCW (p q r : Point k) : Prop := orientation p q r = .pos
 
 /-! ## The identities -/
 
@@ -65,54 +54,50 @@ theorem det_plucker (p q r s t : Point k) :
     det t p r * det t s q = det t s p * det t q r + det t p q * det t s r := by
   simp only [det, Point.x, Point.y]; ring
 
-/-! ## Orientation -/
+/-! ## The instance
 
-/-- A counterclockwise turn is a positive determinant. -/
-theorem ccw_iff_det_pos {p q r : Point k} : CCW p q r ↔ 0 < det p q r :=
-  SignedRing.sign_eq_pos_iff
+Each field is stated here against `sign (det ..)` so that the proofs are about
+the determinant rather than about a structure projection. -/
 
-/-- Cyclic symmetry, as an equation between signs: it holds of collinear
-triples too, not only of turns. -/
-theorem orientation_cyclic (p q r : Point k) :
-    orientation q r p = orientation p q r := by
-  unfold orientation
-  rw [det_cyclic]
+private theorem sign_det_cyclic (p q r : Point k) :
+    sign (det q r p) = sign (det p q r) := by rw [det_cyclic]
 
-/-- Antisymmetry, as an equation between signs: exchanging the two points seen
-from the pivot negates the orientation, collinear triples included, where both
-sides are `.zero`. -/
-theorem orientation_swap (p q r : Point k) :
-    orientation p r q = -orientation p q r := by
-  unfold orientation
+private theorem sign_det_swap (p q r : Point k) :
+    sign (det p r q) = -sign (det p q r) := by
   rw [det_swap, SignedRing.sign_neg]
 
-/-! ## Knuth's axioms -/
+private theorem sign_det_interiority {p q r t : Point k}
+    (h₁ : sign (det t q r) ≠ .neg) (h₂ : sign (det p t r) ≠ .neg)
+    (h₃ : sign (det p q t) ≠ .neg) : sign (det p q r) ≠ .neg := by
+  rw [← SignedRing.nonneg_iff] at h₁ h₂ h₃ ⊢
+  rw [det_sum p q r t]
+  exact add_nonneg (add_nonneg h₁ h₂) h₃
 
-/-- Knuth's axiom 1. -/
-theorem CCW.cyclic {p q r : Point k} (h : CCW p q r) : CCW q r p := by
-  rwa [CCW, orientation_cyclic]
-
-/-- Knuth's axiom 2. -/
-theorem CCW.antisymm {p q r : Point k} (h : CCW p q r) : ¬ CCW p r q := by
-  intro hc
-  rw [ccw_iff_det_pos, det_swap] at hc
-  rw [ccw_iff_det_pos] at h
-  linarith
-
-/-- Knuth's axiom 4: a point `t` seeing all three edges of `p q r` the same way
-lies inside it, so `p q r` turns counterclockwise. -/
-theorem CCW.interiority {p q r t : Point k}
-    (h₁ : CCW t q r) (h₂ : CCW p t r) (h₃ : CCW p q t) : CCW p q r := by
-  rw [ccw_iff_det_pos] at h₁ h₂ h₃ ⊢
+private theorem sign_det_interiority_pos {p q r t : Point k}
+    (h₁ : sign (det t q r) = .pos) (h₂ : sign (det p t r) = .pos)
+    (h₃ : sign (det p q t) = .pos) : sign (det p q r) = .pos := by
+  rw [SignedRing.sign_eq_pos_iff] at h₁ h₂ h₃ ⊢
   rw [det_sum p q r t]
   exact add_pos (add_pos h₁ h₂) h₃
 
-/-- Knuth's axiom 5: seen from `t`, the order is transitive on points confined
-to one side of the line `t s` by the first three hypotheses. -/
-theorem CCW.transitivity {p q r s t : Point k}
-    (hsp : CCW t s p) (hsq : CCW t s q) (hsr : CCW t s r)
-    (hpq : CCW t p q) (hqr : CCW t q r) : CCW t p r := by
-  rw [ccw_iff_det_pos] at hsp hsq hsr hpq hqr ⊢
+private theorem sign_det_transitivity {p q r s t : Point k}
+    (hsp : sign (det t s p) ≠ .neg) (hsq : sign (det t s q) = .pos)
+    (hsr : sign (det t s r) ≠ .neg) (hpq : sign (det t p q) ≠ .neg)
+    (hqr : sign (det t q r) ≠ .neg) : sign (det t p r) ≠ .neg := by
+  rw [← SignedRing.nonneg_iff] at hsp hsr hpq hqr ⊢
+  rw [SignedRing.sign_eq_pos_iff] at hsq
+  have hprod : 0 ≤ det t p r * det t s q := by
+    rw [det_plucker p q r s t]
+    exact add_nonneg (mul_nonneg hsp hqr) (mul_nonneg hpq hsr)
+  by_contra hc
+  rw [not_le] at hc
+  nlinarith
+
+private theorem sign_det_transitivity_pos {p q r s t : Point k}
+    (hsp : sign (det t s p) = .pos) (hsq : sign (det t s q) = .pos)
+    (hsr : sign (det t s r) = .pos) (hpq : sign (det t p q) = .pos)
+    (hqr : sign (det t q r) = .pos) : sign (det t p r) = .pos := by
+  rw [SignedRing.sign_eq_pos_iff] at hsp hsq hsr hpq hqr ⊢
   have hprod : 0 < det t p r * det t s q := by
     rw [det_plucker p q r s t]
     exact add_pos (mul_pos hsp hqr) (mul_pos hpq hsr)
@@ -120,16 +105,26 @@ theorem CCW.transitivity {p q r s t : Point k}
   · exact h
   · exact absurd hsq (not_lt.mpr h.le)
 
-instance : CCWSystem (Point k) where
-  ccw := CCW
-  cyclic := CCW.cyclic
-  antisymm := CCW.antisymm
-  interiority := CCW.interiority
-  transitivity := CCW.transitivity
+instance : OrientationSystem (Point k) where
+  orientation p q r := sign (det p q r)
+  cyclic := sign_det_cyclic
+  swap := sign_det_swap
+  interiority := sign_det_interiority
+  interiority_pos := sign_det_interiority_pos
+  transitivity := sign_det_transitivity
+  transitivity_pos := sign_det_transitivity_pos
+
+/-- The orientation of a triple of points is the sign of its determinant. -/
+theorem orientation_eq_sign_det (p q r : Point k) :
+    orientation p q r = sign (det p q r) := rfl
+
+/-- A counterclockwise turn is a positive determinant. -/
+theorem ccw_iff_det_pos {p q r : Point k} : CCW p q r ↔ 0 < det p q r :=
+  SignedRing.sign_eq_pos_iff
 
 /-! ## The three values, on concrete points
 
-The degenerate cases are the reason `orientation` is not a `Prop`: a collinear
+The degenerate cases are the reason an orientation is not a `Prop`: a collinear
 triple is reported rather than excluded, and so is a repeated point. -/
 
 example : orientation (toLex (0, 0) : Point Int) (toLex (1, 0)) (toLex (0, 1)) = .pos := by decide
