@@ -9,6 +9,99 @@
 \chapter{2D Planar Geometry Primitives}
 
 \chapter{Planar Arrangements}
+\label{chap:arrangements}
+
+\section{What it means for a geometric algorithm to be correct}
+
+Before describing arrangements themselves, it is worth being explicit about the
+shape of the correctness statements in this chapter, because there is a real
+choice to be made and it determines how the rest of the development is
+organised.
+
+A geometric algorithm here has two audiences. It must \emph{run} --- an
+arrangement is a finite data structure, and computing the union of two of them
+is a program that terminates and produces another arrangement. It must also be
+\emph{right}, and ``right'' has to be measured against something that is not
+itself a program, or we have only shown that our code agrees with our code.
+
+\subsection{Two levels of specification}
+
+There are two distinct things we could measure an implementation against, and
+they are not equally strong.
+
+The first is an \emph{internal} specification, phrased in terms of the
+operations this library provides. The \code{Region} interface exposes a
+\code{location} function assigning each point one of \emph{inside},
+\emph{boundary} or \emph{outside}, and we can say how union must behave on those
+three values --- this is \code{union\_spec}, and \code{LawfulRegion} demands that
+\code{location} of a union agrees with it pointwise. This is a genuine
+specification: it constrains observable behaviour rather than internal
+structure, so two different representations of a region can be held to the same
+standard, and an implementation cannot satisfy it by accident.
+
+It has one weakness. If \code{union\_spec} is subtly wrong --- if it mishandles
+the boundary case, say --- then every implementation we verify against it is
+wrong in exactly the same way, consistently and provably.
+
+The second is an \emph{external} specification, phrased in terms Mathlib already
+defines. A region determines a set of points, and \code{Region.interior} already
+exposes it as a \code{Set}. At that level, union really is $\cup$, Minkowski sum
+really is pointwise addition of sets, and the convex hull really is Mathlib's
+\code{convexHull}. A theorem stating that our computed hull has the same
+interior as Mathlib's \code{convexHull} says that ours is \emph{the} convex hull,
+not that ours satisfies our definition of one.
+
+Mathlib's \code{convexHull} is defined as the intersection of all convex sets
+containing its argument. It cannot be executed, and that is precisely why it
+makes a good referee: it is a definition nobody would mistake for an algorithm,
+agreed on by a large community, and it cannot have been tailored to make our
+implementation look correct.
+
+The two levels are complementary rather than competing. The internal
+specification is what one actually reasons with when proving a sweep line
+correct, since it is stated in terms the algorithm manipulates. The external
+one is what makes the result mean something. The intended structure is therefore
+to prove the internal specification directly, and separately to prove that the
+internal specification implies the external one --- so that each algorithm
+proof is tractable, while the top-level claim is stated in Mathlib's language.
+
+\subsection{Where the algorithm lives}
+
+Given a specification, there are several ways to relate it to code, and the
+choice is not obvious.
+
+One option is to make the implementation carry its own correctness, returning a
+value bundled with a proof that it satisfies the specification. Nothing
+incorrect can then escape. This works well for small functions, but for a sweep
+line it fuses the algorithm and its proof into a single artifact, and every
+change to the algorithm disturbs the proof.
+
+A second option is to define the operation twice: once in whatever form is
+easiest to reason about, and once in the form we actually want to run, together
+with a theorem that the two agree. Lean supports this directly --- a
+\code{csimp} lemma causes the compiler to substitute the efficient version at
+runtime while every proof continues to refer to the clean one. This is how the
+Lean standard library treats its own primitives. The cost is that proving two
+algorithms extensionally equal can be harder than proving one of them correct,
+particularly when they have quite different shapes, as a naive quadratic union
+and a sweep line do.
+
+A third option applies specifically to decision problems. Point location asks a
+question with a yes-or-no answer, so instead of writing a function and proving
+it correct, we can state the question as a proposition and supply a decision
+procedure for it. The algorithm is then the proof, and no separate agreement
+theorem is required at all. This is available for \code{location} but not for
+union or convex hull, which produce data rather than answers.
+
+These options are not exclusive, and a fourth concern cuts across all of them:
+how much of an arrangement's validity is enforced by its type. The invariants
+listed with the \code{Arrangement} definition --- that edges point
+lexicographically downwards, that every target is a vertex of the map, that
+edges around a vertex are sorted, and that edges and vertices are
+interior-disjoint --- could be carried in the structure, making malformed
+arrangements unrepresentable, or stated as a separate predicate that operations
+are proved to preserve. The former makes every constructor prove more; the
+latter makes every consumer assume more.
 
 \chapter{Point Location Queries}
 
@@ -38,6 +131,7 @@
 \end{theorem}
 
 \chapter{Computational Number Representations}
+\label{chap:numbers}
 
 For our computational geometry algorithms to be correct, we need to use exact
 number representations --- roundoff error introduced by floating-point
@@ -190,6 +284,7 @@ Of course, the whole point of $A[√n]$ is that it contains a square root of $n$
 \end{theorem}
 
 \begin{proof}
+  \leanok
   Follows immediately from the definitions.
 \end{proof}
 
@@ -269,7 +364,7 @@ or less than 0 (this reduces the case analysis considerably).
 \begin{lemma}
   \label{thm:signFromOrder}
   \uses{def:signedRing}
-  \lean{instSignedRingOfLinearOrderedRing}
+  \lean{instSignedRingOfLinearOrderedCommRing}
   \leanok
   Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
   function.
@@ -305,7 +400,13 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
   the opposite answer (this arithetic depends on $n$ being nonnegative).
 
   We can use this algorithm to define the sign function for $A[\sqrt{n}]$.
-  Checking that it satisfies the signed ring properties is tedious but routine.
+
+  Checking the signed ring properties is not entirely routine. Multiplicativity
+  of the sign reduces to closure of the non-negative elements under
+  multiplication, where the norms compose. Closure under addition is harder,
+  since they do not; the argument there compares $(v-a)(v+a)$ with $(d-u)(d+u)$
+  and multiplies through by $d+u$ to stay inside $A$.
+  \leanok
 \end{proof}
 
 \begin{corollary}
@@ -337,6 +438,13 @@ Putting this all together gives the main result of this section:
   then $A[\sqrt{n}]$ is also a linearly ordered field.
 \end{theorem}
 
+\begin{proof}
+  \leanok
+  The field structure is Lemma~\ref{thm:adjoinField} and the order is
+  Corollary~\ref{thm:adjoinOrderedRing}; since both are instances on the same
+  type, nothing further is needed to combine them.
+\end{proof}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A[\sqrt{n}]$ to $ℝ$}
 
@@ -351,6 +459,7 @@ TODO: informal definitions for homs.
 \begin{definition}
   \label{def:adjoinToReal}
   \lean{AdjoinSqrt.toReal}
+  \leanok
   \uses{def:adjoin}
   Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
   there is a corresponding function $AdjoinSqrt.toReal : A[√n] → ℝ$ given by
@@ -425,7 +534,7 @@ number representations, but are interesting nonetheless.
 
 \begin{definition}
   \label{def:filtered}
-  \leanok
+  \notready
   \lean{FilteredReal}
   Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
   an unevaluated value of type $α$ and a closed floating-point interval that
@@ -454,7 +563,7 @@ number representations, but are interesting nonetheless.
 \begin{lemma}
   \label{thm:filteredRing}
   \lean{FilteredReal.instCommRing}
-  \leanok
+  \notready
   \uses{def:filteredRingOps}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
@@ -476,7 +585,7 @@ number representations, but are interesting nonetheless.
   \label{thm:filteredField}
   \uses{thm:filteredRing, def:filteredInv}
   \lean{FilteredReal.instField}
-  \leanok
+  \notready
   If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
   is a field.
 \end{lemma}
@@ -496,7 +605,7 @@ number representations, but are interesting nonetheless.
   \label{thm:filteredOrderedRing}
   \uses{thm:filteredRing, def:filteredCompare}
   \lean{FilteredReal.instLinearOrderedRing}
-  \leanok
+  \notready
   If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
   homomorphism then \code{FilteredReal f} is a linearly ordered ring.
 \end{lemma}
@@ -504,7 +613,7 @@ number representations, but are interesting nonetheless.
 \begin{theorem}
   \label{thm:filteredOrderedField}
   \lean{FilteredReal.instLinearOrderedField}
-  \leanok
+  \notready
   \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
   If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
   and ordering properties of $α$, then \code{FilteredReal f} is a linearly
@@ -542,7 +651,7 @@ intervals. We formalize this as follows:
   \label{thm:compareComplete}
   \uses{def:filteredCompare}
   \lean{Interval.compare?_complete}
-  \leanok
+  \notready
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
@@ -555,6 +664,173 @@ intervals. We formalize this as follows:
 \section{Origami}
 
 \section{Diagram Widgets}
+
+\chapter{Future Work}
+
+\section{A structural account of $A[\sqrt{n}]$}
+
+The development of $A[\sqrt{n}]$ in this document is deliberately elementary:
+elements are pairs, and the ring and field laws are checked coordinatewise. That
+is easy to follow and easy to compute with, but it obscures a good deal of
+structure, and the ring proofs feel more laborious than the mathematics
+warrants.
+
+What the construction really is, is the \emph{regular representation}. Every
+element $z$ of $A[\sqrt{n}]$ acts on $A[\sqrt{n}]$ by multiplication, and that
+action is $A$-linear, so in the basis $\{1, \sqrt{n}\}$ it is a matrix over $A$:
+\begin{displaymath}
+  M(z) \;=\;
+  \begin{pmatrix} z_1 & n z_2 \\ z_2 & z_1 \end{pmatrix},
+  \qquad z = z_1 + z_2\sqrt{n}.
+\end{displaymath}
+The second column is where $n$ enters, and it is the only place. Since
+$(zw)x = z(wx)$, the map $z \mapsto M(z)$ is a ring homomorphism, and
+multiplying the matrices out reproduces the multiplication formula this
+development defines by hand. Under this correspondence:
+\begin{itemize}
+\item the norm $z \cdot \overline{z}$ is $\det M(z)$, so its multiplicativity is
+      that of the determinant;
+\item $2z_1$ is $\operatorname{tr} M(z)$;
+\item conjugation is the adjugate, so the formula for the inverse is Cramer's
+      rule, and the fact that the norm vanishes only at zero is the statement
+      that a matrix is invertible exactly when its determinant is not;
+\item the characteristic polynomial is
+      $\lambda^2 - 2z_1\lambda + (z_1^2 - n z_2^2)$, whose coefficients lie in
+      $A$ while its roots are $z_1 \pm z_2\sqrt{n}$ --- the two conjugate
+      embeddings.
+\end{itemize}
+
+That last point explains why the ordering can be described at all. The order
+asks whether one particular eigenvalue is non-negative, and $\sqrt{n}$ appears
+in the roots but never in the coefficients; the criterion of
+Definition~\ref{def:adjoinSign} is the standard way of locating a root of a
+quadratic from its coefficients. It also explains the shape of the argument for
+closure under addition, which pairs $(v-a)(v+a)$ against $(d-u)(d+u)$: those are
+the elementary symmetric combinations through which roots and coefficients
+communicate.
+
+This suggests presenting $A[\sqrt{n}]$ as $A[x]/(x^2 - n)$ and inheriting its
+structure rather than verifying it. Mathlib's \code{AdjoinRoot} supplies the
+commutative ring, the algebra structure, decidable equality, a power basis, and
+--- given irreducibility, which is what the non-square hypothesis amounts to ---
+the field structure. That would remove essentially all of the ring boilerplate
+here, including the one proof in this development that has to navigate
+associativity and commutativity by hand. Mathlib also defines \code{Algebra.norm}
+as precisely the determinant of the multiplication map, so the norm and its
+multiplicativity would come from the same place.
+
+What it would \emph{not} simplify is the ordering, which is the bulk of the work
+and was the difficult part. Mathlib supplies the ring and field theory of an
+extension but no order theory for one: that is Artin--Schreier territory, and
+the results are not there. The matrix picture explains what the sign function is
+doing without providing a theorem one can cite in its place.
+
+So the honest assessment is that the refactor is worth doing for the algebra and
+irrelevant to the analysis. There is a second reason to want it, though, which
+has nothing to do with brevity: the elementary presentation is a completely
+concrete instance of a construction usually met in the abstract, and the two
+side by side --- pairs of numbers on one hand, a quotient of a polynomial ring
+on the other, provably the same --- would make a good introduction to the
+commutative algebra involved.
+
+One caveat for whoever attempts it: \code{AdjoinRoot} is a quotient type and its
+field structure is noncomputable, so it would serve for reasoning while the
+existing pair representation continued to serve for computation, the two related
+by a theorem. That is the same division discussed in
+Chapter~\ref{chap:arrangements}, and it recurs often enough in this project to
+be worth naming as a habit rather than rediscovering each time.
+
+\section{Deferred components}
+
+Interval arithmetic, and with it the \code{FilteredReal} layer of
+Chapter~\ref{chap:numbers}, is not currently built. It depends on an external
+floating-point interval library which lags the Mathlib version used here.
+
+There is a difficulty of principle behind that, not merely of packaging. Sound
+interval arithmetic requires reasoning about floating-point, and Lean's
+\code{Float} is an opaque primitive with no specification --- fast, but nothing
+can be proved about it. A library that wants proofs must therefore supply its own
+software floating-point, which costs exactly the speed that made the filtering
+worth doing. The way out is to axiomatise \code{Float} against IEEE~754, as
+Flocq does for Coq, so that the containment proofs become theorems relative to a
+published standard rather than to bespoke code.
+
+Extraction of a reasonably efficient executable has not been attempted. The
+ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone
+membership is what makes it so --- but no attention has yet been paid to whether
+the compiled code is fast, and some of the algebraic instances inherit
+deliberately naive default implementations from Mathlib.
+
+The rendering support is presently limited to producing static diagrams. The
+interactive widget infrastructure available in Lean would permit dragging shapes
+directly in the editor, which is the natural presentation for the drag-and-drop
+application.
+
+\chapter{References}
+
+\begin{itemize}
+\item Mark de Berg, Otfried Cheong, Marc van Kreveld and Mark Overmars,
+  \emph{Computational Geometry: Algorithms and Applications}, 3rd edition,
+  Springer, 2008. The primary source for the algorithms formalised here,
+  including planar arrangements, the sweep-line method, point location and
+  convex hulls.
+
+\item The \link{https://www.cgal.org/}{CGAL} project, \emph{The Computational
+  Geometry Algorithms Library}. Influential on the design of this library,
+  particularly its separation of geometric algorithms from the arithmetic
+  used to instantiate them, and its treatment of exact predicates.
+
+\item Lutz Kettner, Kurt Mehlhorn, Sylvain Pion, Stefan Schirra and Chee Yap,
+  \emph{Classroom examples of robustness problems in geometric computations},
+  Computational Geometry \textbf{40}(1):61--78, 2008.
+  \link{https://doi.org/10.1016/j.comgeo.2007.06.003}{doi:10.1016/j.comgeo.2007.06.003}.
+  Exhibits concrete inputs on which floating-point implementations of convex
+  hull and Delaunay triangulation fail, and analyses the geometry of the
+  floating-point orientation predicate. This is the empirical case for
+  Chapter~\ref{chap:numbers}.
+
+\item The mathlib Community, \emph{The Lean Mathematical Library}, CPP 2020,
+  pp.\ 367--381.
+  \link{https://doi.org/10.1145/3372885.3373824}{doi:10.1145/3372885.3373824}.
+  The source of the algebraic and order hierarchies used throughout, and of the
+  \code{Set}-level definitions against which the geometric results are
+  ultimately stated.
+
+\item Leonardo de Moura and Sebastian Ullrich, \emph{The Lean 4 Theorem Prover
+  and Programming Language}, CADE 28, LNCS 12699, pp.\ 625--635, Springer, 2021.
+  \link{https://doi.org/10.1007/978-3-030-79876-5_37}{doi:10.1007/978-3-030-79876-5\_37}.
+  Describes the system, including its treatment of Lean as a programming
+  language, which is what makes it reasonable to expect these algorithms to run
+  as well as to be proved correct.
+
+\item Martin Rau and Tobias Nipkow, \emph{Verification of Closest Pair of Points
+  Algorithms}, IJCAR 2020, LNCS 12167, pp.\ 341--357.
+  \link{https://doi.org/10.1007/978-3-030-51054-1_20}{doi:10.1007/978-3-030-51054-1\_20}.
+  The closest published analogue to this project: divide-and-conquer geometric
+  algorithms verified for both functional correctness and asymptotic running
+  time, with executable code extracted and benchmarked against handwritten
+  implementations. A useful reference point for the choices discussed in
+  Chapter~\ref{chap:arrangements}.
+
+\item Tobias Nipkow, Manuel Eberl and Maximilian P.\ L.\ Haslbeck,
+  \emph{Verified Textbook Algorithms: A Biased Survey}, ATVA 2020, LNCS 12302.
+  \link{https://doi.org/10.1007/978-3-030-59152-6_2}{doi:10.1007/978-3-030-59152-6\_2}.
+  Surveys what has been achieved in verifying standard algorithms, covering both
+  correctness and running time, and is the most direct discussion of the
+  trade-offs weighed in Chapter~\ref{chap:arrangements}: how much of a
+  specification to state abstractly, when to refine a clean definition into an
+  efficient implementation, and what is lost either way.
+
+\item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
+  Pragmatic Introduction to the Coq Proof Assistant}, MIT Press, 2013.
+  \link{https://adam.chlipala.net/cpdt/}{adam.chlipala.net/cpdt}.
+  Written for Coq rather than Lean, but its subject is proof engineering rather
+  than any particular prover: how to structure a development so that it survives
+  change. Its treatment of dependently typed programming --- when to push
+  correctness into the type of a function and when to keep it in a separate
+  theorem --- is the question Chapter~\ref{chap:arrangements} has to answer for
+  each algorithm.
+\end{itemize}
 
 
 % vim: ts=2 sw=2 et ai
