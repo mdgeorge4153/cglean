@@ -581,44 +581,54 @@ number representations, but are interesting nonetheless.
   division in the same way.
 \end{definition}
 
-\begin{lemma}
-  \label{thm:filteredField}
-  \uses{thm:filteredRing, def:filteredInv}
-  \lean{FilteredReal.instField}
-  \notready
-  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
-  is a field.
-\end{lemma}
-
-\begin{proof}
-  \notready
-\end{proof}
-
-\begin{definition}
-  \label{def:filteredCompare}
-  \uses{def:filtered}
-  \lean{FilteredReal.instOrd}
-  \notready
-\end{definition}
-
-\begin{lemma}
-  \label{thm:filteredOrderedRing}
-  \uses{thm:filteredRing, def:filteredCompare}
-  \lean{FilteredReal.instLinearOrderedRing}
-  \notready
-  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
-  homomorphism then \code{FilteredReal f} is a linearly ordered ring.
-\end{lemma}
-
-\begin{theorem}
-  \label{thm:filteredOrderedField}
-  \lean{FilteredReal.instLinearOrderedField}
-  \notready
-  \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
-  If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
-  and ordering properties of $α$, then \code{FilteredReal f} is a linearly
-  ordered field.
-\end{theorem}
+% TODO (prose): the filter's escape hatch. Division and overflow are the same
+% event, so this should be one discussion rather than two.
+%
+%  * An interval containing zero has no reciprocal that is again an interval.
+%    Two shapes of answer: a value meaning "no information", or a type of
+%    intervals known to exclude zero. LeanCert takes the second
+%    (`IntervalRatNonzero`), and offers reciprocals only for rational intervals,
+%    not the dyadic ones used here.
+%
+%  * The subtype is the better fit, and not only on taste. A no-information
+%    value propagates silently; requiring the divisor to be bounded away from
+%    zero forces the question at the point of division, and the answer there is
+%    what a filter should do anyway --- stop trusting the approximation and
+%    evaluate.
+%
+%  * Doing that needs something the current interface lacks. To bracket a
+%    freshly evaluated value one must approximate an element of $A$, and
+%    $f : A \to \R$ does not do that: it names the real, it does not bound it.
+%    So `FilteredEmbedding` needs either a separate approximation function, in
+%    the manner of `Floatable`, or an embedding yielding intervals.
+%
+%  * Rounding belongs in the number layer, not the interval layer. LeanCert puts
+%    it in the interval (`roundOut` takes a minimum exponent), which is
+%    meaningful for dyadics and meaningless for floats. A class of numbers with
+%    directed rounding, with the interval layer merely choosing a direction per
+%    endpoint, is what survives swapping the representation.
+%
+%  * That class needs only directedness --- `addDown x y <= x + y <= addUp x y`
+%    in $\R$ --- not correct rounding. IEEE implies it comfortably.
+%
+%  * For hardware floats the obstacle is that Lean's `Float` is opaque with no
+%    theorems, so it has no real-valued semantics to reason from. One would
+%    define `toReal` and assert a relative-error bound against it, in the manner
+%    of Flocq for Coq, and derive the directed operations rather than asserting
+%    them.
+%
+%  * NaN needs no embedding in $\R$: condition each specification on the
+%    *output* being finite, and it is never mentioned. Where the condition
+%    fails, the interval carries no information --- the same escape hatch as
+%    division above.
+%
+%  * Consequence: the interval type needs a no-information case exactly when the
+%    number type can overflow. Vacuous for dyadics, whose exponent is unbounded.
+%
+%  * Mathlib's `Mathlib/Data/FP/Basic.lean` is not a shortcut. Its `FP.Float` is
+%    a separate inductive modelling inf, nan and finite values, unconnected to
+%    the hardware `Float`, carrying one theorem. Its `toRat` does take a
+%    finiteness proof, which is the same instinct as the above.
 
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
@@ -649,13 +659,20 @@ intervals. We formalize this as follows:
 
 \begin{lemma}
   \label{thm:compareComplete}
-  \uses{def:filteredCompare}
-  \lean{Interval.compare?_complete}
-  \notready
+  \uses{def:intervalCompare}
+  \lean{CGLean.compare?_complete}
+  \leanok
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Declining means the intervals overlap, so the larger of the two lower bounds
+  lies in both. That point compares equal to itself, while a suitable pair of
+  endpoints compares strictly; the two pairs are the required witnesses.
+\end{proof}
 
 \chapter{Applications}
 
