@@ -1,5 +1,6 @@
 import ProofWidgets.Data.Svg
 import ProofWidgets.Component.HtmlDisplay
+import Mathlib.Algebra.Order.Ring.Rat
 import CGLean.Render.Region
 import CGLean.Render.Utils
 

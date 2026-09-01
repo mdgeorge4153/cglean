@@ -1,4 +1,3 @@
-import Std.Data.Rat.Basic
 
 class Floatable (α : Type) where
   toFloat : α → Float

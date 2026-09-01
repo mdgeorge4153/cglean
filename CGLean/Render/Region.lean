@@ -6,6 +6,8 @@ import CGLean.Geometry.Point2D
 
 open ProofWidgets Svg
 
+variable {α R : Type}
+
 def floatPoint [Floatable α] (p : Point α) : Float × Float := (Floatable.toFloat p.x, Floatable.toFloat p.y)
 
 def toSvg [Floatable α] [Region R (Point α)] (frame : Frame) (r : R) : Svg frame :=

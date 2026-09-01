@@ -1,15 +1,10 @@
 import Mathlib.Algebra.Ring.Basic
-import Mathlib.Algebra.Field.IsField
 import Mathlib.Tactic.Ring.RingNF
-import Mathlib.Mathport.Syntax
-import Mathlib.Algebra.Order.Ring.Cone
 import Mathlib.Algebra.Order.Ring.Defs
-import Mathlib.Tactic.Linarith.Frontend
-import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.LinearCombination
 import CGLean.Algebra.Signed
 import CGLean.Classes.RingOps
-
-open Mathlib.Tactic.Ring
 
 /-- Definitions ---------------------------------------------------------------/
 
@@ -19,6 +14,8 @@ open Mathlib.Tactic.Ring
   aₙ : R
 
 namespace AdjoinSqrt
+
+variable {R : Type} {n : R}
 
 @[simps] instance instZero [Zero R] : Zero (AdjoinSqrt R n) where
   zero := ⟨0,0⟩
@@ -46,7 +43,9 @@ instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
 
 abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
-@[simps] instance [Mul R] [Add R] [Neg R] : CoeDep (AdjoinSqrt R n) (x * conj x) R where
+/-- The norm `x * conj x`, which lies in `R` rather than `R[√n]`. -/
+@[simps] instance instCoeDepNorm [Mul R] [Add R] [Neg R] {x : AdjoinSqrt R n} :
+    CoeDep (AdjoinSqrt R n) (x * conj x) R where
   coe := (x * conj x).a₁
 
 @[simps] instance instInv [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
@@ -100,16 +99,18 @@ instance instSemiring [CommSemiring R]: Semiring (AdjoinSqrt R n) where
   mul_one := by intros; ext <;> simp
 
 instance instAlgebra [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
-  toFun (x : R) := x
-  map_one'  := by rfl
-  map_mul'  := by intros; ext <;> simp
-  map_zero' := by rfl
-  map_add'  := by intros; ext <;> simp
+  algebraMap := {
+    toFun (x : R) := (x : AdjoinSqrt R n)
+    map_one'  := rfl
+    map_mul'  := by intros; ext <;> simp
+    map_zero' := rfl
+    map_add'  := by intros; ext <;> simp
+  }
   commutes' := by intros; ext <;> simp <;> ring
   smul_def' := by intros; ext <;> simp
 
 instance instRing [CommRing R]: Ring (AdjoinSqrt R n) where
-  add_left_neg := by intros; ext <;> simp
+  neg_add_cancel := by intros; ext <;> simp
   zsmul := zsmulRec
 
 instance instCommRing [CommRing R]: CommRing (AdjoinSqrt R n) where
@@ -120,8 +121,7 @@ class Nonsquare (R : Type) [Mul R] (n : R) where
 
 lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
   intro H
-  have H' : a + -b + b = b
-  . rw [H]; exact zero_add b
+  have H' : a + -b + b = b := by rw [H]; exact zero_add b
   rw [← H']
   ring
 
@@ -133,36 +133,26 @@ lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R
   by_cases an0 : x.aₙ = 0
   case pos =>
     rw [an0] at H
-    field_simp at H
-    apply eq_zero_or_eq_zero_of_mul_eq_zero at H
-    cases H <;> ext <;> simp <;> assumption
+    simp at H
+    ext <;> simp_all
   case neg =>
     -- here's where we need division in this proof
     have H'' : (x.a₁ * x.aₙ⁻¹) * (x.a₁  * x.aₙ⁻¹) = n := by
       field_simp
       apply cancel_neg
-      rw [←mul_assoc]
-      assumption
+      linear_combination H
     apply Nonsquare.not_square at H''
     exfalso; assumption
 
 instance instField [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
-    -- TODO: this proof is a bit nasty I think
-    intros x xne0; ext
-    field_simp
-    rw [div_eq_mul_inv]
-    apply mul_inv_cancel
-    intro H
-    apply xne0
-    apply conj_0
-    rw [←H]
-    simp
-
-    -- an
-    field_simp
-    left
-    ring
+    intro x xne0
+    -- the norm `x * conj x` is non-zero, which is `conj_0` contrapositive
+    have hd : x.a₁ ^ 2 + -(n * x.aₙ ^ 2) ≠ 0 := fun h =>
+      xne0 (conj_0 x (by simp [AdjoinSqrt.conj]; linear_combination h))
+    ext <;> simp [AdjoinSqrt.conj]
+    · field_simp
+    · ring
 
   inv_zero := by
     ext <;> simp
@@ -215,15 +205,20 @@ instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing 
 --   sign_mul := sorry
 --   sign_plus := sorry
 
--- TODO: this needs to be LinearOrderedCommRing on RHS
-instance [LinearOrderedCommRing A] [Nonsquare A n] [Pos A n]: LinearOrderedRing (AdjoinSqrt A n) := by infer_instance
+/-- The order on `A[√n]`, obtained from its `SignedRing` structure via
+`CGLean.Algebra.Signed`. -/
+def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+    LinearOrder (AdjoinSqrt R n) := inferInstance
 
-instance [LinearOrderedField A] [Nonsquare A n] [Pos A n]: LinearOrderedField (AdjoinSqrt A n) := sorry
+/-- That order is compatible with the ring operations, so `A[√n]` is a linearly
+ordered ring whenever `A` is one and `n` is a positive non-square. -/
+def isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
+    IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
 
-def toReal (f : A → ℝ) (x : AdjoinSqrt A n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
+def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
 
-@[simp] def root (n : A) [Zero A] [One A] : AdjoinSqrt A n := ⟨0, 1⟩
+@[simp] def root (n : R) [Zero R] [One R] : AdjoinSqrt R n := ⟨0, 1⟩
 
-theorem root_n_squared [CommRing A]: root n * root n = (n : AdjoinSqrt A n) := by
+theorem root_n_squared [CommRing R]: root n * root n = (n : AdjoinSqrt R n) := by
   sorry
 

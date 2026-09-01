@@ -1,34 +1,17 @@
 name = "cglean"
 defaultTargets = ["CGLean"]
 
+# An unknown identifier is otherwise silently bound as an implicit variable of
+# unknown type, reporting a confusing downstream type error instead.
+[leanOptions]
+autoImplicit = false
+
+# `rev` must agree with lean-toolchain: Mathlib only supports the toolchain it
+# was built against.
 [[require]]
 name = "mathlib"
-git = "https://github.com/leanprover-community/mathlib4"
-rev = "v4.8.0-rc1"
-
-[[require]]
-name = "leancolls"
-git = "https://github.com/mdgeorge4153/LeanColls.git"
-rev = "lean-4.8"
-
-[[require]]
-name = "ray"
-git = "https://github.com/girving/ray.git"
-rev = "lean-4.8"
-
-[[require]]
-name = "checkdecls"
-git = "https://github.com/PatrickMassot/checkdecls.git"
-rev = "lean4.8.0-rc1"
-
-[[require]]
-name = "checkdecls"
-git = "https://github.com/PatrickMassot/checkdecls.git"
-
-[[require]]
-name = "«doc-gen4»"
-git = "https://github.com/leanprover/doc-gen4"
-rev = "main"
+scope = "leanprover-community"
+rev = "v4.32.2"
 
 [[lean_lib]]
 name = "CGLean"

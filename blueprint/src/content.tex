@@ -258,7 +258,7 @@ or less than 0 (this reduces the case analysis considerably).
 \begin{lemma}
   \label{thm:orderFromSign}
   \uses{def:signedRing}
-  \lean{instLinearOrderedRingOfSignedRing}
+  \lean{instLinearOrderOfSignedRing, instIsStrictOrderedRingOfSignedRing}
   \leanok
   Given a signed ring $A$, we can define an ordered ring structure on $A$.
 \end{lemma}
@@ -269,7 +269,7 @@ or less than 0 (this reduces the case analysis considerably).
 \begin{lemma}
   \label{thm:signFromOrder}
   \uses{def:signedRing}
-  \lean{instSignedRingOfLinearOrderedCommRing}
+  \lean{instSignedRingOfLinearOrderedRing}
   \leanok
   Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
   function.
@@ -310,7 +310,7 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 
 \begin{corollary}
   \label{thm:adjoinOrderedRing}
-  \lean{AdjoinSqrt.instLinearOrderedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
   \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign, thm:signFromOrder}
   \leanok
   If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
@@ -329,7 +329,7 @@ Putting this all together gives the main result of this section:
 
 \begin{theorem}
   \label{thm:adjoinOrderedField}
-  \lean{AdjoinSqrt.instLinearOrderedFieldOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instField, AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
   \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
   \leanok
 
