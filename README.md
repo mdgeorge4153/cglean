@@ -4,9 +4,7 @@ CGLean: verified computational geometry in lean
 Exact-arithmetic computational geometry in Lean 4: number representations that
 compute without rounding error, and planar geometry built on top of them.
 
-The blueprint under `blueprint/` is the place to start reading. It states what
-the library is meant to prove, and its dependency graph shows how much of that
-is done.
+See the blueprint for further information.
 
 
 Building the library

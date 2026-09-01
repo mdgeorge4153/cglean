@@ -1,4 +1,3 @@
--- `Rat` now lives in Lean core (`Init.Data.Rat`), which is auto-imported.
 
 class Floatable (α : Type) where
   toFloat : α → Float
