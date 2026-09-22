@@ -277,7 +277,7 @@ lemma nonneg_iff [SignedField R] [Pos R n] (x : AdjoinSqrt R n) :
     · exact Or.inr ⟨le_of_lt hd, hN⟩
 
 /-- The non-negative elements are closed under multiplication. Each case turns
-on comparing `(x.a₁*y.a₁)²` with `(n*x.aₙ*y.aₙ)²`, whose difference factors
+on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
 through the two norms. -/
 lemma nonneg_mul [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
     (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
@@ -383,13 +383,13 @@ lemma aₙ_add_nonneg [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
   linarith
 
 
-/-- The half of the mixed case where `x`'s `√n` part is also non-negative. Here
+/-- The half of the mixed case where `a`'s `√n` part is also non-negative. Here
 the rational part alone dominates and the sum lands on the `√n`-dominated side
 by a chain of square comparisons:
 
-    (a+c)² ≤ c² ≤ n·d² ≤ n·(b+d)²
+    (a₁+b₁)² ≤ b₁² ≤ n·bₙ² ≤ n·(aₙ+bₙ)²
 
-using `0 ≤ -(a+c) ≤ -c` for the first step and `0 ≤ d ≤ b+d` for the last. The
+using `0 ≤ -(a₁+b₁) ≤ -b₁` for the first step and `0 ≤ bₙ ≤ aₙ+bₙ` for the last. The
 opposite half is `norm_add_nonpos_of_aₙ_nonpos`, which needs a multiplier. -/
 lemma norm_add_nonpos_of_aₙ_nonneg [SignedField R] [Pos R n]
     {x y : AdjoinSqrt R n} (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ)
@@ -463,15 +463,15 @@ lemma sign_mul_eq [SignedField R] [Nonsquare R n] [Pos R n] (x y : AdjoinSqrt R 
     rw [hsx, hsy, h]
     rfl
 
-/-- The half of the mixed case where `x`'s `√n` part is negative.
+/-- The half of the mixed case where `a`'s `√n` part is negative.
 
-Writing `a = x.a₁`, `u = -x.aₙ`, `v = -y.a₁`, `d = y.aₙ`, the goal is
-`(v-a)² ≤ n(d-u)²`. Multiplying by `d+u` makes it provable in `R`:
+Writing `u = -aₙ`, `v = -b₁`, `d = bₙ`, the goal is
+`(v-a₁)² ≤ n(d-u)²`. Multiplying by `d+u` makes it provable in `R`:
 
-    (v-a)²(d+u) ≤ (v-a)(v+a)(d-u) ≤ n(d-u)(d+u)(d-u)
+    (v-a₁)²(d+u) ≤ (v-a₁)(v+a₁)(d-u) ≤ n(d-u)(d+u)(d-u)
 
-The first step is `(v-a)(d+u) ≤ (v+a)(d-u)`, which reduces to `u·v ≤ a·d`; the
-second is `v² - a² ≤ n(d² - u²)`, which is just the two norm hypotheses added.
+The first step is `(v-a₁)(d+u) ≤ (v+a₁)(d-u)`, which reduces to `u·v ≤ a₁·d`; the
+second is `v² - a₁² ≤ n(d² - u²)`, which is just the two norm hypotheses added.
 Dividing by `d+u` finishes, with `d+u = 0` forcing everything to zero. -/
 lemma norm_add_nonpos_of_aₙ_nonpos [SignedField R] [Pos R n]
     {x y : AdjoinSqrt R n} (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ)
