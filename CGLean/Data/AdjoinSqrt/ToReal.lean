@@ -96,11 +96,11 @@ theorem toReal_nonneg (x : AdjoinSqrt R n) (hx : (0 : AdjoinSqrt R n) ≤ x) :
     with ⟨h1, hN⟩ | ⟨h1, hN⟩
   · have a1 : 0 ≤ f x.a₁ := by simpa using hf h1
     have aN : 0 ≤ f (norm x) := by simpa using hf hN
-    simp only [norm, map_sub, map_mul] at aN
+    simp only [norm, map_add, map_neg, map_mul] at aN
     exact add_nonneg_of_sq_le hs0 a1 (by rw [hs]; linarith)
   · have aN : 0 ≤ f x.aₙ := by simpa using hf h1
     have a1 : f (norm x) ≤ 0 := by simpa using hf hN
-    simp only [norm, map_sub, map_mul] at a1
+    simp only [norm, map_add, map_neg, map_mul] at a1
     exact add_nonneg_of_sq_ge hs0 aN (by rw [hs]; linarith)
 
 include hf in
