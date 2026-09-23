@@ -506,10 +506,9 @@ TODO: informal definitions for homs.
 
 \begin{proof}
   \leanok
-  Zero, one and addition are immediate from $toReal$ being one. Multiplication
-  is the only case with content: the cross terms match only because
-  $\sqrt{n.toReal}$ squares back to $n.toReal$, which is where the hypothesis
-  $n.toReal \geq 0$ is used.
+  % TODO (prose):
+  %  * zero, one, add: immediate
+  %  * mul: cross terms need sqrt(n.toReal)^2 = n.toReal; uses n.toReal >= 0
 \end{proof}
 
 \begin{lemma}
@@ -524,10 +523,9 @@ TODO: informal definitions for homs.
 
 \begin{proof}
   \leanok
-  It suffices that non-negative elements map to non-negative reals, and each
-  disjunct of Definition~\ref{def:adjoinSign} gives that directly: $\sqrt{n.toReal}$
-  exists in $ℝ$, so the comparison of $a_1$ with $a_n\sqrt{n}$ that had to be
-  made indirectly inside $A$ can here be made outright.
+  % TODO (prose):
+  %  * reduce to: non-negative maps to non-negative
+  %  * each disjunct of def:adjoinSign, directly: sqrt exists in R
 \end{proof}
 
 
@@ -543,8 +541,8 @@ TODO: informal definitions for homs.
 
 \begin{proof}
   \leanok
-  The two preceding lemmas together, there being nothing more to an ordered
-  field homomorphism than preserving the operations and the order.
+  % TODO (prose):
+  %  * the two preceding lemmas together
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
