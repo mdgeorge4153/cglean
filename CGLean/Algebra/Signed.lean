@@ -1,3 +1,4 @@
+import Mathlib.Algebra.Field.Defs
 import Mathlib.Data.Sign.Basic
 import Mathlib.Algebra.Order.Ring.Cone
 
@@ -13,13 +14,18 @@ class Signed (R : Type) where
 open Signed
 
 -- TODO: start higher in the hierarchy - e.g. SignedGroup etc
-class SignedRing (R : Type) extends Ring R, Signed R where
+class SignedRing (R : Type) extends CommRing R, Signed R where
  sign_zero : sign 0 = 0
  sign_one  : sign 1 = 1
  sign_mul  : ∀ (a b : R), sign (a * b) = sign a * sign b
  zero_sign : ∀ (a : R), sign a = 0 → a = 0
  sign_neg  : ∀ (a : R), sign (-a) = -sign a
  sign_plus : ∀ (a b : R), sign a ≠ .neg → sign b ≠ .neg → sign (a + b) ≠ .neg
+
+/-- A field whose sign function is well behaved. Mathlib's own `Field` extends
+both `CommRing` and `DivisionRing`, so the shared ring structure is flattened
+rather than duplicated. -/
+class SignedField (R : Type) extends SignedRing R, Field R
 
 open SignedRing
 
@@ -90,6 +96,21 @@ theorem SignedRing.sign_of_pos [SignedRing R] {a : R} (h : 0 < a) : sign a = .po
   case zero => exact absurd (SignedRing.zero_sign a hs).symm hne
   case pos => rfl
 
+/-- `sign` and the order determine each other. These four turn sign reasoning
+into inequality reasoning, where the ordered-field lemmas apply. -/
+theorem SignedRing.nonneg_iff [SignedRing R] {a : R} : 0 ≤ a ↔ sign a ≠ .neg := by
+  rw [SignedRing.le_iff, sub_zero]
+
+
+theorem SignedRing.sign_eq_zero_iff [SignedRing R] {a : R} : sign a = .zero ↔ a = 0 :=
+  ⟨SignedRing.zero_sign a, fun h => by rw [h]; exact SignedRing.sign_zero⟩
+
+theorem SignedRing.sign_eq_pos_iff [SignedRing R] {a : R} : sign a = .pos ↔ 0 < a := by
+  refine ⟨fun h => lt_of_le_of_ne (nonneg_iff.mpr (by rw [h]; decide)) ?_, sign_of_pos⟩
+  intro h0
+  rw [← h0, SignedRing.sign_zero] at h
+  exact absurd h (by decide)
+
 instance instIsOrderedRingOfSignedRing [SignedRing R] : IsOrderedRing R :=
   IsOrderedRing.mkOfCone (SignedRing.nonnegCone R)
 
@@ -103,9 +124,21 @@ instance instIsStrictOrderedRingOfSignedRing [SignedRing R] :
   · rw [SignedRing.le_iff, sub_zero, hprod]; decide
   · intro h; rw [← h, SignedRing.sign_zero] at hprod; exact absurd hprod (by decide)
 
-/-- Conversely, a linearly ordered ring has a well-behaved sign function. -/
-instance instSignedRingOfLinearOrderedRing
-    [Ring R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
+theorem SignedRing.sign_eq_neg_iff [SignedRing R] {a : R} : sign a = .neg ↔ a < 0 := by
+  constructor
+  · intro h
+    have : sign (-a) = .pos := by rw [SignedRing.sign_neg, h]; rfl
+    exact neg_pos.mp (sign_eq_pos_iff.mp this)
+  · intro h
+    have : sign (-a) = .pos := sign_eq_pos_iff.mpr (neg_pos.mpr h)
+    rw [SignedRing.sign_neg] at this
+    cases hs : sign a <;> rw [hs] at this <;> simp_all
+
+
+/-- Conversely, a linearly ordered commutative ring has a well-behaved sign
+function. -/
+instance instSignedRingOfLinearOrderedCommRing
+    [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] : SignedRing R where
   sign := SignType.sign
   sign_zero := sign_zero
   sign_one  := sign_one
