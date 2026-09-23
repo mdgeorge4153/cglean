@@ -790,21 +790,10 @@ be worth naming as a habit rather than rediscovering each time.
 \section{Deferred components}
 
 % TODO (prose): hardware floating point.
-%
-%  * Interval arithmetic is built, on LeanCert's dyadic intervals: software
-%    arithmetic with an unbounded exponent, and containment proofs throughout.
-%
-%  * Hardware `Float` would be faster, but it is opaque in Lean and nothing can
-%    be proved about it. The way to use it is to axiomatise it against IEEE 754,
-%    as Flocq does for Coq, so the containment proofs rest on a published
-%    standard rather than on bespoke code.
-%
-%  * The design that would make this a swap rather than a rewrite --- directed
-%    rounding in the number layer, overflow handled by the same escape hatch as
-%    division --- is in the note following Definition~\ref{def:filteredInv}.
-%
-%  * Nothing has been measured. The cost of dyadics against floats, and of
-%    either against exact arithmetic in nested $A[\sqrt{n}]$, is open.
+%  * now built on LeanCert dyadic intervals (software, unbounded exponent)
+%  * hardware Float: opaque in Lean; option is IEEE 754 axioms, Flocq-style
+%  * swap design: see the note after def:filteredInv
+%  * performance unmeasured
 
 Extraction of a reasonably efficient executable has not been attempted. The
 ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone
