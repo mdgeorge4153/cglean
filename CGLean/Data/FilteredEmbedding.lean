@@ -24,10 +24,9 @@ evaluated lazily on the underlying `α` type; the underlying operations on the
 `α` type are only evaluated if and when the floating-point approximations are
 insufficiently precise to evaluate comparisons (like `=` and `≤`).
 
-NOTE: The current implementation is just a proof of concept based on the
-`Ray.Approx` floating-point approximation library, which uses software floating
-point instead of hardware floating point. It is therefore unlikely to provide
-an actual performance improvement.
+NOTE: The intervals are LeanCert's `IntervalDyadic`, which uses software
+arithmetic on dyadic rationals rather than hardware floating point. This is
+cheaper than exact arithmetic in nested `A[√n]` but slower than floats would be.
 
 TODO: The hope is that we are only comparing numbers that are far away from each
 other, but comparing equal points for equality is also likely to be a common

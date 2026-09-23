@@ -609,44 +609,18 @@ number representations, but are interesting nonetheless.
   division in the same way.
 \end{definition}
 
-\begin{lemma}
-  \label{thm:filteredField}
-  \uses{thm:filteredRing, def:filteredInv}
-  \lean{FilteredReal.instField}
-  \notready
-  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
-  is a field.
-\end{lemma}
-
-\begin{proof}
-  \notready
-\end{proof}
-
-\begin{definition}
-  \label{def:filteredCompare}
-  \uses{def:filtered}
-  \lean{FilteredReal.instOrd}
-  \notready
-\end{definition}
-
-\begin{lemma}
-  \label{thm:filteredOrderedRing}
-  \uses{thm:filteredRing, def:filteredCompare}
-  \lean{FilteredReal.instLinearOrderedRing}
-  \notready
-  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
-  homomorphism then \code{FilteredReal f} is a linearly ordered ring.
-\end{lemma}
-
-\begin{theorem}
-  \label{thm:filteredOrderedField}
-  \lean{FilteredReal.instLinearOrderedField}
-  \notready
-  \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
-  If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
-  and ordering properties of $α$, then \code{FilteredReal f} is a linearly
-  ordered field.
-\end{theorem}
+% TODO (prose): the filter's escape hatch (division and overflow together).
+%  * interval containing zero has no interval reciprocal
+%  * options: no-information value, or intervals excluding zero (LeanCert:
+%    IntervalRatNonzero, rational intervals only)
+%  * prefer the subtype: forces evaluation at the point of division
+%  * needs approximating elements of A, not just f : A → ℝ
+%  * rounding belongs in the number layer (directed rounding), not the interval
+%  * directedness only, not correct rounding; IEEE suffices
+%  * Float: opaque; define toReal + relative-error axiom, Flocq-style
+%  * NaN: condition specs on finite output; else no information
+%  * no-information case needed exactly when numbers can overflow; not dyadics
+%  * Mathlib's FP.Float: separate model, unconnected to hardware Float
 
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
@@ -677,13 +651,20 @@ intervals. We formalize this as follows:
 
 \begin{lemma}
   \label{thm:compareComplete}
-  \uses{def:filteredCompare}
-  \lean{Interval.compare?_complete}
-  \notready
+  \uses{def:intervalCompare}
+  \lean{CGLean.compare?_complete}
+  \leanok
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * decline = overlap; max of lower bounds lies in both
+  %  * witnesses: that point with itself (eq), an endpoint pair (strict)
+\end{proof}
 
 \chapter{Applications}
 
@@ -772,18 +753,11 @@ be worth naming as a habit rather than rediscovering each time.
 
 \section{Deferred components}
 
-Interval arithmetic, and with it the \code{FilteredReal} layer of
-Chapter~\ref{chap:numbers}, is not currently built. It depends on an external
-floating-point interval library which lags the Mathlib version used here.
-
-There is a difficulty of principle behind that, not merely of packaging. Sound
-interval arithmetic requires reasoning about floating-point, and Lean's
-\code{Float} is an opaque primitive with no specification --- fast, but nothing
-can be proved about it. A library that wants proofs must therefore supply its own
-software floating-point, which costs exactly the speed that made the filtering
-worth doing. The way out is to axiomatise \code{Float} against IEEE~754, as
-Flocq does for Coq, so that the containment proofs become theorems relative to a
-published standard rather than to bespoke code.
+% TODO (prose): hardware floating point.
+%  * now built on LeanCert dyadic intervals (software, unbounded exponent)
+%  * hardware Float: opaque in Lean; option is IEEE 754 axioms, Flocq-style
+%  * swap design: see the note after def:filteredInv
+%  * performance unmeasured
 
 Extraction of a reasonably efficient executable has not been attempted. The
 ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone
