@@ -388,25 +388,19 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 \end{definition}
 
 \begin{proof}
-  We want to define $sign : A → \{0,1,-1\}$ which compares $a_1 + a_n\sqrt{n}$
-  with 0. This is the same as comparing $a_1$ with $-a_n\sqrt{n}$. We would
-  like to square both sides, but there's some casework involved, because
-  depending on the signs of $a_1$ and $-a_n$, we may have to flip the
-  inequality.
-
-  If exactly one of $a_1$ and $-a_n$ are negative, the comparison is easy. If they
-  are both positive, then comparing $a_1^2$ and $na_n^2$ gives the right
-  answer. If they are both negative, then comparing $a_1^2$ and $na_n^2$ gives
-  the opposite answer (this arithetic depends on $n$ being nonnegative).
-
-  We can use this algorithm to define the sign function for $A[\sqrt{n}]$.
-
-  Checking the signed ring properties is not entirely routine. Multiplicativity
-  of the sign reduces to closure of the non-negative elements under
-  multiplication, where the norms compose. Closure under addition is harder,
-  since they do not; the argument there compares $(v-a_1)(v+a_1)$ with $(d-u)(d+u)$
-  and multiplies through by $d+u$ to stay inside $A$.
   \leanok
+  TODO: rewrite for the current \texttt{norm}-based definition of $sign$.
+  Points to cover:
+  \begin{itemize}
+    \item $sign~x$ compares $a_1$ to $0$ when $norm~x = a_1^2 - na_n^2 \geq 0$,
+      and $a_n$ to $0$ otherwise.
+    \item Multiplicativity reduces to closure of the non-negative elements
+      under multiplication, where the norms compose.
+    \item Closure under addition: rotating by $\sqrt n$ (multiplying by it)
+      swaps which of $a_1$/$a_n$ dominates and negates $norm$, which turns
+      the harder half of closure under addition into a corollary of the
+      easier half rather than a separate argument.
+  \end{itemize}
 \end{proof}
 
 \begin{corollary}
@@ -705,9 +699,11 @@ asks whether one particular eigenvalue is non-negative, and $\sqrt{n}$ appears
 in the roots but never in the coefficients; the criterion of
 Definition~\ref{def:adjoinSign} is the standard way of locating a root of a
 quadratic from its coefficients. It also explains the shape of the argument for
-closure under addition, which pairs $(v-a_1)(v+a_1)$ against $(d-u)(d+u)$: those are
-the elementary symmetric combinations through which roots and coefficients
-communicate.
+closure under addition, which still turns on elementary symmetric combinations
+of the coordinates through which roots and coefficients communicate. (TODO:
+update the specific pairing here --- the proof now gets the harder half of
+closure under addition as a corollary of the easier half, via the $\sqrt n$
+rotation, rather than via a standalone multiplier argument.)
 
 This suggests presenting $A[\sqrt{n}]$ as $A[x]/(x^2 - n)$ and inheriting its
 structure rather than verifying it. Mathlib's \code{AdjoinRoot} supplies the
