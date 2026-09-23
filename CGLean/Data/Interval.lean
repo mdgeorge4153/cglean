@@ -164,4 +164,59 @@ theorem mem_inv? {x : ℝ} {I J : IntervalDyadic} (hx : x ∈ I) (h : inv? I = s
   exact mem_trim (IntervalDyadic.mem_ofIntervalRat
     (IntervalRat.mem_invNonzero (I := ⟨_, hz⟩) hxR hx0) ratPrec (by simp [ratPrec]))
 
+/-! ## Square roots
+
+LeanCert's `IntervalDyadic.sqrt` returns `[0, max hi 1]`, which is sound but too
+wide to separate anything. These bounds are within `2⁻ᵏ`, from `Nat.sqrt` of the
+endpoints scaled by `4ᵏ`. -/
+
+/-- A lower bound on `√q`, within `2⁻ᵏ`. -/
+def sqrtLo (q : ℚ) (k : ℕ) : ℚ := (Nat.sqrt ⌊q * 4 ^ k⌋₊ : ℚ) / 2 ^ k
+
+/-- An upper bound on `√q`, within `2⁻ᵏ`. -/
+def sqrtHi (q : ℚ) (k : ℕ) : ℚ := (Nat.sqrt ⌈q * 4 ^ k⌉₊ + 1 : ℚ) / 2 ^ k
+
+theorem sqrtLo_le (q : ℚ) (k : ℕ) : (sqrtLo q k : ℝ) ≤ Real.sqrt q := by
+  unfold sqrtLo
+  rcases lt_or_ge q 0 with hq | hq
+  · have : ⌊q * 4 ^ k⌋₊ = 0 := Nat.floor_eq_zero.mpr (by
+      have : q * 4 ^ k < 0 := mul_neg_of_neg_of_pos hq (by positivity)
+      linarith)
+    simp [this, Real.sqrt_nonneg]
+  · push_cast
+    rw [Real.le_sqrt (by positivity) (by exact_mod_cast hq), div_pow]
+    have h1 : ((Nat.sqrt ⌊q * 4 ^ k⌋₊ : ℕ) : ℝ) ^ 2 ≤ (⌊q * 4 ^ k⌋₊ : ℝ) := by
+      exact_mod_cast Nat.sqrt_le' _
+    have h2 : (⌊q * 4 ^ k⌋₊ : ℝ) ≤ (q : ℝ) * 4 ^ k := by
+      exact_mod_cast Nat.floor_le (by positivity)
+    rw [div_le_iff₀ (by positivity), show ((2 : ℝ) ^ k) ^ 2 = 4 ^ k by
+      rw [← pow_mul, mul_comm, pow_mul]; norm_num]
+    linarith
+
+theorem le_sqrtHi (q : ℚ) (k : ℕ) : Real.sqrt q ≤ (sqrtHi q k : ℝ) := by
+  unfold sqrtHi
+  push_cast
+  rw [Real.sqrt_le_left (by positivity), div_pow, le_div_iff₀ (by positivity),
+    show ((2 : ℝ) ^ k) ^ 2 = 4 ^ k by rw [← pow_mul, mul_comm, pow_mul]; norm_num]
+  have h1 : (q : ℝ) * 4 ^ k ≤ (⌈q * 4 ^ k⌉₊ : ℝ) := by
+    exact_mod_cast Nat.le_ceil _
+  have h2 : (⌈q * 4 ^ k⌉₊ : ℝ) < ((Nat.sqrt ⌈q * 4 ^ k⌉₊ : ℕ) + 1 : ℝ) ^ 2 := by
+    exact_mod_cast Nat.lt_succ_sqrt' _
+  linarith
+
+/-- An interval containing the square root of every member of `I`. -/
+def sqrt (I : IntervalDyadic) : IntervalDyadic :=
+  trim (IntervalDyadic.ofIntervalRat
+    ⟨sqrtLo I.lo.toRat precision, sqrtHi I.hi.toRat precision, by
+      have := (sqrtLo_le I.lo.toRat precision).trans <|
+        (Real.sqrt_le_sqrt (by exact_mod_cast I.le)).trans (le_sqrtHi I.hi.toRat precision)
+      exact_mod_cast this⟩ ratPrec)
+
+theorem mem_sqrt {x : ℝ} {I : IntervalDyadic} (hx : x ∈ I) : Real.sqrt x ∈ sqrt I := by
+  rw [IntervalDyadic.mem_def] at hx
+  refine mem_trim (IntervalDyadic.mem_ofIntervalRat ?_ ratPrec (by simp [ratPrec]))
+  rw [IntervalRat.mem_def]
+  exact ⟨(sqrtLo_le _ _).trans (Real.sqrt_le_sqrt hx.1),
+    (Real.sqrt_le_sqrt hx.2).trans (le_sqrtHi _ _)⟩
+
 end CGLean

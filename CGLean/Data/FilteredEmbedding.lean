@@ -66,6 +66,19 @@ variable {α : Type}
 /-- The embedding into `ℝ`. -/
 noncomputable def RealApprox.toRingHom [Ring α] (e : RealApprox α) : α →+* ℝ := e.hom.out
 
+theorem RealApprox.mem_approx' [Ring α] (e : RealApprox α) (a : α) :
+    e.toRingHom a ∈ e.approx a :=
+  e.mem_approx a
+
+/-- The rationals, bracketed exactly when dyadic and to `ratPrec` otherwise. -/
+def RealApprox.rat : RealApprox ℚ where
+  hom := Erased.mk (Rat.castHom ℝ)
+  approx := ofRat
+  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
+
+instance : Fact (StrictMono RealApprox.rat.toRingHom) :=
+  ⟨by rw [RealApprox.toRingHom, RealApprox.rat, Erased.out_mk]; exact Rat.cast_strictMono⟩
+
 /-- A value of `α`, not yet computed, with an interval containing its image. -/
 structure FilteredEmbedding [Ring α] (e : RealApprox α) where
   value : Thunk α
