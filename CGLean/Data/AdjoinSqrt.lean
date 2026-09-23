@@ -235,15 +235,6 @@ lemma norm_mul_rootN [CommRing R] (x : AdjoinSqrt R n) :
     norm (x * root n) = -n * norm x := by
   simp [norm, root]; ring
 
-/-- `√n` has positive sign, given `n > 0`. -/
-lemma sign_rootN [SignedField R] [Pos R n] : Signed.sign (root n : AdjoinSqrt R n) = .pos := by
-  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
-  have hneg : norm (root n : AdjoinSqrt R n) = -n := by simp [norm, root]
-  -- norm (√n) = -n < 0, so `sign` falls through to the √n-coefficient, which is 1
-  rw [sign_eq, hneg, show sign (-n) = .neg from SignedRing.sign_eq_neg_iff.mpr (by linarith)]
-  show sign (1:R) = .pos
-  rw [SignedRing.sign_one]; rfl
-
 /-- Multiplying by `√n` doesn't change the sign. -/
 lemma sign_mul_rootN [SignedField R] [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) :
     Signed.sign (x * root n) = Signed.sign x := by
