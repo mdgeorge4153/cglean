@@ -100,4 +100,68 @@ theorem compare?_complete {x y : IntervalDyadic} (h : compare? x y = none) :
     · rw [IntervalDyadic.mem_def]; exact ⟨hyle, le_refl _⟩
     · rw [compare_eq_iff_eq.mpr rfl, compare_lt_iff_lt.mpr hs]; decide
 
+/-! ## Rounding and constants -/
+
+/-- Significant bits kept in each endpoint. Exact dyadic products double the
+mantissa, so every arithmetic result is rounded back to this. -/
+def precision : Nat := 64
+
+/-- Round each endpoint of `I` outward to `precision` significant bits. -/
+def trim (I : IntervalDyadic) : IntervalDyadic :=
+  ⟨I.lo.normalizeDown precision, I.hi.normalizeUp precision, by
+    calc (I.lo.normalizeDown precision).toRat
+        ≤ I.lo.toRat := LeanCert.Core.Dyadic.toRat_normalizeDown_le _ _
+      _ ≤ I.hi.toRat := I.le
+      _ ≤ (I.hi.normalizeUp precision).toRat := LeanCert.Core.Dyadic.toRat_normalizeUp_ge _ _⟩
+
+theorem mem_trim {x : ℝ} {I : IntervalDyadic} (hx : x ∈ I) : x ∈ trim I := by
+  rw [IntervalDyadic.mem_def] at hx ⊢
+  have hlo : ((I.lo.normalizeDown precision).toRat : ℝ) ≤ I.lo.toRat := by
+    exact_mod_cast LeanCert.Core.Dyadic.toRat_normalizeDown_le _ _
+  have hhi : (I.hi.toRat : ℝ) ≤ (I.hi.normalizeUp precision).toRat := by
+    exact_mod_cast LeanCert.Core.Dyadic.toRat_normalizeUp_ge _ _
+  exact ⟨hlo.trans hx.1, hx.2.trans hhi⟩
+
+/-- The interval containing exactly the integer `i`. -/
+def ofInt (i : ℤ) : IntervalDyadic := IntervalDyadic.singleton (LeanCert.Core.Dyadic.ofInt i)
+
+theorem mem_ofInt (i : ℤ) : (i : ℝ) ∈ ofInt i := by
+  simpa [ofInt, LeanCert.Core.Dyadic.toRat_ofInt] using
+    IntervalDyadic.mem_singleton (LeanCert.Core.Dyadic.ofInt i)
+
+/-- Absolute precision, as a binary exponent, for results that pass through
+rational intervals. -/
+def ratPrec : Int := -(precision : Int)
+
+/-- An interval containing the rational `q`, exact when `q` is dyadic enough. -/
+def ofRat (q : ℚ) : IntervalDyadic :=
+  IntervalDyadic.ofIntervalRat (IntervalRat.singleton q) ratPrec
+
+theorem mem_ofRat (q : ℚ) : (q : ℝ) ∈ ofRat q :=
+  IntervalDyadic.mem_ofIntervalRat (IntervalRat.mem_singleton q) ratPrec (by simp [ratPrec])
+
+/-! ## Reciprocals -/
+
+/-- The reciprocal of `I`, or `none` when `I` contains zero.
+
+The reciprocal is taken over rational endpoints and rounded back, at the
+absolute precision `ratPrec`; LeanCert has no dyadic reciprocal. -/
+def inv? (I : IntervalDyadic) : Option IntervalDyadic :=
+  if h : IntervalRat.containsZero I.toIntervalRat then none
+  else some (trim (IntervalDyadic.ofIntervalRat (IntervalRat.invNonzero ⟨_, h⟩) ratPrec))
+
+theorem mem_inv? {x : ℝ} {I J : IntervalDyadic} (hx : x ∈ I) (h : inv? I = some J) :
+    x⁻¹ ∈ J := by
+  unfold inv? at h
+  split_ifs at h with hz
+  rw [Option.some.injEq] at h
+  subst h
+  have hxR : x ∈ I.toIntervalRat := IntervalDyadic.mem_toIntervalRat.mp hx
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [IntervalRat.mem_def] at hxR
+    exact hz ⟨by exact_mod_cast hxR.1, by exact_mod_cast hxR.2⟩
+  exact mem_trim (IntervalDyadic.mem_ofIntervalRat
+    (IntervalRat.mem_invNonzero (I := ⟨_, hz⟩) hxR hx0) ratPrec (by simp [ratPrec]))
+
 end CGLean

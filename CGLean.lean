@@ -3,6 +3,7 @@ import CGLean.Classes.Region
 import CGLean.Classes.RingOps
 import CGLean.Data.AdjoinSqrt
 import CGLean.Data.Interval
+import CGLean.Data.FilteredEmbedding
 import CGLean.Data.AdjoinSqrt.ToReal
 import CGLean.Geometry.Point2D
 import CGLean.Geometry.Arrangement

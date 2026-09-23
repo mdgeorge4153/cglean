@@ -3,30 +3,34 @@ Copyright (c) 2024 Michael D. George. All rights reserved.
 TODO: choose a license
 Author: Michael D. George.
 -/
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.Order.Ring.InjSurj
+import Mathlib.Data.Rat.Cast.Lemmas
+import Mathlib.Data.Erased
 import Mathlib.Data.Real.Basic
-import Mathlib.Algebra.Ring.Defs
-import Ray.Approx.Interval.Around
-import Ray.Approx.Interval.Mul
 import CGLean.Data.Interval
 import CGLean.Classes.RingOps
 
 /-!
-# Filtered Real Numbers
+# Filtered real numbers
 
-The `FilteredEmbedding f` type is intended to be a drop-in replacement for a
-type `α` that encapsulates a subset of the real numbers (which is provided by
-`f : α → ℝ`). It attempts to improve computational performance by maintaining
-floating point intervals that bound the real values of the encapsulated `α`
-values.
+`FilteredReal e` is intended to be a drop-in replacement for a type `α` of exact
+numbers, given a ring homomorphism `α →+* ℝ` and a way to bracket its values
+(bundled together as `e : RealApprox α`). Each value carries a dyadic interval
+containing its image in `ℝ`.
 
-Operations that produce `FilteredEmbedding f` values (like `+` and `*`) are
-evaluated lazily on the underlying `α` type; the underlying operations on the
-`α` type are only evaluated if and when the floating-point approximations are
-insufficiently precise to evaluate comparisons (like `=` and `≤`).
+Arithmetic on `FilteredReal e` is evaluated lazily on `α` and eagerly on the
+intervals. Comparisons consult the intervals first, and evaluate the `α` values
+only when the intervals overlap.
 
-NOTE: The intervals are LeanCert's `IntervalDyadic`, which uses software
-arithmetic on dyadic rationals rather than hardware floating point. This is
-cheaper than exact arithmetic in nested `A[√n]` but slower than floats would be.
+Two values are equal when their `α` values are, whatever their intervals: the
+interval of `(x + y) + z` need not be that of `x + (y + z)`. So `FilteredReal e`
+is a quotient of `FilteredEmbedding e`, and its algebraic and order structure is
+pulled back along the injection `FilteredReal.get` into `α`.
+
+The intervals are LeanCert's `IntervalDyadic`, which uses software arithmetic on
+dyadic rationals rather than hardware floating point. This is cheaper than exact
+arithmetic in nested `A[√n]` but slower than floats would be.
 
 TODO: The hope is that we are only comparing numbers that are far away from each
 other, but comparing equal points for equality is also likely to be a common
@@ -34,226 +38,356 @@ operation, and it will always fall back on the slow implementation (unless the
 FP approximations are exact). It is worth looking into the paper on reference
 equality optimizations (or even some kind of union-find structure) to see if
 this can be improved.
-
-TODO: Update documentation to reflect FilteredReal (quotient of
-FilteredEmbedding)
-
-## Implementation note
-
-Since a `FilteredEmbedding f` value must contain a proof that the
-floating-point interval contains the real value, we can only implement
-operations if we know that `f` is well-behaved. For example, to implement `Zero
-(FilteredEmbedding f)`, we not only need a `Zero α`, but we need to know that
-`f 0 = 0` (i.e. that `f` is a 0-homomorphism).
-
-This means that when constructing your `FilteredEmbedding f`, `f` should be a
-homomorphism for the operations that you want to be able to perform. For
-example, if you need an instance of `Zero`, you need `f` to be a `ZeroHom`:
-
-```
-def exampleWithZero : ZeroHom example ℝ where
-  toFun x   := ...
-  map_zero' := ...
-
-abbrev ExampleFiltered : Type := FilteredEmbedding exampleWithZero
-
-example : ExampleFiltered := 0
-```
-
 -/
 
-open Pointwise
+namespace CGLean
 
-attribute [simp] Thunk.get
+open LeanCert.Core
 
-structure FilteredEmbedding (f : α → ℝ) where
-  value  : Thunk α
-  range  : Around (f value.get)
+/-! ## Bracketing elements of `α` -/
 
-@[simp] def FilteredEmbedding.toReal (x : FilteredEmbedding f) : ℝ := f x.value.get
+/-- A ring homomorphism into `ℝ`, together with an interval containing the image
+of each element.
 
-/-! ## FilteredReals are equivalence classes of FilteredEmbedding -------------/
+The homomorphism is what lets an interval for `x + y` be built from intervals for
+`x` and `y`. `approx` supplies an interval for a value that was not built that
+way: a constant, or a reciprocal whose argument's interval contains zero.
 
-@[simp] def eqv (f : α → ℝ) (x y : FilteredEmbedding f) : Prop := x.value.get = y.value.get
+The homomorphism is `Erased`: it lands in `ℝ`, so it cannot be computed, and it
+is needed only in proofs. Held directly, it would make every `RealApprox`, and
+so every computation with `FilteredReal`, noncomputable. -/
+structure RealApprox (α : Type) [Ring α] where
+  hom : Erased (α →+* ℝ)
+  approx : α → IntervalDyadic
+  mem_approx : ∀ a, hom.out a ∈ approx a
 
-@[simps] instance same_value (f : α → ℝ): Setoid (FilteredEmbedding f) where
-  r     := eqv f
-  iseqv := InvImage.equivalence _ _ eq_equivalence
+variable {α : Type}
 
-def FilteredReal (f : α → ℝ) : Type := Quotient (same_value f)
+/-- The embedding into `ℝ`. -/
+noncomputable def RealApprox.toRingHom [Ring α] (e : RealApprox α) : α →+* ℝ := e.hom.out
 
-namespace FilteredReal
+/-- A value of `α`, not yet computed, with an interval containing its image. -/
+structure FilteredEmbedding [Ring α] (e : RealApprox α) where
+  value : Thunk α
+  range : IntervalDyadic
+  mem : e.toRingHom value.get ∈ range
 
-def mk (f : α → ℝ) (value : α) (range : Around (f value)) : FilteredReal f :=
-  Quotient.mk' ⟨value, range⟩
+namespace FilteredEmbedding
 
-theorem mk_eq_mk : x = y → mk f x p₁ = mk f y p₂ := by
-  intro; apply Quot.sound; simpa [InvImage]
-
-/-! ## Zero -------------------------------------------------------------------/
-
-section Zero
-
-variable [Zero α] [FunLike F α ℝ] [ZeroHomClass F α ℝ] (f : F)
-
-@[simps] instance: Zero (FilteredEmbedding f) where
-  zero := {
-    value := (0 : α)
-    range := ⟨0, by simp [map_zero]⟩
-  }
-
-def toZeroHom: ZeroHom (FilteredEmbedding f) ℝ where
-  toFun     := FilteredEmbedding.toReal
-  map_zero' := by simp
-
-instance instZero: Zero (FilteredReal f) where
-  zero := Quotient.mk' 0
-
-end Zero
-
-/-! ## One --------------------------------------------------------------------/
-
-section One
-
-variable [One α] [FunLike F α ℝ] [OneHomClass F α ℝ] (f : F)
-
-@[simps] instance: One (FilteredEmbedding f) where
-  one := {
-    value := (1 : α)
-    range := ⟨1, by simp [map_one]⟩
-  }
-
-def toOneHom: OneHom (FilteredEmbedding f) ℝ where
-  toFun    := FilteredEmbedding.toReal
-  map_one' := by simp
-
-instance instOne: One (FilteredReal f) where
-  one := Quotient.mk' 1
-
-end One
-
-/-! ## Add --------------------------------------------------------------------/
-
-section Add
-
-variable [Add α] [FunLike F α ℝ] [AddHomClass F α ℝ] (f : F)
-
-@[simps] instance: Add (FilteredEmbedding f) where
-  add x y := {
-    value := x.value.get + y.value.get
-    range := ⟨x.range.i + y.range.i, by simp [map_add]; mono⟩
-  }
-
-def toAddHom: AddHom (FilteredEmbedding f) ℝ where
-  toFun := FilteredEmbedding.toReal
-  map_add' := by simp
-
-instance instAdd: Add (FilteredReal f) where
-  add := Quot.map₂ (· + ·) (by simp_all) (by simp_all)
-
-end Add
-
-/-! ## Mul --------------------------------------------------------------------/
-
-section Mul
-
-variable [Mul α] [FunLike F α ℝ] [MulHomClass F α ℝ] (f : F)
-
-@[simps] instance: Mul (FilteredEmbedding f) where
-  mul x y := {
-    value := x.value.get * y.value.get
-    range := ⟨x.range.i * y.range.i, by simp [map_mul]; mono⟩
-  }
-
-def toMulHom: MulHom (FilteredEmbedding f) ℝ where
-  toFun := FilteredEmbedding.toReal
-  map_mul' := by simp
-
-instance instMul: Mul (FilteredReal f) where
-  mul := Quot.map₂ (· * ·) (by simp_all) (by simp_all)
-
-end Mul
-
-/-! ## Ring -------------------------------------------------------------------/
+/-! ### Ring operations -/
 
 section Ring
 
-variable [CommRing α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F)
+variable [CommRing α] {e : RealApprox α}
 
-instance instRingOps: RingOps (FilteredReal f) := sorry
-instance instCommRing: CommRing (FilteredReal f) := sorry
+/-- An already computed value, bracketed by `e.approx`. -/
+def pure (a : α) : FilteredEmbedding e :=
+  ⟨Thunk.pure a, e.approx a, e.mem_approx a⟩
+
+instance : IntCast (FilteredEmbedding e) where
+  intCast i := ⟨Thunk.pure i, ofInt i, by
+    show e.toRingHom (i : α) ∈ _
+    rw [map_intCast]; exact mem_ofInt i⟩
+
+instance : NatCast (FilteredEmbedding e) where
+  natCast n := ⟨Thunk.pure n, ofInt n, by
+    show e.toRingHom (n : α) ∈ _
+    rw [map_natCast]; exact_mod_cast mem_ofInt n⟩
+
+instance : Zero (FilteredEmbedding e) := ⟨((0 : ℤ) : FilteredEmbedding e)⟩
+instance : One (FilteredEmbedding e) := ⟨((1 : ℤ) : FilteredEmbedding e)⟩
+
+instance : Add (FilteredEmbedding e) where
+  add x y := ⟨Thunk.mk fun _ => x.value.get + y.value.get, trim (x.range.add y.range), by
+    show e.toRingHom (x.value.get + y.value.get) ∈ _
+    rw [map_add]; exact mem_trim (IntervalDyadic.mem_add x.mem y.mem)⟩
+
+instance : Neg (FilteredEmbedding e) where
+  neg x := ⟨Thunk.mk fun _ => -x.value.get, x.range.neg, by
+    show e.toRingHom (-x.value.get) ∈ _
+    rw [map_neg]; exact IntervalDyadic.mem_neg x.mem⟩
+
+instance : Sub (FilteredEmbedding e) where
+  sub x y := ⟨Thunk.mk fun _ => x.value.get - y.value.get, trim (x.range.sub y.range), by
+    show e.toRingHom (x.value.get - y.value.get) ∈ _
+    rw [map_sub]; exact mem_trim (IntervalDyadic.mem_sub x.mem y.mem)⟩
+
+instance : Mul (FilteredEmbedding e) where
+  mul x y := ⟨Thunk.mk fun _ => x.value.get * y.value.get, trim (x.range.mul y.range), by
+    show e.toRingHom (x.value.get * y.value.get) ∈ _
+    rw [map_mul]; exact mem_trim (IntervalDyadic.mem_mul x.mem y.mem)⟩
+
+instance : SMul ℕ (FilteredEmbedding e) := ⟨fun n x => (n : FilteredEmbedding e) * x⟩
+instance : SMul ℤ (FilteredEmbedding e) := ⟨fun n x => (n : FilteredEmbedding e) * x⟩
+
+/-- `x ^ n` by repeated multiplication. -/
+def npow : ℕ → FilteredEmbedding e → FilteredEmbedding e
+  | 0, _ => 1
+  | n + 1, x => npow n x * x
+
+instance : Pow (FilteredEmbedding e) ℕ := ⟨fun x n => npow n x⟩
+
+theorem value_pow (x : FilteredEmbedding e) (n : ℕ) : (x ^ n).value.get = x.value.get ^ n := by
+  induction n with
+  | zero => show ((1 : ℤ) : α) = _; simp
+  | succ n ih =>
+    show (npow n x).value.get * x.value.get = _
+    rw [show (npow n x).value.get = (x ^ n).value.get from rfl, ih, pow_succ]
 
 end Ring
 
-/-! ## Field ------------------------------------------------------------------/
+/-! ### Values are equivalent when their `α` values are equal -/
+
+instance setoid [Ring α] (e : RealApprox α) : Setoid (FilteredEmbedding e) where
+  r x y := x.value.get = y.value.get
+  iseqv := ⟨fun _ => rfl, Eq.symm, Eq.trans⟩
+
+/-! ### Comparison -/
+
+section Order
+
+variable [Ring α] [LinearOrder α] {e : RealApprox α}
+
+/-- Compare two values by their intervals, falling back on `α` only when the
+intervals overlap. -/
+def cmp (x y : FilteredEmbedding e) : Ordering :=
+  match compare? x.range y.range with
+  | some o => o
+  | none => compare x.value.get y.value.get
+
+/-- The filtered comparison agrees with the exact one. -/
+theorem cmp_eq [Fact (StrictMono e.toRingHom)] (x y : FilteredEmbedding e) :
+    x.cmp y = compare x.value.get y.value.get := by
+  unfold cmp
+  split
+  · next o h =>
+    rw [← compare_of_compare? h _ x.mem _ y.mem, ← cmp_eq_compare, ← cmp_eq_compare,
+      (Fact.out : StrictMono e.toRingHom).cmp_map_eq]
+  · rfl
+
+end Order
+
+/-! ### Reciprocals -/
 
 section Field
 
-variable [Field α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F)
+variable [Field α] {e : RealApprox α}
 
-instance instField: Field (FilteredReal f) := sorry
+/-- The reciprocal. When the interval contains zero it has no interval
+reciprocal, so the value is computed here and bracketed afresh by `e.approx`. -/
+def inv (x : FilteredEmbedding e) : FilteredEmbedding e :=
+  let v : Thunk α := Thunk.mk fun _ => x.value.get⁻¹
+  match h : inv? x.range with
+  | some J => ⟨v, J, by
+      show e.toRingHom (x.value.get⁻¹) ∈ J
+      rw [map_inv₀]; exact mem_inv? x.mem h⟩
+  | none => ⟨v, e.approx v.get, e.mem_approx _⟩
+
+theorem value_inv (x : FilteredEmbedding e) : (inv x).value.get = x.value.get⁻¹ := by
+  unfold inv; split <;> rfl
+
+instance : RatCast (FilteredEmbedding e) where
+  ratCast q := ⟨Thunk.pure q, ofRat q, by
+    show e.toRingHom (q : α) ∈ _
+    rw [map_ratCast]; exact mem_ofRat q⟩
 
 end Field
 
-/-! ## Equality ---------------------------------------------------------------/
+end FilteredEmbedding
 
-section BEq
+/-! ## The quotient -/
 
-variable [BEq α] (f : α → ℝ)
+/-- Values of `α` with intervals, identified when their `α` values are equal. -/
+def FilteredReal [Ring α] (e : RealApprox α) : Type := Quotient (FilteredEmbedding.setoid e)
 
-instance: BEq (FilteredEmbedding f) where
-  beq x y := match Interval.compare? x.range.i y.range.i with
-    | some .eq => true
-    | some .lt | some .gt => false
-    | none => x.value.get == y.value.get
+namespace FilteredReal
 
-variable [LawfulBEq α]
+section Ring
 
-theorem eqv_of_beq: ∀ (x y : FilteredEmbedding f), x == y → x.toReal = y.toReal := by
-  intros x y h
-  simp only [BEq.beq] at h
-  split at h
-  . simp [←compare_eq_iff_eq, Interval.compare_of_compare?_approx _ _ (by assumption), Around.mem]
-  . contradiction
-  . contradiction
-  . simp at h; simp [h]
+variable [CommRing α] {e : RealApprox α}
 
-theorem beq_of_eqv: ∀ (x y : FilteredEmbedding f), eqv f x y → x == y := by
-  simp only [BEq.beq]
-  intros x y h
-  split
-  . rfl
-  . have lt: x.toReal < y.toReal := by
-      simp [←compare_lt_iff_lt, Interval.compare_of_compare?_approx _ _ (by assumption), Around.mem]
-    simp at h
-    simp [h] at lt
-  . have gt: x.toReal > y.toReal := by
-      simp [←compare_gt_iff_gt, Interval.compare_of_compare?_approx _ _ (by assumption), Around.mem]
-    simp at h
-    simp [h] at gt
-  . simpa using h
+/-- The exact value. -/
+def get : FilteredReal e → α := Quotient.lift (fun x => x.value.get) (fun _ _ h => h)
 
-end BEq
+theorem get_injective : Function.Injective (get (e := e)) := by
+  intro x y h
+  induction x using Quotient.ind
+  induction y using Quotient.ind
+  exact Quotient.sound h
 
--- TODO: implement BEq and/or DecidableEq
--- TODO: comparisons
--- TODO: CGLean.Algebra.Signed
+/-- An already computed value. -/
+def ofValue (a : α) : FilteredReal e := ⟦FilteredEmbedding.pure a⟧
 
-section LinearOrderedRing
+@[simp] theorem get_ofValue (a : α) : get (ofValue a : FilteredReal e) = a := rfl
 
-variable [LinearOrderedRing α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F) (_ : Monotone f)
+instance : IntCast (FilteredReal e) := ⟨fun i => ⟦i⟧⟩
+instance : NatCast (FilteredReal e) := ⟨fun n => ⟦n⟧⟩
+instance : Zero (FilteredReal e) := ⟨⟦0⟧⟩
+instance : One (FilteredReal e) := ⟨⟦1⟧⟩
 
-instance instLinearOrderedRing: LinearOrderedRing (FilteredReal f) := sorry
+instance : Add (FilteredReal e) where
+  add := Quotient.map₂ (· + ·) fun _ _ h₁ _ _ h₂ => by
+    show _ + _ = _ + _; rw [show _ = _ from h₁, show _ = _ from h₂]
 
-end LinearOrderedRing
+instance : Neg (FilteredReal e) where
+  neg := Quotient.map (- ·) fun _ _ h => by
+    show -_ = -_; rw [show _ = _ from h]
 
-section LinearOrderedField
+instance : Sub (FilteredReal e) where
+  sub := Quotient.map₂ (· - ·) fun _ _ h₁ _ _ h₂ => by
+    show _ - _ = _ - _; rw [show _ = _ from h₁, show _ = _ from h₂]
 
-variable [LinearOrderedField α] [FunLike F α ℝ] [RingHomClass F α ℝ] (f : F) (_ : Monotone f)
+instance : Mul (FilteredReal e) where
+  mul := Quotient.map₂ (· * ·) fun _ _ h₁ _ _ h₂ => by
+    show _ * _ = _ * _; rw [show _ = _ from h₁, show _ = _ from h₂]
 
-instance instLinearOrderedField: LinearOrderedField (FilteredReal f) := sorry
+instance : SMul ℕ (FilteredReal e) := ⟨fun n x => (n : FilteredReal e) * x⟩
+instance : SMul ℤ (FilteredReal e) := ⟨fun n x => (n : FilteredReal e) * x⟩
 
-end LinearOrderedField
+instance : Pow (FilteredReal e) ℕ where
+  pow x n := Quotient.map (· ^ n) (fun a b h => by
+    show (a ^ n).value.get = (b ^ n).value.get
+    rw [FilteredEmbedding.value_pow, FilteredEmbedding.value_pow, show _ = _ from h]) x
+
+@[simp] theorem get_intCast (i : ℤ) : get (i : FilteredReal e) = i := rfl
+@[simp] theorem get_natCast (n : ℕ) : get (n : FilteredReal e) = n := rfl
+@[simp] theorem get_zero : get (0 : FilteredReal e) = 0 := Int.cast_zero
+@[simp] theorem get_one : get (1 : FilteredReal e) = 1 := Int.cast_one
+
+@[simp] theorem get_add (x y : FilteredReal e) : get (x + y) = get x + get y := by
+  induction x using Quotient.ind; induction y using Quotient.ind; rfl
+
+@[simp] theorem get_neg (x : FilteredReal e) : get (-x) = -get x := by
+  induction x using Quotient.ind; rfl
+
+@[simp] theorem get_sub (x y : FilteredReal e) : get (x - y) = get x - get y := by
+  induction x using Quotient.ind; induction y using Quotient.ind; rfl
+
+@[simp] theorem get_mul (x y : FilteredReal e) : get (x * y) = get x * get y := by
+  induction x using Quotient.ind; induction y using Quotient.ind; rfl
+
+@[simp] theorem get_nsmul (n : ℕ) (x : FilteredReal e) : get (n • x) = n • get x := by
+  rw [nsmul_eq_mul, ← get_natCast]; exact get_mul _ _
+
+@[simp] theorem get_zsmul (n : ℤ) (x : FilteredReal e) : get (n • x) = n • get x := by
+  rw [zsmul_eq_mul, ← get_intCast]; exact get_mul _ _
+
+@[simp] theorem get_pow (x : FilteredReal e) (n : ℕ) : get (x ^ n) = get x ^ n := by
+  induction x using Quotient.ind; exact FilteredEmbedding.value_pow _ n
+
+instance instRingOps : RingOps (FilteredReal e) where
+
+instance instCommRing : CommRing (FilteredReal e) :=
+  get_injective.commRing get get_zero get_one get_add get_mul get_neg get_sub get_nsmul
+    get_zsmul get_pow get_natCast get_intCast
+
+end Ring
+
+/-! ### Order -/
+
+section Order
+
+variable [CommRing α] [LinearOrder α] {e : RealApprox α} [Fact (StrictMono e.toRingHom)]
+
+instance : Ord (FilteredReal e) where
+  compare := Quotient.lift₂ FilteredEmbedding.cmp fun _ _ _ _ h₁ h₂ => by
+    rw [FilteredEmbedding.cmp_eq, FilteredEmbedding.cmp_eq, show _ = _ from h₁,
+      show _ = _ from h₂]
+
+theorem compare_get (x y : FilteredReal e) : compare (get x) (get y) = compare x y := by
+  induction x using Quotient.ind; induction y using Quotient.ind
+  exact (FilteredEmbedding.cmp_eq _ _).symm
+
+instance : LE (FilteredReal e) := ⟨fun x y => get x ≤ get y⟩
+instance : LT (FilteredReal e) := ⟨fun x y => get x < get y⟩
+
+/-! These decide by `compare`, so by the intervals when they suffice. -/
+
+instance : DecidableLE (FilteredReal e) := fun x y =>
+  decidable_of_iff (compare x y ≠ .gt) (by
+    rw [← compare_get, Ne, compare_gt_iff_gt, not_lt]; rfl)
+
+instance : DecidableLT (FilteredReal e) := fun x y =>
+  decidable_of_iff (compare x y = .lt) (by rw [← compare_get, compare_lt_iff_lt]; rfl)
+
+instance : DecidableEq (FilteredReal e) := fun x y =>
+  decidable_of_iff (compare x y = .eq) (by
+    rw [← compare_get, compare_eq_iff_eq, get_injective.eq_iff])
+
+instance : Max (FilteredReal e) := ⟨fun x y => if x ≤ y then y else x⟩
+instance : Min (FilteredReal e) := ⟨fun x y => if x ≤ y then x else y⟩
+
+theorem get_max (x y : FilteredReal e) : get (x ⊔ y) = get x ⊔ get y := by
+  show get (if x ≤ y then y else x) = _
+  split_ifs with h
+  · exact (max_eq_right h).symm
+  · exact (max_eq_left (le_of_not_ge h)).symm
+
+theorem get_min (x y : FilteredReal e) : get (x ⊓ y) = get x ⊓ get y := by
+  show get (if x ≤ y then x else y) = _
+  split_ifs with h
+  · exact (min_eq_left h).symm
+  · exact (min_eq_right (le_of_not_ge h)).symm
+
+instance instLinearOrder : LinearOrder (FilteredReal e) :=
+  get_injective.linearOrder get Iff.rfl Iff.rfl get_min get_max compare_get
+
+instance instIsStrictOrderedRing [IsStrictOrderedRing α] : IsStrictOrderedRing (FilteredReal e) :=
+  Function.Injective.isStrictOrderedRing get get_zero get_one get_add get_mul Iff.rfl Iff.rfl
+
+end Order
+
+/-! ### Field -/
+
+section Field
+
+variable [Field α] {e : RealApprox α}
+
+instance instInv : Inv (FilteredReal e) where
+  inv := Quotient.map FilteredEmbedding.inv fun a b h => by
+    show (FilteredEmbedding.inv a).value.get = (FilteredEmbedding.inv b).value.get
+    rw [FilteredEmbedding.value_inv, FilteredEmbedding.value_inv, show _ = _ from h]
+
+instance : Div (FilteredReal e) := ⟨fun x y => x * y⁻¹⟩
+instance : RatCast (FilteredReal e) := ⟨fun q => ⟦q⟧⟩
+instance : NNRatCast (FilteredReal e) := ⟨fun q => ((q : ℚ) : FilteredReal e)⟩
+instance : SMul ℚ (FilteredReal e) := ⟨fun q x => (q : FilteredReal e) * x⟩
+instance : SMul ℚ≥0 (FilteredReal e) := ⟨fun q x => (q : FilteredReal e) * x⟩
+
+instance : Pow (FilteredReal e) ℤ where
+  pow x
+    | .ofNat n => x ^ n
+    | .negSucc n => (x ^ (n + 1))⁻¹
+
+@[simp] theorem get_inv (x : FilteredReal e) : get x⁻¹ = (get x)⁻¹ := by
+  induction x using Quotient.ind; exact FilteredEmbedding.value_inv _
+
+@[simp] theorem get_div (x y : FilteredReal e) : get (x / y) = get x / get y := by
+  show get (x * y⁻¹) = _; rw [get_mul, get_inv, div_eq_mul_inv]
+
+@[simp] theorem get_ratCast (q : ℚ) : get (q : FilteredReal e) = q := rfl
+
+@[simp] theorem get_nnratCast (q : ℚ≥0) : get (q : FilteredReal e) = q := by
+  show ((q : ℚ) : α) = _; exact Rat.cast_nnratCast q
+
+@[simp] theorem get_qsmul (q : ℚ) (x : FilteredReal e) : get (q • x) = q • get x := by
+  show get ((q : FilteredReal e) * x) = _; rw [get_mul, get_ratCast, Rat.smul_def]
+
+@[simp] theorem get_nnqsmul (q : ℚ≥0) (x : FilteredReal e) : get (q • x) = q • get x := by
+  show get ((q : FilteredReal e) * x) = _; rw [get_mul, get_nnratCast, NNRat.smul_def]
+
+@[simp] theorem get_zpow (x : FilteredReal e) (n : ℤ) : get (x ^ n) = get x ^ n := by
+  cases n with
+  | ofNat n => show get (x ^ n) = _; rw [get_pow, Int.ofNat_eq_natCast, zpow_natCast]
+  | negSucc n => show get ((x ^ (n + 1))⁻¹) = _; rw [get_inv, get_pow, zpow_negSucc]
+
+instance instField : Field (FilteredReal e) :=
+  get_injective.field get get_zero get_one get_add get_mul get_neg get_sub get_inv get_div
+    get_nsmul get_zsmul get_nnqsmul get_qsmul get_pow get_zpow get_natCast get_intCast
+    get_nnratCast get_ratCast
+
+end Field
 
 end FilteredReal
 
+end CGLean
