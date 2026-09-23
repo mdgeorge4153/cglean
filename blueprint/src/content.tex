@@ -482,6 +482,11 @@ the operations defined on $A[\sqrt{n}]$.
 
 TODO: informal definitions for homs.
 
+% TODO (prose): bracketing A[√n] (AdjoinSqrt.realApprox)
+%  * interval for a₁ + aₙ√n from intervals for a₁, aₙ, n
+%  * needs a tight interval square root; LeanCert's is [0, max hi 1]
+%  * sqrt bounds from Nat.sqrt of endpoints scaled by 4^k
+
 %% A[√n] → ℝ
 
 \begin{definition}
@@ -588,8 +593,11 @@ number representations, but are interesting nonetheless.
 
 \begin{definition}
   \label{def:filtered}
-  \notready
-  \lean{FilteredReal}
+  \lean{CGLean.FilteredReal, CGLean.FilteredEmbedding, CGLean.RealApprox}
+  \leanok
+  % TODO (prose): statement is out of date
+  %  * parameter is now RealApprox: ring hom f plus approx : α → interval
+  %  * intervals are dyadic, not floating-point
   Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
   an unevaluated value of type $α$ and a closed floating-point interval that
   contains $f α$. We consider two values in \code{FilteredReal f} to be
@@ -600,7 +608,8 @@ number representations, but are interesting nonetheless.
 \begin{definition}
   \label{def:filteredRingOps}
   \uses{def:filtered}
-  \lean{FilteredReal.instRingOps}
+  \lean{CGLean.FilteredReal.instRingOps}
+  \leanok
   We define the usual ring operations on \code{FilteredReal} values by storing
   thunks that perform the corresponding operation on the underlying $α$ value.
   We also immediately compute a new interval using the corresponding operations
@@ -616,26 +625,31 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:filteredRing}
-  \lean{FilteredReal.instCommRing}
-  \notready
+  \lean{CGLean.FilteredReal.instCommRing}
+  \leanok
   \uses{def:filteredRingOps}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
 \end{lemma}
 
 \begin{proof}
-  \notready
+  \leanok
+  % TODO (prose):
+  %  * axioms hold in A; pull back along the injection get (def:filteredToA)
 \end{proof}
 
 \begin{definition}
   \label{def:filteredInv}
-  \lean{FilteredReal.instInv}
+  \lean{CGLean.FilteredReal.instInv}
+  \leanok
   \uses{def:filtered}
   If $A$ is a field, and $f$ is a field homomorphism, we can also define
   division in the same way.
 \end{definition}
 
 % TODO (prose): the filter's escape hatch (division and overflow together).
+%  * implemented: interval reciprocal if zero excluded, else evaluate and
+%    re-approximate with RealApprox.approx
 %  * interval containing zero has no interval reciprocal
 %  * options: no-information value, or intervals excluding zero (LeanCert:
 %    IntervalRatNonzero, rational intervals only)
@@ -648,6 +662,23 @@ number representations, but are interesting nonetheless.
 %  * no-information case needed exactly when numbers can overflow; not dyadics
 %  * Mathlib's FP.Float: separate model, unconnected to hardware Float
 
+\begin{lemma}
+  \label{thm:filteredOrderedField}
+  \lean{CGLean.FilteredReal.instField, CGLean.FilteredReal.instLinearOrder, CGLean.FilteredReal.instIsStrictOrderedRing}
+  \leanok
+  \uses{thm:filteredRing, def:filteredInv, def:intervalCompare}
+  % TODO (prose): statement
+  %  * A linearly ordered field, f strictly monotone: FilteredReal f is one too
+  %  * comparisons decided by intervals, falling back on A when they overlap
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * field and order pulled back along get
+  %  * filtered compare agrees with A's: compare_of_compare? plus strict monotonicity
+\end{proof}
+
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
 The whole point of \code{FilteredReal} is that it encapsulates values of
@@ -656,7 +687,8 @@ $A$.
 \begin{definition}
   \label{def:filteredToA}
   \uses{def:filtered}
-  \notready
+  \lean{CGLean.FilteredReal.get, CGLean.FilteredReal.get_injective}
+  \leanok
   There is a nice injection $i$ from \code{FilteredReal (f : A → ℝ)} to
   $A$, and $f \circ i = toReal$.
 \end{definition}
@@ -664,9 +696,16 @@ $A$.
 \begin{theorem}
   \label{def:filteredEquivalent}
   \uses{def:filteredToA, thm:filteredOrderedField}
-  \notready
+  \lean{CGLean.FilteredReal.get_add, CGLean.FilteredReal.get_mul, CGLean.FilteredReal.get_neg, CGLean.FilteredReal.get_inv, CGLean.FilteredReal.compare_get}
+  \leanok
   $i$ preserves all of the linearly ordered field operations.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * by construction: the structure on FilteredReal is defined through i
+\end{proof}
 
 \subsection{FilteredReal avoids computation}
 

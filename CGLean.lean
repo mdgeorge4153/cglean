@@ -6,6 +6,7 @@ import CGLean.Data.AdjoinSqrt
 import CGLean.Data.Interval
 import CGLean.Data.FilteredEmbedding
 import CGLean.Data.AdjoinSqrt.ToReal
+import CGLean.Data.AdjoinSqrt.Filtered
 import CGLean.Geometry.Point2D
 import CGLean.Geometry.Arrangement
 import CGLean.Render.Region
