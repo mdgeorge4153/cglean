@@ -217,6 +217,10 @@ lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
 lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) : norm (-x) = norm x := by
   simp [norm]
 
+/-- Neither does conjugation: `norm` only sees `x.aₙ²`. -/
+lemma norm_conj [CommRing R] (x : AdjoinSqrt R n) : norm (conj x) = norm x := by
+  simp [norm]
+
 lemma sign_zero_eq [SignedField R] : Signed.sign (0 : AdjoinSqrt R n) = 0 := by
   simp [norm, SignedRing.sign_zero]
 
@@ -291,6 +295,51 @@ lemma nonneg_iff [SignedField R] [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) 
       · exact h
       · exact absurd h (not_le.mpr hgt)
 
+/-- Comparison of squares reflects, given the larger side is non-negative.
+Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
+lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
+    (h : a * a ≤ b * b) : a ≤ b :=
+  le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
+
+
+/-- When both norms are non-negative and both rational parts are, the rational
+part dominates the cross term. -/
+lemma cross_le [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
+    n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
+    mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
+    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+
+/-- Dual of `cross_le`. -/
+lemma cross_ge [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
+    x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
+  -- Obtained for free by rotating both x, y by √n (which swaps a₁ ↔ n·aₙ and
+  -- negates the norm) and dividing the resulting cross_le instance by n.
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx
+  have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy
+  have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
+  have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
+  have h := cross_le hx' hy' hxN' hyN'
+  rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
+  nlinarith [h]
+
+/-- `x` and `conj y` share `.a₁` and `norm`, so `cross_le`/`cross_ge` apply to
+either pairing of `x` with `y` or `conj y`; the two conclusions bound
+`n * x.aₙ * y.aₙ` from opposite sides. This is the tool `nonneg_mul`'s
+same-regime cases use to avoid re-deriving the cross-term certificate. -/
+lemma cross_le_conj [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
+    -(n * x.aₙ * y.aₙ) ≤ x.a₁ * y.a₁ := by
+  have h := cross_le hx (show 0 ≤ (conj y).a₁ from hy) hxN
+    (show 0 ≤ norm (conj y) from norm_conj y ▸ hyN)
+  rw [show (conj y).a₁ = y.a₁ from rfl, show (conj y).aₙ = -y.aₙ from rfl] at h
+  linarith
+
 /-- The non-negative elements are closed under multiplication. Each case turns
 on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
 through the two norms. -/
@@ -305,10 +354,7 @@ lemma nonneg_mul [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
   rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
   · left
     refine ⟨?_, by rw [hprod]; exact mul_nonneg hxN hyN⟩
-    rw [ha]
-    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hxN (mul_self_nonneg y.a₁),
-      mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
-      sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+    rw [ha]; linarith [cross_le_conj hx1 hy1 hxN hyN]
   · right
     refine ⟨?_, by rw [hprod]; exact mul_nonpos_of_nonneg_of_nonpos hxN hyN⟩
     rw [hb]
@@ -325,11 +371,15 @@ lemma nonneg_mul [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
     refine ⟨?_, by
       rw [hprod]; nlinarith [mul_nonneg (neg_nonneg.mpr hxN) (neg_nonneg.mpr hyN)]⟩
     rw [ha]
-    nlinarith [mul_nonneg (mul_nonneg hn.le hx1) hy1,
-      mul_nonneg (neg_nonneg.mpr hxN) (mul_self_nonneg y.a₁),
-      mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) (neg_nonneg.mpr hyN),
-      sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ),
-      mul_nonneg hn.le (mul_nonneg hx1 hy1)]
+    -- Rotate both by √n (swapping into the L-regime `cross_le_conj` covers)
+    -- and divide the resulting bound by `n`.
+    have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx1
+    have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy1
+    have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
+    have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
+    have h := cross_le_conj hx' hy' hxN' hyN'
+    rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
+    nlinarith [h]
 
 /-- `eq_zero_of_sign_eq_zero`'s positive-norm case, factored out so the
 negative-norm case can reduce to it by rotating through `√n`. -/
@@ -425,39 +475,6 @@ lemma sign_mul_eq [SignedField R] [Nonsquare R n] [Pos R n] (x y : AdjoinSqrt R 
     rw [neg_mul_neg] at h
     rw [hsx, hsy, h]
     rfl
-
-/-- Comparison of squares reflects, given the larger side is non-negative.
-Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
-lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
-    (h : a * a ≤ b * b) : a ≤ b :=
-  le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
-
-
-/-- When both norms are non-negative and both rational parts are, the rational
-part dominates the cross term. -/
-lemma cross_le [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
-    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
-    n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
-  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
-  simp only [norm] at hxN hyN
-  nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
-    mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
-    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
-
-/-- Dual of `cross_le`. -/
-lemma cross_ge [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
-    (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
-    x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
-  -- Obtained for free by rotating both x, y by √n (which swaps a₁ ↔ n·aₙ and
-  -- negates the norm) and dividing the resulting cross_le instance by n.
-  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
-  have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx
-  have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy
-  have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
-  have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
-  have h := cross_le hx' hy' hxN' hyN'
-  rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
-  nlinarith [h]
 
 /-- In a mixed pair, if the rational parts sum to something non-positive then the
 `√n` parts sum to something non-negative. -/
