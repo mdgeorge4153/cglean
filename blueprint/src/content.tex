@@ -609,54 +609,18 @@ number representations, but are interesting nonetheless.
   division in the same way.
 \end{definition}
 
-% TODO (prose): the filter's escape hatch. Division and overflow are the same
-% event, so this should be one discussion rather than two.
-%
-%  * An interval containing zero has no reciprocal that is again an interval.
-%    Two shapes of answer: a value meaning "no information", or a type of
-%    intervals known to exclude zero. LeanCert takes the second
-%    (`IntervalRatNonzero`), and offers reciprocals only for rational intervals,
-%    not the dyadic ones used here.
-%
-%  * The subtype is the better fit, and not only on taste. A no-information
-%    value propagates silently; requiring the divisor to be bounded away from
-%    zero forces the question at the point of division, and the answer there is
-%    what a filter should do anyway --- stop trusting the approximation and
-%    evaluate.
-%
-%  * Doing that needs something the current interface lacks. To bracket a
-%    freshly evaluated value one must approximate an element of $A$, and
-%    $f : A \to \R$ does not do that: it names the real, it does not bound it.
-%    So `FilteredEmbedding` needs either a separate approximation function, in
-%    the manner of `Floatable`, or an embedding yielding intervals.
-%
-%  * Rounding belongs in the number layer, not the interval layer. LeanCert puts
-%    it in the interval (`roundOut` takes a minimum exponent), which is
-%    meaningful for dyadics and meaningless for floats. A class of numbers with
-%    directed rounding, with the interval layer merely choosing a direction per
-%    endpoint, is what survives swapping the representation.
-%
-%  * That class needs only directedness --- `addDown x y <= x + y <= addUp x y`
-%    in $\R$ --- not correct rounding. IEEE implies it comfortably.
-%
-%  * For hardware floats the obstacle is that Lean's `Float` is opaque with no
-%    theorems, so it has no real-valued semantics to reason from. One would
-%    define `toReal` and assert a relative-error bound against it, in the manner
-%    of Flocq for Coq, and derive the directed operations rather than asserting
-%    them.
-%
-%  * NaN needs no embedding in $\R$: condition each specification on the
-%    *output* being finite, and it is never mentioned. Where the condition
-%    fails, the interval carries no information --- the same escape hatch as
-%    division above.
-%
-%  * Consequence: the interval type needs a no-information case exactly when the
-%    number type can overflow. Vacuous for dyadics, whose exponent is unbounded.
-%
-%  * Mathlib's `Mathlib/Data/FP/Basic.lean` is not a shortcut. Its `FP.Float` is
-%    a separate inductive modelling inf, nan and finite values, unconnected to
-%    the hardware `Float`, carrying one theorem. Its `toRat` does take a
-%    finiteness proof, which is the same instinct as the above.
+% TODO (prose): the filter's escape hatch (division and overflow together).
+%  * interval containing zero has no interval reciprocal
+%  * options: no-information value, or intervals excluding zero (LeanCert:
+%    IntervalRatNonzero, rational intervals only)
+%  * prefer the subtype: forces evaluation at the point of division
+%  * needs approximating elements of A, not just f : A → ℝ
+%  * rounding belongs in the number layer (directed rounding), not the interval
+%  * directedness only, not correct rounding; IEEE suffices
+%  * Float: opaque; define toReal + relative-error axiom, Flocq-style
+%  * NaN: condition specs on finite output; else no information
+%  * no-information case needed exactly when numbers can overflow; not dyadics
+%  * Mathlib's FP.Float: separate model, unconnected to hardware Float
 
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
@@ -697,9 +661,9 @@ intervals. We formalize this as follows:
 
 \begin{proof}
   \leanok
-  Declining means the intervals overlap, so the larger of the two lower bounds
-  lies in both. That point compares equal to itself, while a suitable pair of
-  endpoints compares strictly; the two pairs are the required witnesses.
+  % TODO (prose):
+  %  * decline = overlap; max of lower bounds lies in both
+  %  * witnesses: that point with itself (eq), an endpoint pair (strict)
 \end{proof}
 
 \chapter{Applications}
