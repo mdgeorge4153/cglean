@@ -28,7 +28,9 @@ noncomputable def toRealHom [CommRing R] (f : R →+* ℝ) (hn : 0 ≤ f n) :
 def realApprox [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRingHom n) :
     RealApprox (AdjoinSqrt R n) where
   hom := Erased.mk (toRealHom e.toRingHom hn)
-  approx x := trim ((e.approx x.a₁).add (trim ((e.approx x.aₙ).mul (sqrt (e.approx n)))))
+  -- `√n` is bracketed once, not on every call
+  approx := let s := sqrt (e.approx n)
+    fun x => trim ((e.approx x.a₁).add (trim ((e.approx x.aₙ).mul s)))
   mem_approx x := by
     rw [Erased.out_mk]
     exact mem_trim (IntervalDyadic.mem_add (e.mem_approx' _)
