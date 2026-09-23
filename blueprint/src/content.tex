@@ -332,7 +332,7 @@ follows:
 
 Now we can proceed to check the ordering properties on $A[\sqrt{n}]$. Instead
 of defining comparisons like $<$ and $≤$ directly, it is easier to define a
-$sign$ operator that indicates whether a number is greater than, equal to,
+$\sign$ operator that indicates whether a number is greater than, equal to,
 or less than 0 (this reduces the case analysis considerably).
 
 \begin{definition}
@@ -366,7 +366,7 @@ or less than 0 (this reduces the case analysis considerably).
   \uses{def:signedRing}
   \lean{instSignedRingOfLinearOrderedCommRing}
   \leanok
-  Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
+  Conversely, given an ordered ring $A$ we can define a well-behaved $\sign$
   function.
 \end{lemma}
 \begin{proof}
@@ -388,7 +388,7 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 \end{definition}
 
 \begin{proof}
-  We want to define $sign : A → \{0,1,-1\}$ which compares $a := a_1 + a_n\sqrt{n}$
+  We want to define $\sign : A → \{0,1,-1\}$ which compares $a := a_1 + a_n\sqrt{n}$
   with 0. The trick to defining this is to determine whether $|a_1|$ or
   $|a_n\sqrt{n}|$ is bigger: if $|a_1|$ dominates then the sign of $a$ is just
   the sign of $a_1$, otherwise the sign of $a$ is the sign of $a_n$.
