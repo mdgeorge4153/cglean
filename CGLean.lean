@@ -5,6 +5,7 @@ import CGLean.Data.AdjoinSqrt
 import CGLean.Data.AdjoinSqrt.ToReal
 import CGLean.Data.Interval
 import CGLean.Data.FilteredEmbedding
+import CGLean.Data.NumberType
 import CGLean.Data.AdjoinSqrt.Filtered
 import CGLean.Geometry.Point2D
 import CGLean.Geometry.Arrangement

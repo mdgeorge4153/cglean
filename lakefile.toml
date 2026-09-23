@@ -23,3 +23,9 @@ rev = "main"
 
 [[lean_lib]]
 name = "CGLean"
+
+# Benchmark: exact vs filtered arithmetic in ℚ[√2][√3]. Not a default target.
+[[lean_exe]]
+name = "bench"
+srcDir = "bench"
+root = "Main"
