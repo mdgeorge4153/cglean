@@ -426,3 +426,186 @@ lemma sign_mul_eq [SignedField R] [Nonsquare R n] [Pos R n] (x y : AdjoinSqrt R 
     rw [hsx, hsy, h]
     rfl
 
+/-- Comparison of squares reflects, given the larger side is non-negative.
+Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
+lemma le_of_mul_self_le [SignedField R] {a b : R} (hb : 0 ≤ b)
+    (h : a * a ≤ b * b) : a ≤ b :=
+  le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
+
+
+/-- When both norms are non-negative and both rational parts are, the rational
+part dominates the cross term. -/
+lemma cross_le [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
+    n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
+    mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
+    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
+
+/-- Dual of `cross_le`. -/
+lemma cross_ge [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
+    x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
+  -- Obtained for free by rotating both x, y by √n (which swaps a₁ ↔ n·aₙ and
+  -- negates the norm) and dividing the resulting cross_le instance by n.
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx
+  have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy
+  have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
+  have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
+  have h := cross_le hx' hy' hxN' hyN'
+  rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
+  nlinarith [h]
+
+/-- In a mixed pair, if the rational parts sum to something non-positive then the
+`√n` parts sum to something non-negative. -/
+lemma aₙ_add_nonneg [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
+    (h : x.a₁ + y.a₁ ≤ 0) : 0 ≤ x.aₙ + y.aₙ := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  simp only [norm] at hxN hyN
+  have h1 : x.a₁ * x.a₁ ≤ (-y.a₁) * (-y.a₁) :=
+    mul_self_le_mul_self hx1 (by linarith)
+  have h2 : n * (x.aₙ * x.aₙ) ≤ n * (y.aₙ * y.aₙ) := by nlinarith [h1]
+  have h3 : x.aₙ * x.aₙ ≤ y.aₙ * y.aₙ := le_of_mul_le_mul_left h2 hn
+  have h4 : -x.aₙ ≤ y.aₙ := le_of_mul_self_le hy1 (by nlinarith [h3])
+  linarith
+
+/-- Dual of `norm_add_nonpos`: if the `√n` parts sum to something non-positive,
+the sum sits on the rational-dominated side. -/
+lemma norm_add_nonneg [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
+    (h : x.aₙ + y.aₙ ≤ 0) : 0 ≤ norm (x+y) := by
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hsum : norm (x+y)
+      = (x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) := by simp [norm]; ring
+  rw [hsum]
+  simp only [norm] at hxN hyN
+  have hb : x.aₙ ≤ 0 := by linarith
+  rcases le_total 0 y.a₁ with hc | hc
+  · -- `c ≥ 0`: the rational part only grows, the `√n` part only shrinks
+    nlinarith [hxN, hn, hx1, hc, hy1, hb, h,
+      mul_self_nonneg (x.aₙ + y.aₙ), mul_nonneg hx1 hc,
+      mul_le_mul_of_nonneg_left
+        (show (x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) ≤ x.aₙ*x.aₙ by nlinarith [hy1, hb, h]) hn.le]
+  · -- `c ≤ 0`: the mirrored certificate, multiplier `a - c`
+    have hac : 0 ≤ x.a₁ - y.a₁ := by linarith
+    have step1 : x.aₙ * y.a₁ ≤ x.a₁ * y.aₙ := by
+      refine le_of_mul_self_le (mul_nonneg hx1 hy1) ?_
+      nlinarith [mul_self_nonneg x.aₙ, mul_self_nonneg y.aₙ, hxN, hyN, hn,
+        mul_le_mul_of_nonneg_left hyN (mul_self_nonneg x.aₙ),
+        mul_le_mul_of_nonneg_right hxN (mul_self_nonneg y.aₙ)]
+    -- `a + c ≥ 0`, again by comparing squares
+    have hdb : y.aₙ ≤ -x.aₙ := by linarith
+    have hpr : 0 ≤ x.a₁ + y.a₁ := by
+      have hsq : (-y.a₁) * (-y.a₁) ≤ x.a₁ * x.a₁ := by
+        nlinarith [hxN, hyN, hn, hy1, mul_self_le_mul_self hy1 hdb]
+      linarith [le_of_mul_self_le hx1 hsq]
+    rcases eq_or_lt_of_le hac with heq | hlt
+    · have hz : x.a₁ = 0 := le_antisymm (by linarith) hx1
+      have hy0 : y.a₁ = 0 := by linarith
+      have hb0 : x.aₙ = 0 := by
+        have hsq : x.aₙ * x.aₙ ≤ 0 := by
+          have h' := hxN; rw [hz] at h'; nlinarith [h', hn]
+        exact mul_self_eq_zero.mp (le_antisymm hsq (mul_self_nonneg _))
+      have hd0 : y.aₙ = 0 := le_antisymm (by linarith) hy1
+      simp [hz, hy0, hb0, hd0]
+    · have key : 0 ≤ (x.a₁ - y.a₁) *
+          ((x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ)) := by
+        nlinarith [step1, hxN, hyN, hx1, hy1, hb, hc, h, hac, hpr, hn,
+          mul_nonneg (mul_nonneg hn.le (neg_nonneg.mpr h)) hac,
+          mul_nonneg hpr hac, mul_nonneg (neg_nonneg.mpr h) hpr,
+          mul_nonneg hx1 hy1]
+      nlinarith [key, hlt]
+
+/-- The `√n`-dominated twin of `norm_add_nonneg`. -/
+lemma norm_add_nonpos [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
+    (h : x.a₁ + y.a₁ ≤ 0) : norm (x+y) ≤ 0 := by
+  -- Obtained for free by rotating both summands by √n: x' := y*√n and
+  -- y' := x*√n swap regimes (L↔R) and negate their norms, and
+  -- x'.aₙ + y'.aₙ = y.a₁ + x.a₁ is exactly the given hypothesis (relabelled).
+  -- So norm_add_nonneg applies directly to (x', y'), giving
+  -- 0 ≤ norm (x'+y') = norm ((x+y)*√n) = -n * norm (x+y), i.e. norm (x+y) ≤ 0.
+  have hn : 0 < n := SignedRing.sign_eq_pos_iff.mp Pos.n_pos
+  have hx' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy1
+  have hy' : 0 ≤ (x * root n).aₙ := by rw [mul_root_aₙ]; exact hx1
+  have hxN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
+  have hyN' : norm (x * root n) ≤ 0 := by rw [norm_mul_rootN]; nlinarith
+  have hsum : 0 ≤ norm (y * root n + x * root n) := by
+    refine norm_add_nonneg hx' hy' hxN' hyN' ?_
+    rw [mul_root_aₙ, mul_root_aₙ]; linarith
+  have hrot : y * root n + x * root n = (x + y) * root n := by
+    rw [← right_distrib, add_comm y x]
+  rw [hrot, norm_mul_rootN] at hsum
+  nlinarith
+
+/-- The non-negative elements are closed under addition. -/
+lemma nonneg_add [SignedField R] [Pos R n] {x y : AdjoinSqrt R n}
+    (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
+    (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
+    (0 ≤ (x+y).a₁ ∧ 0 ≤ norm (x+y)) ∨ (0 ≤ (x+y).aₙ ∧ norm (x+y) ≤ 0) := by
+  have ha : (x+y).a₁ = x.a₁ + y.a₁ := rfl
+  have hb : (x+y).aₙ = x.aₙ + y.aₙ := rfl
+  have hsum : norm (x+y) = norm x + norm y + 2*(x.a₁*y.a₁ - n*x.aₙ*y.aₙ) := by
+    simp [norm]; ring
+  rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
+  · exact Or.inl ⟨by rw [ha]; linarith,
+      by rw [hsum]; linarith [cross_le hx1 hy1 hxN hyN]⟩
+  · rcases le_total 0 (x.a₁ + y.a₁) with hle | hle
+    · rcases le_total 0 (x.aₙ + y.aₙ) with hbd | hbd
+      · rcases le_total 0 (norm (x+y)) with hN | hN
+        · exact Or.inl ⟨by rw [ha]; exact hle, hN⟩
+        · exact Or.inr ⟨by rw [hb]; exact hbd, hN⟩
+      · exact Or.inl ⟨by rw [ha]; exact hle, norm_add_nonneg hx1 hy1 hxN hyN hbd⟩
+    · exact Or.inr ⟨by rw [hb]; exact aₙ_add_nonneg hx1 hy1 hxN hyN hle,
+        norm_add_nonpos hx1 hy1 hxN hyN hle⟩
+  · rcases le_total 0 (x.a₁ + y.a₁) with hle | hle
+    · rcases le_total 0 (x.aₙ + y.aₙ) with hbd | hbd
+      · rcases le_total 0 (norm (x+y)) with hN | hN
+        · exact Or.inl ⟨by rw [ha]; exact hle, hN⟩
+        · exact Or.inr ⟨by rw [hb]; exact hbd, hN⟩
+      · refine Or.inl ⟨by rw [ha]; exact hle, ?_⟩
+        rw [show x + y = y + x from add_comm x y]
+        exact norm_add_nonneg hy1 hx1 hyN hxN (by linarith)
+    · refine Or.inr ⟨?_, ?_⟩
+      · rw [hb, add_comm]; exact aₙ_add_nonneg hy1 hx1 hyN hxN (by linarith)
+      · rw [show x + y = y + x from add_comm x y]
+        exact norm_add_nonpos hy1 hx1 hyN hxN (by linarith)
+  · exact Or.inr ⟨by rw [hb]; linarith,
+      by rw [hsum]; linarith [cross_ge hx1 hy1 hxN hyN]⟩
+
+/-- `sign_plus`, the last axiom of `instSignedRing`. -/
+lemma sign_plus_eq [SignedField R] [Nonsquare R n] [Pos R n]
+    (a b : AdjoinSqrt R n) (ha : Signed.sign a ≠ .neg)
+    (hb : Signed.sign b ≠ .neg) : Signed.sign (a + b) ≠ .neg :=
+  (nonneg_iff _).mpr (nonneg_add ((nonneg_iff a).mp ha) ((nonneg_iff b).mp hb))
+
+
+instance instSignedRing [SignedField R] [Nonsquare R n] [Pos R n] :
+    SignedRing (AdjoinSqrt R n) where
+  __ := instCommRing
+  sign_zero := sign_zero_eq
+  sign_one  := sign_one_eq
+  sign_mul  := sign_mul_eq
+  zero_sign := eq_zero_of_sign_eq_zero
+  sign_neg  := sign_neg_eq
+  sign_plus := sign_plus_eq
+
+
+/-- The order on `A[√n]`, obtained from its `SignedRing` structure via
+`CGLean.Algebra.Signed`. -/
+@[reducible] def linearOrderOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
+    LinearOrder (AdjoinSqrt R n) := inferInstance
+
+/-- That order is compatible with the ring operations, so `A[√n]` is a linearly
+ordered ring whenever `A` is one and `n` is a positive non-square. -/
+theorem isStrictOrderedRingOfNonsquareOfPos [SignedField R] [Nonsquare R n] [Pos R n] :
+    IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
+
+
+theorem root_n_squared [CommRing R]: root n * root n = (n : AdjoinSqrt R n) := by
+  ext <;> simp
+
