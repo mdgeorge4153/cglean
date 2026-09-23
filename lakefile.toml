@@ -28,4 +28,4 @@ name = "CGLean"
 # they are extra roots, which both builds them and puts them in the API docs.
 # Once alerad/leancert#131 lands, make them modules, import them from
 # `CGLean.lean`, and drop this line.
-roots = ["CGLean", "CGLean.Data.Interval"]
+roots = ["CGLean", "CGLean.Data.Interval", "CGLean.Data.FilteredEmbedding"]
