@@ -35,6 +35,35 @@ jobs:
       - name: Build
         run: lake build
 
+      # doc-gen4 records every declaration it sees in a SQLite database and
+      # only then renders HTML from it. Ingesting Mathlib and the Lean core
+      # takes over half an hour, so the whole build directory is cached and
+      # Lake replays whatever the current sources still agree with, leaving
+      # only CGLean's own modules to re-ingest.
+      #
+      # doc-gen4 and the packages only it uses are cached alongside, because
+      # every entry in the database records the hash of the doc-gen4 executable
+      # among its inputs and that executable does not come out byte-identical
+      # from one build to the next. Rebuilding it invalidates everything, so it
+      # has to be restored rather than rebuilt for any of the rest to be reused.
+      - name: Cache the generated documentation
+        uses: actions/cache@v4
+        with:
+          path: |
+            docbuild/.lake
+            .lake/packages/doc-gen4
+            .lake/packages/leansqlite
+            .lake/packages/MD4Lean
+            .lake/packages/BibtexQuery
+            .lake/packages/UnicodeBasic
+          key: DocData-${{ hashFiles('lake-manifest.json', 'docbuild/lake-manifest.json') }}
+          restore-keys: |
+            DocData-
+
+      - name: Build documentation
+        run: lake build CGLean:docs
+        working-directory: docbuild
+
       # No TeX: the blueprint contains no TikZ or included graphics, so plasTeX
       # renders it unaided. Graphviz is for the dependency graph.
       # A venv rather than pipx: leanblueprint shells out to `plastex`, which
@@ -54,9 +83,17 @@ jobs:
       - name: Check the blueprint against the library
         run: python3 scripts/check-blueprint.py
 
+      # The blueprint sits at the root and the API documentation under `docs/`,
+      # which is where the blueprint's `\dochome` points its statement links.
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp -r blueprint/web/. _site/
+          cp -r docbuild/.lake/build/doc _site/docs
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: blueprint/web
+          path: _site
 
   deploy:
     needs: build
