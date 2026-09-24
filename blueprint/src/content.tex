@@ -341,10 +341,14 @@ of defining comparisons like $<$ and $≤$ directly, it is easier to define a
 $\sign$ operator that indicates whether a number is greater than, equal to,
 or less than 0 (this reduces the case analysis considerably).
 
+% TODO (prose): order-first formulation
+%  * order is now primary: positive cone (AdjoinSqrt.nonnegCone), as in Mathlib
+%  * sign is Mathlib's SignType.sign, derived from the order
+%  * SignedRing no longer exists in Lean; keep as informal motivation or drop
+
 \begin{definition}
   \label{def:signedRing}
-  \lean{SignedRing}
-  \leanok
+  % TODO: no Lean counterpart any more (order-first); restate or drop
   A signed ring is a ring $A$ coupled with a function $\sign : A → \{0, 1, -1\}$
   satisfying the following properties: \begin{itemize}
     \item $\sign(0) = 0$
@@ -359,18 +363,16 @@ or less than 0 (this reduces the case analysis considerably).
 \begin{lemma}
   \label{thm:orderFromSign}
   \uses{def:signedRing}
-  \lean{instLinearOrderOfSignedRing, instIsStrictOrderedRingOfSignedRing}
-  \leanok
+  % TODO: no Lean counterpart any more (order-first); restate or drop
   Given a signed ring $A$, we can define an ordered ring structure on $A$.
 \end{lemma}
 \begin{proof}
-  \leanok
   This is mostly borrowed from Mathlib.
 \end{proof}
 \begin{lemma}
   \label{thm:signFromOrder}
   \uses{def:signedRing}
-  \lean{instSignedRingOfLinearOrderedCommRing}
+  \lean{SignType.sign, sign_mul, Left.sign_neg}
   \leanok
   Conversely, given an ordered ring $A$ we can define a well-behaved $\sign$
   function.
@@ -386,9 +388,12 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 
 \begin{definition}
   \label{def:adjoinSign}
-  \lean{AdjoinSqrt.instSignedRing}
+  \lean{AdjoinSqrt.IsNonneg, AdjoinSqrt.nonnegCone, AdjoinSqrt.cmpZero, AdjoinSqrt.sign_eq}
   \leanok
   \uses{def:signedRing, def:adjoin, def:adjoinRingOps}
+  % TODO (prose): statement is out of date
+  %  * now: the positive cone of A[√n], decided by cmpZero
+  %  * the sign formula below is now a theorem (sign_eq) about SignType.sign
   If $A$ is a signed ring and $n ∈ A \geq 0$ is not a square in $A$, then
   $A[\sqrt{n}]$ is a signed ring.
 \end{definition}
@@ -445,7 +450,7 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 
 \begin{corollary}
   \label{thm:adjoinOrderedRing}
-  \lean{AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign, thm:signFromOrder}
   \leanok
   If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
@@ -456,6 +461,8 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
   \leanok
   Since $A$ is a linearly ordered ring, it is a signed ring. Therefore $A[\sqrt{n}]$ is signed,
   which implies that it is a linearly ordered ring.
+  % TODO (prose): out of date (order-first)
+  %  * cone closed under + and × (nonneg_add, nonneg_mul); Mathlib builds the order
 \end{proof}
 
 %% A[√n] is an ordered field
@@ -464,7 +471,7 @@ Putting this all together gives the main result of this section:
 
 \begin{theorem}
   \label{thm:adjoinOrderedField}
-  \lean{AdjoinSqrt.instField, AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instField, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
   \leanok
 
