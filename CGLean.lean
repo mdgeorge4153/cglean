@@ -1,7 +1,6 @@
 import CGLean.Classes.Floatable
 import CGLean.Classes.Region
 import CGLean.Classes.RingOps
-import CGLean.Algebra.Signed
 import CGLean.Data.AdjoinSqrt
 import CGLean.Data.Interval
 import CGLean.Data.FilteredEmbedding
