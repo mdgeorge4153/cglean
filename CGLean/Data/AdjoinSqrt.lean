@@ -444,15 +444,11 @@ lemma nonneg_antisymm [Nonsquare R n] [Pos R n] {x : AdjoinSqrt R n}
   unfold IsNonneg at hx hnx
   rw [hN, h1, h2] at hnx
   have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
-  rcases hx with ⟨ha, hN1⟩ | ⟨hb, hN1⟩ <;> rcases hnx with ⟨ha', hN2⟩ | ⟨hb', hN2⟩
-  · have : x.a₁ = 0 := le_antisymm (by linarith) ha
-    apply hzero; simp only [norm, this] at hN1 ⊢
-    nlinarith [mul_nonneg hn.le (mul_self_nonneg x.aₙ)]
-  · exact hzero (le_antisymm hN2 hN1)
-  · exact hzero (le_antisymm hN1 hN2)
-  · have : x.aₙ = 0 := le_antisymm (by linarith) hb
-    apply hzero; simp only [norm, this] at hN1 ⊢
-    nlinarith [mul_self_nonneg x.a₁]
+  -- every case forces `norm x = 0`
+  apply hzero
+  rcases hx with ⟨p, _⟩ | ⟨p, _⟩ <;> rcases hnx with ⟨q, _⟩ | ⟨q, _⟩ <;> simp only [norm] at * <;>
+    nlinarith [mul_nonneg p q, mul_nonneg (mul_nonneg hn.le p) q,
+      mul_nonneg hn.le (mul_self_nonneg x.aₙ), mul_self_nonneg x.a₁]
 
 /-- Every element is non-negative or non-positive. -/
 lemma nonneg_or_neg_nonneg (x : AdjoinSqrt R n) : IsNonneg x ∨ IsNonneg (-x) := by
@@ -499,8 +495,10 @@ theorem cmpZero_spec [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) :
   have hx0 : x = 0 ↔ x.a₁ = 0 ∧ x.aₙ = 0 := AdjoinSqrt.ext_iff
   have sq := mul_self_nonneg x.a₁
   have sqn : 0 ≤ n * x.aₙ * x.aₙ := by rw [mul_assoc]; exact mul_nonneg hn.le (mul_self_nonneg _)
+  have sqpos : x.aₙ ≠ 0 → 0 < n * x.aₙ * x.aₙ := fun h => by
+    rw [mul_assoc]; exact mul_pos hn (mul_self_pos.mpr h)
   unfold cmpZero IsNonneg
-  simp only [norm] at hzero ⊢
+  simp only [norm, hx0] at hzero ⊢
   rcases lt_trichotomy x.a₁ 0 with h1 | h1 | h1 <;>
     rcases lt_trichotomy x.aₙ 0 with h2 | h2 | h2 <;>
     simp only [compare_lt_iff_lt.mpr, compare_eq_iff_eq.mpr, compare_gt_iff_gt.mpr, h1, h2,
@@ -508,28 +506,11 @@ theorem cmpZero_spec [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) :
   all_goals simp only [compare_lt_iff_lt, compare_eq_iff_eq, reduceCtorEq, true_iff, false_iff,
     not_or, not_and, not_le, and_true, true_and, le_refl, neg_zero, add_zero, zero_add,
     mul_zero, not_true_eq_false, and_false]
-  -- a₁ < 0, aₙ < 0
-  · exact ⟨⟨fun h => absurd h (not_le.mpr h1), fun h => absurd h (not_le.mpr h2)⟩,
-      fun h => absurd h h1.ne⟩
-  -- a₁ < 0, aₙ = 0
-  · exact ⟨⟨fun h => absurd h (not_le.mpr h1), mul_self_pos.mpr h1.ne⟩, h1.ne⟩
-  -- a₁ < 0 < aₙ: the norm decides
-  · refine ⟨⟨fun h => ⟨fun h' => absurd h' (not_le.mpr h1), fun _ => by linarith⟩,
-      fun ⟨_, h⟩ => by linarith [h h2.le]⟩, ⟨fun h => hx0.mp (hzero (by linarith)),
-      fun ⟨h, _⟩ => absurd h h1.ne⟩⟩
-  -- a₁ = 0, aₙ < 0
-  · exact ⟨⟨by nlinarith [mul_pos hn (mul_pos_of_neg_of_neg h2 h2)],
-      fun h => absurd h (not_le.mpr h2)⟩, h2.ne⟩
-  -- a₁ = 0 < aₙ
-  · exact ⟨fun _ h' => by nlinarith [h' h2.le, mul_pos hn (mul_pos h2 h2)], h2.ne'⟩
-  -- aₙ < 0 < a₁: the norm decides
-  · refine ⟨⟨fun h => ⟨fun _ => by linarith, fun h' => absurd h' (not_le.mpr h2)⟩,
-      fun ⟨h, _⟩ => by linarith [h h1.le]⟩, ⟨fun h => hx0.mp (hzero (by linarith)),
-      fun ⟨h, _⟩ => absurd h h1.ne'⟩⟩
-  -- aₙ = 0 < a₁
-  · exact ⟨fun h => absurd (h h1.le) (not_lt.mpr (mul_self_nonneg _)), h1.ne'⟩
-  -- 0 < a₁, 0 < aₙ
-  · exact ⟨fun h h' => by linarith [h h1.le, h' h2.le], fun h => absurd h h1.ne'⟩
+  -- Nine cases on the signs of `a₁` and `aₙ`. When they agree, or one is zero,
+  -- the answer is immediate; when they differ, `norm x` decides. Each case is
+  -- propositional structure over linear facts, except `0 < n·aₙ²`, which is
+  -- `sqpos`.
+  all_goals aesop (add unsafe 50% (by linarith), unsafe 30% (by nlinarith), unsafe apply sqpos)
 
 section Instances
 
