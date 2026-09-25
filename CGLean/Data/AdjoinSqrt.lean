@@ -42,7 +42,7 @@ instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
 /-- `R` acting on `A[√n]` componentwise. Not an instance: for `R = ℕ`, `ℤ` or
 `ℚ` it would compete with the action every semiring, ring or field already has,
 which agrees with this one only up to a proof. -/
-@[simps] def componentSMul [Mul R] : SMul R (AdjoinSqrt R n) where
+@[reducible, simps] def componentSMul [Mul R] : SMul R (AdjoinSqrt R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
 
 @[simps] instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
