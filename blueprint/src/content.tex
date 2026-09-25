@@ -194,12 +194,18 @@ We can summarize the example from this section in the following corollary:
 \begin{corollary}
   \label{thm:numberType}
   \uses{def:adjoin, def:filtered}
+  \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldFiltered, CGLean.NumberType.instLinearOrderFiltered}
+  \leanok
   \code{FilteredReal $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 
 \begin{proof}
   \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderedFieldHom}
-  TODO
+  \leanok
+  % TODO (prose):
+  %  * 2 not a square in Q, 3 not a square in Q[√2]; both positive
+  %  * Q's sign order agrees with Mathlib's, so Q → R is strictly monotone
+  %  * the three cited results, applied twice up the tower
 \end{proof}
 
 The definition of a linearly ordered field can be broken down into parts, and
@@ -571,7 +577,7 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:adjoinAlgebra}
-  \lean{AdjoinSqrt.instAlgebra}
+  \lean{AdjoinSqrt.algebra}
   \leanok
   \uses{def:adjoin, def:adjoinOfA, thm:adjoinRing}
   If $A$ is a ring, then $A[\sqrt{n}]$ is an $A$-algebra.

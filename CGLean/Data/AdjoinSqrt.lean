@@ -39,7 +39,10 @@ variable {R : Type} {n : R}
 /-- marker instance to encapsulate the above -/
 instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
 
-@[simps] instance instSMul [Mul R] : SMul R (AdjoinSqrt R n) where
+/-- `R` acting on `A[√n]` componentwise. Not an instance: for `R = ℕ`, `ℤ` or
+`ℚ` it would compete with the action every semiring, ring or field already has,
+which agrees with this one only up to a proof. -/
+@[reducible, simps] def componentSMul [Mul R] : SMul R (AdjoinSqrt R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
 
 @[simps] instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
@@ -120,7 +123,10 @@ instance instSemiring [CommSemiring R]: Semiring (AdjoinSqrt R n) where
   one_mul := by intros; ext <;> simp
   mul_one := by intros; ext <;> simp
 
-instance instAlgebra [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
+/-- `A[√n]` is an `A`-algebra. Not an instance, for the same reason as
+`componentSMul`; bring it into scope with `letI := AdjoinSqrt.algebra`. -/
+abbrev algebra [CommSemiring R] : Algebra R (AdjoinSqrt R n) where
+  toSMul := componentSMul
   algebraMap := {
     toFun (x : R) := (x : AdjoinSqrt R n)
     map_one'  := rfl
