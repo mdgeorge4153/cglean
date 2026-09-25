@@ -52,7 +52,7 @@ instance : SignedField K where
   __ := AdjoinSqrt.instField
 
 theorem three_eq : (3 : K) = ⟨3, 0⟩ := by
-  rw [← map_ofNat (@algebraMap ℚ K _ _ AdjoinSqrt.instAlgebra) 3]
+  rw [← map_ofNat (@algebraMap ℚ K _ _ AdjoinSqrt.algebra) 3]
   ext
   · show (OfNat.ofNat 3 : ℚ) = 3; norm_num
   · rfl
