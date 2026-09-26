@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="430" viewBox="0 0 760 430"
+     font-family="ui-sans-serif, system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="hGrey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c9299"/>
+    </marker>
+    <marker id="hBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2a7ad4"/>
+    </marker>
+    <marker id="hOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ed8712"/>
+    </marker>
+  </defs>
+
+  <!-- ── panel 1: a claim that holds of its points ───────────────────────── -->
+  <text x="40" y="34" font-size="17" fill="#5b6068" font-weight="600">ccw p q r</text>
+  <text x="128" y="34" font-size="14" fill="#9aa0a6">— how one claim is drawn</text>
+
+  <line x1="90" y1="280" x2="286.1" y2="252.0" stroke="#8c9299" stroke-width="2"/>
+  <line x1="90" y1="280" x2="183.7" y2="92.5" stroke="#8c9299" stroke-width="2"
+        marker-end="url(#hGrey)"/>
+  <path d="M 149.4 271.5 A 60 60 0 0 0 116.8 226.3" fill="none" stroke="#2a7ad4"
+        stroke-width="3" marker-end="url(#hBlue)"/>
+
+  <circle cx="90"  cy="280" r="5" fill="#73777e"/>
+  <circle cx="300" cy="250" r="5" fill="#73777e"/>
+  <circle cx="190" cy="80"  r="5" fill="#73777e"/>
+  <text x="70"  y="302" font-size="16" fill="#5b6068">p</text>
+  <text x="312" y="250" font-size="16" fill="#5b6068">q</text>
+  <text x="199" y="73"  font-size="16" fill="#5b6068">r</text>
+
+  <text x="40" y="392" font-size="13" fill="#9aa0a6">both rays leave the pivot p; only the ray to r</text>
+  <text x="40" y="410" font-size="13" fill="#9aa0a6">is headed, marking where the turn ends</text>
+
+  <!-- ── panel 2: the same rays, the other order ─────────────────────────── -->
+  <text x="420" y="34" font-size="17" fill="#5b6068" font-weight="600">ccw p r q</text>
+  <text x="508" y="34" font-size="14" fill="#9aa0a6">— false of these points</text>
+
+  <line x1="470" y1="280" x2="666.1" y2="252.0" stroke="#8c9299" stroke-width="2"
+        marker-end="url(#hGrey)"/>
+  <line x1="470" y1="280" x2="563.7" y2="92.5" stroke="#8c9299" stroke-width="2"/>
+  <path d="M 508.0 204.0 A 85 85 0 1 0 554.2 268.0" fill="none" stroke="#ed8712"
+        stroke-width="3" marker-end="url(#hOrange)"/>
+
+  <circle cx="470" cy="280" r="5" fill="#73777e"/>
+  <circle cx="680" cy="250" r="5" fill="#73777e"/>
+  <circle cx="570" cy="80"  r="5" fill="#73777e"/>
+  <text x="450" y="302" font-size="16" fill="#5b6068">p</text>
+  <text x="692" y="250" font-size="16" fill="#5b6068">q</text>
+  <text x="579" y="73"  font-size="16" fill="#5b6068">r</text>
+
+  <text x="420" y="392" font-size="13" fill="#9aa0a6">the same two rays, now headed at q and swept</text>
+  <text x="420" y="410" font-size="13" fill="#9aa0a6">the long way: a reflex arc is a false claim</text>
+</svg>
