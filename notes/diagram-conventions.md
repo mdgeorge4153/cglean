@@ -88,6 +88,24 @@ against the two that are the order itself.
   counterclockwise, and impossible to apply mid-proof, where whether a
   hypothesis holds is not known.
 
+## Agreed, not yet built: drawing all three orientations
+
+The renderer draws claims of one kind, a counterclockwise turn. Now that
+`CGLean.orientation` is three-valued, a claim can equally be that a triple turns
+clockwise or that it is collinear, and each should have its own colour.
+
+`.zero` cannot be an arc, since a collinear triple has zero sweep and would be
+invisible. It is drawn instead as two arcs, one in each direction — the
+degenerate case where neither order wins, rather than a third glyph invented for
+it.
+
+This is orthogonal to the reflex-arc convention above, and both survive. Colour
+says which of the three values a claim *asserts*; a reflex sweep says the
+coordinates the diagram was laid out with *disagree* with what is asserted. A
+clockwise claim therefore becomes a minor arc in its own colour rather than
+something inferred from a reflex sweep, and reflex is left to mean exactly one
+thing.
+
 ## Not yet automated
 
 Every coordinate in the demos is chosen by hand. Nothing in a proof state
