@@ -667,6 +667,13 @@ number representations, but are interesting nonetheless.
 %  * NaN: condition specs on finite output; else no information
 %  * no-information case needed exactly when numbers can overflow; not dyadics
 %  * Mathlib's FP.Float: separate model, unconnected to hardware Float
+%  * dyadics unrounded: mantissa doubles per mul; round inside addUp etc.
+%    at a fixed precision (LeanCert's roundOut: precision per call)
+%  * no exact dyadic division (1/3); divUp/divDown must round
+%  * precision vs LEAN_MAX_SMALL_INT (~31 bits on 64-bit, not 63); 31x31
+%    products leave the fast path, so mul rounds immediately; unmeasured
+%  * reuse: dyadic side → LeanCert?; Float axioms not Mathlib (trust
+%    extension; cf. Flocq separate from Coq stdlib)
 
 \begin{lemma}
   \label{thm:filteredOrderedField}
@@ -895,6 +902,20 @@ application.
   trade-offs weighed in Chapter~\ref{chap:arrangements}: how much of a
   specification to state abstractly, when to refine a clean definition into an
   efficient implementation, and what is lost either way.
+
+\item Yves Bertot and Thomas Portet, \emph{Formally Verifying a Vertical Cell
+  Decomposition Algorithm}, ITP 2025, LIPIcs vol.\ 352, 24:1--24:18.
+  \link{https://doi.org/10.4230/LIPIcs.ITP.2025.24}{doi:10.4230/LIPIcs.ITP.2025.24},
+  development at \link{https://github.com/math-comp/trajectories}{math-comp/trajectories}.
+  The closest existing work to the arrangements chapter: a sweep line verified
+  in Rocq, for decomposing a region containing obstacles into safe cells. Two
+  choices there differ from the ones here and are worth weighing. Coordinates
+  come from a discrete real closed field rather than a tower of square roots,
+  which is more general but pays for it in the cost of arithmetic. More
+  importantly, the algorithm is proved against Knuth's axioms for the
+  orientation predicate rather than against any particular arithmetic, so that
+  any implementation satisfying the axioms inherits the correctness proof. Three
+  separate files are given over to degenerate positions.
 
 \item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
   Pragmatic Introduction to the Coq Proof Assistant}, MIT Press, 2013.
