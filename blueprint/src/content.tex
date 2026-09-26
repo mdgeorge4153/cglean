@@ -7,6 +7,118 @@
 \chapter{Overview}
 
 \chapter{2D Planar Geometry Primitives}
+\label{chap:primitives}
+
+\section{Orientation}
+
+% TODO (prose):
+%  * why orientation is the one predicate everything else needs
+%  * Knuth's CC systems (Axioms and Hulls); axioms instead of coordinates
+%  * three-valued, not a relation: data, so computable; collinear reported
+
+\begin{definition}
+  \label{def:orientationSystem}
+  \lean{CGLean.OrientationSystem}
+  \leanok
+  An orientation system on a set $P$ is a function
+  $\orient : P^3 → \{0, 1, -1\}$ such that, for all $p, q, r, s, t ∈ P$:
+  \begin{itemize}
+    \item $\orient(q, r, p) = \orient(p, q, r)$
+    \item $\orient(p, r, q) = -\orient(p, q, r)$
+    \item if $\orient(t, q, r)$, $\orient(p, t, r)$ and $\orient(p, q, t)$ are
+      all $\geq 0$ (resp.\ all $= 1$), then so is $\orient(p, q, r)$
+    \item if $\orient(t, s, p) \geq 0$, $\orient(t, s, q) = 1$,
+      $\orient(t, s, r) \geq 0$, $\orient(t, p, q) \geq 0$ and
+      $\orient(t, q, r) \geq 0$, then $\orient(t, p, r) \geq 0$; and likewise
+      with every hypothesis and the conclusion $= 1$
+  \end{itemize}
+  % TODO (prose):
+  %  * which of Knuth's axioms each is (1, 2, 4, 5)
+  %  * axiom 3 (non-degeneracy) omitted on purpose
+  %  * strict forms not implied by non-strict; both carried
+  %  * why hsq stays strict in non-strict transitivity
+  %  * oriented-matroid / chirotope connection: lead, unverified
+\end{definition}
+
+\begin{definition}
+  \label{def:ccw}
+  \lean{CGLean.CCW}
+  \uses{def:orientationSystem}
+  \leanok
+  $p, q, r$ make a counterclockwise turn, $\ccw(p, q, r)$, when
+  $\orient(p, q, r) = 1$.
+\end{definition}
+
+\begin{lemma}
+  \label{thm:knuthAxioms}
+  \lean{CGLean.CCW.cyclic, CGLean.CCW.antisymm, CGLean.CCW.interiority, CGLean.CCW.transitivity}
+  \uses{def:ccw}
+  \leanok
+  $\ccw$ satisfies Knuth's axioms 1, 2, 4 and 5.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * 1, 4, 5: the strict fields directly
+  %  * 2: swap, and -1 ≠ 1
+\end{proof}
+
+% TODO (prose): ccw as an order around a point (notes/angular-order.md)
+%  * not a total order: fails past half a turn
+%  * total on an open half-plane; that's axiom 5's side conditions
+%  * not a Mathlib CircularOrder; related by projection onto a circle
+
+\section{Orientation of points in the plane}
+
+\begin{definition}
+  \label{def:det}
+  \lean{CGLean.det}
+  \leanok
+  For points $p, q, r$ with coordinates in a ring,
+  $\det(p, q, r) = (q_x - p_x)(r_y - p_y) - (q_y - p_y)(r_x - p_x)$.
+  % TODO (prose):
+  %  * twice the signed area of the triangle
+\end{definition}
+
+\begin{lemma}
+  \label{thm:detIdentities}
+  \lean{CGLean.det_cyclic, CGLean.det_swap, CGLean.det_sum, CGLean.det_plucker}
+  \uses{def:det}
+  \leanok
+  For all points $p, q, r, s, t$:
+  \begin{itemize}
+    \item $\det(q, r, p) = \det(p, q, r)$
+    \item $\det(p, r, q) = -\det(p, q, r)$
+    \item $\det(p, q, r) = \det(t, q, r) + \det(p, t, r) + \det(p, q, t)$
+    \item $\det(t, p, r)\det(t, s, q) = \det(t, s, p)\det(t, q, r) + \det(t, p, q)\det(t, s, r)$
+  \end{itemize}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * expand; ring
+  %  * geometric reading of the sum (areas) and of Plücker
+\end{proof}
+
+\begin{theorem}
+  \label{thm:pointOrientation}
+  \lean{CGLean.instOrientationSystemPoint, CGLean.orientation_eq_sign_det, CGLean.ccw_iff_det_pos}
+  \uses{def:orientationSystem, def:signedRing, thm:detIdentities}
+  \leanok
+  If $A$ is a signed ring, then $\orient(p, q, r) = \sign(\det(p, q, r))$ is
+  an orientation system on $A^2$.
+\end{theorem}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * cyclic, swap: identities + sign(-a) = -sign(a)
+  %  * interiority: area sum + nonneg closed under +
+  %  * transitivity: Plücker + sign_mul; divide by det(t,s,q) > 0
+  %  * no general-position assumption anywhere
+\end{proof}
 
 \chapter{Planar Arrangements}
 \label{chap:arrangements}
@@ -850,6 +962,15 @@ application.
   trade-offs weighed in Chapter~\ref{chap:arrangements}: how much of a
   specification to state abstractly, when to refine a clean definition into an
   efficient implementation, and what is lost either way.
+
+\item Donald E.\ Knuth, \emph{Axioms and Hulls}, Lecture Notes in Computer
+  Science 606, Springer, 1992.
+  \link{https://doi.org/10.1007/3-540-55611-7}{doi:10.1007/3-540-55611-7}.
+  The source of the counterclockwise axioms in
+  Chapter~\ref{chap:primitives}. Knuth replaces coordinates by a ternary
+  predicate satisfying five axioms, and develops convex hull algorithms against
+  the axioms alone, so that any predicate satisfying them --- whatever
+  arithmetic computes it --- inherits the algorithms' correctness.
 
 \item Adam Chlipala, \emph{Certified Programming with Dependent Types: A
   Pragmatic Introduction to the Coq Proof Assistant}, MIT Press, 2013.
