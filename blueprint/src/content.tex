@@ -195,10 +195,12 @@ Of course, the whole point of $A[√n]$ is that it contains a square root of $n$
   \label{thm:adjoinHasSqrtN}
   \lean{AdjoinSqrt.root_n_squared}
   \uses{def:adjoin, thm:adjoinRing}
+  \leanok
   If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
 \end{theorem}
 
 \begin{proof}
+  \leanok
   Follows immediately from the definitions.
 \end{proof}
 
@@ -246,41 +248,43 @@ follows:
 
 Now we can proceed to check the ordering properties on $A[\sqrt{n}]$. Instead
 of defining comparisons like $<$ and $≤$ directly, it is easier to define a
-$sign$ operator that indicates whether a number is greater than, equal to,
+$\sign$ operator that indicates whether a number is greater than, equal to,
 or less than 0 (this reduces the case analysis considerably).
+
+% TODO (prose): order-first formulation
+%  * order is now primary: positive cone (AdjoinSqrt.nonnegCone), as in Mathlib
+%  * sign is Mathlib's SignType.sign, derived from the order
+%  * SignedRing no longer exists in Lean; keep as informal motivation or drop
 
 \begin{definition}
   \label{def:signedRing}
-  \lean{SignedRing}
-  \leanok
-  A signed ring is a ring $A$ coupled with a function $sign : A → \{0, 1, -1\}$
+  % TODO: no Lean counterpart any more (order-first); restate or drop
+  A signed ring is a ring $A$ coupled with a function $\sign : A → \{0, 1, -1\}$
   satisfying the following properties: \begin{itemize}
-    \item $sign~0 = 0$
-    \item $sign~1 = 1$
-    \item $sign~(ab) = (sign~a)(sign~b)$
-    \item if $sign~a = 0$ then $a = 0$
-    \item $sign~(-a) = -sign~a$
-    \item if $sign~a \geq 0$ and $sign~b~\geq 0$ then $sign~(a + b) \geq 0$
+    \item $\sign(0) = 0$
+    \item $\sign(1) = 1$
+    \item $\sign(ab) = \sign(a)\sign(b)$
+    \item if $\sign(a) = 0$ then $a = 0$
+    \item $\sign(-a) = -\sign(a)$
+    \item if $\sign(a) \geq 0$ and $\sign(b) \geq 0$ then $\sign(a + b) \geq 0$
   \end{itemize}
 \end{definition}
 
 \begin{lemma}
   \label{thm:orderFromSign}
   \uses{def:signedRing}
-  \lean{instLinearOrderOfSignedRing, instIsStrictOrderedRingOfSignedRing}
-  \leanok
+  % TODO: no Lean counterpart any more (order-first); restate or drop
   Given a signed ring $A$, we can define an ordered ring structure on $A$.
 \end{lemma}
 \begin{proof}
-  \leanok
   This is mostly borrowed from Mathlib.
 \end{proof}
 \begin{lemma}
   \label{thm:signFromOrder}
   \uses{def:signedRing}
-  \lean{instSignedRingOfLinearOrderedRing}
+  \lean{SignType.sign, sign_mul, Left.sign_neg}
   \leanok
-  Conversely, given an ordered ring $A$ we can define a well-behaved $sign$
+  Conversely, given an ordered ring $A$ we can define a well-behaved $\sign$
   function.
 \end{lemma}
 \begin{proof}
@@ -294,32 +298,71 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
 
 \begin{definition}
   \label{def:adjoinSign}
-  \lean{AdjoinSqrt.instSignedRing}
+  \lean{AdjoinSqrt.IsNonneg, AdjoinSqrt.nonnegCone, AdjoinSqrt.cmpZero, AdjoinSqrt.sign_eq}
+  \leanok
   \uses{def:signedRing, def:adjoin, def:adjoinRingOps}
+  % TODO (prose): statement is out of date
+  %  * now: the positive cone of A[√n], decided by cmpZero
+  %  * the sign formula below is now a theorem (sign_eq) about SignType.sign
   If $A$ is a signed ring and $n ∈ A \geq 0$ is not a square in $A$, then
   $A[\sqrt{n}]$ is a signed ring.
 \end{definition}
 
 \begin{proof}
-  We want to define $sign : A → \{0,1,-1\}$ which compares $a_1 + a_n\sqrt{n}$
-  with 0. This is the same as comparing $a_1$ with $-a_n\sqrt{n}$. We would
-  like to square both sides, but there's some casework involved, because
-  depending on the signs of $a_1$ and $-a_n$, we may have to flip the
-  inequality.
+  We want to define $\sign : A → \{0,1,-1\}$ which compares $a := a_1 + a_n\sqrt{n}$
+  with 0. The trick to defining this is to determine whether $|a_1|$ or
+  $|a_n\sqrt{n}|$ is bigger: if $|a_1|$ dominates then the sign of $a$ is just
+  the sign of $a_1$, otherwise the sign of $a$ is the sign of $a_n$.
 
-  If exactly one of $a_1$ and $-a_n$ are negative, the comparison is easy. If they
-  are both positive, then comparing $a_1^2$ and $na_n^2$ gives the right
-  answer. If they are both negative, then comparing $a_1^2$ and $na_n^2$ gives
-  the opposite answer (this arithetic depends on $n$ being nonnegative).
+  Of course we can't compare $a_1$ and $a_n\sqrt{n}$ directly, because we're
+  defining comparison on $A[\sqrt{n}]$. Instead, we can square both sides and
+  compare in $A$:
 
-  We can use this algorithm to define the sign function for $A[\sqrt{n}]$.
-  Checking that it satisfies the signed ring properties is tedious but routine.
+  \begin{eqnarray*}
+    |a_1| \geq |a_n\sqrt{n}| & \iff & a_1^2 \geq na_n^2 \quad\textrm{(assuming $n > 0$)} \\
+                             & \iff & a_1^2 - na_n^2 \geq 0
+  \end{eqnarray*}
+
+  We refer to this last expression $(a_1^2 - na_n^2)$ as the \emph{norm} of $a$
+  and write it as $\norm{a}$; if we define the conjugate of $a_1 + a_n\sqrt{n}$ as
+  $a_1 - a_n\sqrt{n}$ then the norm of $a$ is just $a$ times its conjugate.
+  It's useful because it lives in $A$.
+
+  With this in hand, we can define the sign operation:
+  \begin{displaymath}
+    \sign(a_1 + a_n\sqrt{n}) = \left\{\begin{array}{ll}
+      \sign(a_1) & \text{if }\sign(\norm{a}) \geq 0 \\
+      \sign(a_n) & \text{otherwise} \\
+    \end{array}
+    \right.
+  \end{displaymath}
+
+  There are some easy properties about sign and the norm that are useful in
+  proving the signed ring properties:
+  \begin{itemize}
+    \item $\sign(a) = \sign(a\sqrt{n})$
+    \item $\sign(\norm{a}) = -\sign(\norm{a\sqrt{n}})$
+    \item $\norm{ab} = \norm{a} \cdot \norm{b}$
+    \item $\norm{a} = 0$ if and only if $a = 0$ (this requires $n$ to be non-square)
+  \end{itemize}
+
+  The first two of these facts reduce the case analysis because you can always
+  assume that $\norm{a} \geq 0$ without loss of generality by multiplying through by
+  $\sqrt{n}$.
+
+  % TODO: overclaim? closure under addition still needs one further
+  % multiplier-style trick inside norm_add_nonneg's hard case, not just
+  % bookkeeping from the facts above -- reword if "entirely mechanical" is
+  % too strong.
+  With these tricks, checking the signed ring properties is entirely mechanical.
+  \leanok
 \end{proof}
 
 \begin{corollary}
   \label{thm:adjoinOrderedRing}
-  \lean{AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign, thm:signFromOrder}
+  \leanok
   If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
   then $A[\sqrt{n}]$ is also linearly ordered.
 \end{corollary}
@@ -328,6 +371,8 @@ With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
   \leanok
   Since $A$ is a linearly ordered ring, it is a signed ring. Therefore $A[\sqrt{n}]$ is signed,
   which implies that it is a linearly ordered ring.
+  % TODO (prose): out of date (order-first)
+  %  * cone closed under + and × (nonneg_add, nonneg_mul); Mathlib builds the order
 \end{proof}
 
 %% A[√n] is an ordered field
@@ -336,12 +381,20 @@ Putting this all together gives the main result of this section:
 
 \begin{theorem}
   \label{thm:adjoinOrderedField}
-  \lean{AdjoinSqrt.instField, AdjoinSqrt.linearOrderOfNonsquareOfPos, AdjoinSqrt.isStrictOrderedRingOfNonsquareOfPos}
+  \lean{AdjoinSqrt.instField, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \uses{def:adjoin, thm:adjoinField, thm:adjoinOrderedRing}
+  \leanok
 
   If $A$ is a linearly ordered field, and if $n$ is a positive non-square in $A$
   then $A[\sqrt{n}]$ is also a linearly ordered field.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  The field structure is Lemma~\ref{thm:adjoinField} and the order is
+  Corollary~\ref{thm:adjoinOrderedRing}; since both are instances on the same
+  type, nothing further is needed to combine them.
+\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A[\sqrt{n}]$ to $ℝ$}
@@ -357,6 +410,7 @@ TODO: informal definitions for homs.
 \begin{definition}
   \label{def:adjoinToReal}
   \lean{AdjoinSqrt.toReal}
+  \leanok
   \uses{def:adjoin}
   Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
   there is a corresponding function $AdjoinSqrt.toReal : A[√n] → ℝ$ given by
@@ -409,7 +463,7 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:adjoinAlgebra}
-  \lean{AdjoinSqrt.instAlgebra}
+  \lean{AdjoinSqrt.algebra}
   \leanok
   \uses{def:adjoin, def:adjoinOfA, thm:adjoinRing}
   If $A$ is a ring, then $A[\sqrt{n}]$ is an $A$-algebra.
