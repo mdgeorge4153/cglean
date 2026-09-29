@@ -1,9 +1,11 @@
+import CGLean.Classes.OrientationSystem
 import CGLean.Classes.Floatable
 import CGLean.Classes.Region
 import CGLean.Classes.RingOps
 import CGLean.Algebra.Signed
 import CGLean.Data.AdjoinSqrt
 import CGLean.Geometry.Point2D
+import CGLean.Geometry.Orientation
 import CGLean.Geometry.Arrangement
 import CGLean.Render.Region
 import CGLean.Render.Utils
