@@ -1,8 +1,8 @@
 import CGLean.Classes.Floatable
 import CGLean.Classes.Region
 import CGLean.Classes.RingOps
-import CGLean.Algebra.Signed
 import CGLean.Data.AdjoinSqrt
+import CGLean.Data.AdjoinSqrt.ToReal
 import CGLean.Geometry.Point2D
 import CGLean.Geometry.Arrangement
 import CGLean.Render.Region
