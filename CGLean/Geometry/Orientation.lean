@@ -1,29 +1,36 @@
 import CGLean.Geometry.Point2D
 import CGLean.Classes.OrientationSystem
-import CGLean.Algebra.Signed
+import Mathlib.Data.Sign.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 
 /-!
 # Orientation of a triple of points
 
-Points with coordinates in a `SignedRing` form an `OrientationSystem`, the
+Points with coordinates in an ordered ring form an `OrientationSystem`, the
 orientation of a triple being the sign of a determinant. Since the sign is
 three-valued, collinearity is reported rather than excluded, and no
 general-position assumption appears anywhere below.
 
 Two polynomial identities carry all the work, and each axiom is a law of
-`Signed` applied to one of them. Interiority comes from the signed areas about
-a fourth point summing to the whole, together with `sign_plus`; transitivity
-from the three-term Plücker relation, together with `sign_mul`. Cyclic symmetry
+`SignType.sign` applied to one of them. Interiority comes from the signed areas about
+a fourth point summing to the whole, together with closure of the non-negative
+elements under addition; transitivity from the three-term Plücker relation,
+together with the sign of a product. Cyclic symmetry
 and antisymmetry are the identities themselves, under `sign_neg`.
 -/
 
-open Signed
+open SignType (sign)
 
-variable {k : Type} [SignedRing k]
+variable {k : Type} [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 
 namespace CGLean
+
+private theorem nonneg_iff {a : k} : 0 ≤ a ↔ sign a ≠ .neg := by
+  rw [Ne, SignType.neg_eq_neg_one, sign_eq_neg_one_iff, not_lt]
+
+private theorem sign_eq_pos_iff {a : k} : sign a = .pos ↔ 0 < a := by
+  rw [SignType.pos_eq_one, sign_eq_one_iff]
 
 /-- Twice the signed area of the triangle `p q r`, positive exactly when the
 three points are traversed counterclockwise and zero exactly when they are
@@ -64,19 +71,19 @@ private theorem sign_det_cyclic (p q r : Point k) :
 
 private theorem sign_det_swap (p q r : Point k) :
     sign (det p r q) = -sign (det p q r) := by
-  rw [det_swap, SignedRing.sign_neg]
+  rw [det_swap, Left.sign_neg]
 
 private theorem sign_det_interiority {p q r t : Point k}
     (h₁ : sign (det t q r) ≠ .neg) (h₂ : sign (det p t r) ≠ .neg)
     (h₃ : sign (det p q t) ≠ .neg) : sign (det p q r) ≠ .neg := by
-  rw [← SignedRing.nonneg_iff] at h₁ h₂ h₃ ⊢
+  rw [← nonneg_iff] at h₁ h₂ h₃ ⊢
   rw [det_sum p q r t]
   exact add_nonneg (add_nonneg h₁ h₂) h₃
 
 private theorem sign_det_interiority_pos {p q r t : Point k}
     (h₁ : sign (det t q r) = .pos) (h₂ : sign (det p t r) = .pos)
     (h₃ : sign (det p q t) = .pos) : sign (det p q r) = .pos := by
-  rw [SignedRing.sign_eq_pos_iff] at h₁ h₂ h₃ ⊢
+  rw [sign_eq_pos_iff] at h₁ h₂ h₃ ⊢
   rw [det_sum p q r t]
   exact add_pos (add_pos h₁ h₂) h₃
 
@@ -84,8 +91,8 @@ private theorem sign_det_transitivity {p q r s t : Point k}
     (hsp : sign (det t s p) ≠ .neg) (hsq : sign (det t s q) = .pos)
     (hsr : sign (det t s r) ≠ .neg) (hpq : sign (det t p q) ≠ .neg)
     (hqr : sign (det t q r) ≠ .neg) : sign (det t p r) ≠ .neg := by
-  rw [← SignedRing.nonneg_iff] at hsp hsr hpq hqr ⊢
-  rw [SignedRing.sign_eq_pos_iff] at hsq
+  rw [← nonneg_iff] at hsp hsr hpq hqr ⊢
+  rw [sign_eq_pos_iff] at hsq
   have hprod : 0 ≤ det t p r * det t s q := by
     rw [det_plucker p q r s t]
     exact add_nonneg (mul_nonneg hsp hqr) (mul_nonneg hpq hsr)
@@ -97,7 +104,7 @@ private theorem sign_det_transitivity_pos {p q r s t : Point k}
     (hsp : sign (det t s p) = .pos) (hsq : sign (det t s q) = .pos)
     (hsr : sign (det t s r) = .pos) (hpq : sign (det t p q) = .pos)
     (hqr : sign (det t q r) = .pos) : sign (det t p r) = .pos := by
-  rw [SignedRing.sign_eq_pos_iff] at hsp hsq hsr hpq hqr ⊢
+  rw [sign_eq_pos_iff] at hsp hsq hsr hpq hqr ⊢
   have hprod : 0 < det t p r * det t s q := by
     rw [det_plucker p q r s t]
     exact add_pos (mul_pos hsp hqr) (mul_pos hpq hsr)
@@ -120,7 +127,7 @@ theorem orientation_eq_sign_det (p q r : Point k) :
 
 /-- A counterclockwise turn is a positive determinant. -/
 theorem ccw_iff_det_pos {p q r : Point k} : CCW p q r ↔ 0 < det p q r :=
-  SignedRing.sign_eq_pos_iff
+  sign_eq_pos_iff
 
 /-! ## The three values, on concrete points
 
