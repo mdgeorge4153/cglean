@@ -110,12 +110,18 @@ We can summarize the example from this section in the following corollary:
 \begin{corollary}
   \label{thm:numberType}
   \uses{def:adjoin, def:filtered}
+  \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldFiltered, CGLean.NumberType.instLinearOrderFiltered}
+  \leanok
   \code{FilteredReal $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 
 \begin{proof}
   \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderedFieldHom}
-  TODO
+  \leanok
+  % TODO (prose):
+  %  * 2 not a square in Q, 3 not a square in Q[√2]; both positive
+  %  * Q's sign order agrees with Mathlib's, so Q → R is strictly monotone
+  %  * the three cited results, applied twice up the tower
 \end{proof}
 
 The definition of a linearly ordered field can be broken down into parts, and
@@ -405,6 +411,11 @@ the operations defined on $A[\sqrt{n}]$.
 
 TODO: informal definitions for homs.
 
+% TODO (prose): bracketing A[√n] (AdjoinSqrt.realApprox)
+%  * interval for a₁ + aₙ√n from intervals for a₁, aₙ, n
+%  * needs a tight interval square root; LeanCert's is [0, max hi 1]
+%  * sqrt bounds from Nat.sqrt of endpoints scaled by 4^k
+
 %% A[√n] → ℝ
 
 \begin{definition}
@@ -511,8 +522,11 @@ number representations, but are interesting nonetheless.
 
 \begin{definition}
   \label{def:filtered}
-  \notready
-  \lean{FilteredReal}
+  \lean{CGLean.FilteredReal, CGLean.FilteredEmbedding, CGLean.RealApprox}
+  \leanok
+  % TODO (prose): statement is out of date
+  %  * parameter is now RealApprox: ring hom f plus approx : α → interval
+  %  * intervals are dyadic, not floating-point
   Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
   an unevaluated value of type $α$ and a closed floating-point interval that
   contains $f α$. We consider two values in \code{FilteredReal f} to be
@@ -523,7 +537,8 @@ number representations, but are interesting nonetheless.
 \begin{definition}
   \label{def:filteredRingOps}
   \uses{def:filtered}
-  \lean{FilteredReal.instRingOps}
+  \lean{CGLean.FilteredReal.instRingOps}
+  \leanok
   We define the usual ring operations on \code{FilteredReal} values by storing
   thunks that perform the corresponding operation on the underlying $α$ value.
   We also immediately compute a new interval using the corresponding operations
@@ -539,63 +554,103 @@ number representations, but are interesting nonetheless.
 
 \begin{lemma}
   \label{thm:filteredRing}
-  \lean{FilteredReal.instCommRing}
-  \notready
+  \lean{CGLean.FilteredReal.instCommRing}
+  \leanok
   \uses{def:filteredRingOps}
   If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
   is a ring.
 \end{lemma}
 
 \begin{proof}
-  \notready
+  \leanok
+  % TODO (prose):
+  %  * axioms hold in A; pull back along the injection get (def:filteredToA)
 \end{proof}
 
 \begin{definition}
   \label{def:filteredInv}
-  \lean{FilteredReal.instInv}
+  \lean{CGLean.FilteredReal.instInv}
+  \leanok
   \uses{def:filtered}
   If $A$ is a field, and $f$ is a field homomorphism, we can also define
   division in the same way.
 \end{definition}
 
+% TODO (prose): the filter's escape hatch (division and overflow together).
+%  * implemented: interval reciprocal if zero excluded, else evaluate and
+%    re-approximate with RealApprox.approx
+%  * interval containing zero has no interval reciprocal
+%  * options: no-information value, or intervals excluding zero (LeanCert:
+%    IntervalRatNonzero, rational intervals only)
+%  * prefer the subtype: forces evaluation at the point of division
+%  * needs approximating elements of A, not just f : A → ℝ
+%  * rounding belongs in the number layer (directed rounding), not the interval
+%  * directedness only, not correct rounding; IEEE suffices
+%  * Float: opaque; define toReal + relative-error axiom, Flocq-style
+%  * NaN: condition specs on finite output; else no information
+%  * no-information case needed exactly when numbers can overflow; not dyadics
+%  * Mathlib's FP.Float: separate model, unconnected to hardware Float
+%  * interface sketch: RoundedField (addUp/addDown/mulUp/..., toReal,
+%    directed-error axioms); intervals generic over it
+%  * representability, not NaN-freedom: decidable "denotes a real"; axioms
+%    conditioned on operands and result
+%  * dyadics unrounded: mantissa doubles per mul; round inside addUp etc.
+%    at a fixed precision (LeanCert's roundOut: precision per call)
+%  * no exact dyadic division (1/3); divUp/divDown must round
+%  * precision vs LEAN_MAX_SMALL_INT (~31 bits on 64-bit, not 63); 31x31
+%    products leave the fast path, so mul rounds immediately; unmeasured
+%  * reuse: dyadic side → LeanCert?; Float axioms not Mathlib (trust
+%    extension; cf. Flocq separate from Coq stdlib)
+
 \begin{lemma}
-  \label{thm:filteredField}
-  \uses{thm:filteredRing, def:filteredInv}
-  \lean{FilteredReal.instField}
-  \notready
-  If $A$ is a field and $f : A → ℝ$ is a field homomorphism then \code{FilteredReal f}
-  is a field.
+  \label{thm:filteredOrderedField}
+  \lean{CGLean.FilteredReal.instField, CGLean.FilteredReal.instLinearOrder, CGLean.FilteredReal.instIsStrictOrderedRing}
+  \leanok
+  \uses{thm:filteredRing, def:filteredInv, def:intervalCompare}
+  % TODO (prose): statement
+  %  * A linearly ordered field, f strictly monotone: FilteredReal f is one too
+  %  * comparisons decided by intervals, falling back on A when they overlap
 \end{lemma}
 
 \begin{proof}
-  \notready
+  \leanok
+  % TODO (prose):
+  %  * field and order pulled back along get
+  %  * filtered compare agrees with A's: compare_of_compare? plus strict monotonicity
 \end{proof}
 
+\subsection{Comparing intervals}
+
+% TODO (prose):
+%  * the comparison the wrapper relies on
+%  * separated intervals fix the order of all members; overlapping fix nothing
+
 \begin{definition}
-  \label{def:filteredCompare}
-  \uses{def:filtered}
-  \lean{FilteredReal.instOrd}
-  \notready
+  \label{def:intervalCompare}
+  \lean{CGLean.compare?}
+  \leanok
+  \code{compare? x y} returns the order shared by every member of $x$ and every
+  member of $y$ when the intervals are separated, and nothing when they overlap.
 \end{definition}
 
 \begin{lemma}
-  \label{thm:filteredOrderedRing}
-  \uses{thm:filteredRing, def:filteredCompare}
-  \lean{FilteredReal.instLinearOrderedRing}
-  \notready
-  If $A$ is a linearly ordered ring and if $f : A → ℝ$ is an ordered ring
-  homomorphism then \code{FilteredReal f} is a linearly ordered ring.
+  \label{thm:compareSound}
+  \uses{def:intervalCompare}
+  \lean{CGLean.compare_of_compare?}
+  \leanok
+  If \code{compare?} returns an order, then every member of $x$ compares that
+  way with every member of $y$.
 \end{lemma}
 
-\begin{theorem}
-  \label{thm:filteredOrderedField}
-  \lean{FilteredReal.instLinearOrderedField}
-  \notready
-  \uses{def:filtered, thm:filteredOrderedRing, thm:filteredField}
-  If $α$ is a linearly ordered field and $f : α → ℝ$ preserves all of the field
-  and ordering properties of $α$, then \code{FilteredReal f} is a linearly
-  ordered field.
-\end{theorem}
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * each case chains the bounds: a ≤ x.hi < y.lo ≤ b, and symmetrically
+\end{proof}
+
+% TODO (prose):
+%  * soundness is what correctness needs
+%  * completeness (thm:compareComplete) is what makes filtering worthwhile
 
 \subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
 
@@ -605,7 +660,8 @@ $A$.
 \begin{definition}
   \label{def:filteredToA}
   \uses{def:filtered}
-  \notready
+  \lean{CGLean.FilteredReal.get, CGLean.FilteredReal.get_injective}
+  \leanok
   There is a nice injection $i$ from \code{FilteredReal (f : A → ℝ)} to
   $A$, and $f \circ i = toReal$.
 \end{definition}
@@ -613,9 +669,16 @@ $A$.
 \begin{theorem}
   \label{def:filteredEquivalent}
   \uses{def:filteredToA, thm:filteredOrderedField}
-  \notready
+  \lean{CGLean.FilteredReal.get_add, CGLean.FilteredReal.get_mul, CGLean.FilteredReal.get_neg, CGLean.FilteredReal.get_inv, CGLean.FilteredReal.compare_get}
+  \leanok
   $i$ preserves all of the linearly ordered field operations.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * by construction: the structure on FilteredReal is defined through i
+\end{proof}
 
 \subsection{FilteredReal avoids computation}
 
@@ -626,13 +689,20 @@ intervals. We formalize this as follows:
 
 \begin{lemma}
   \label{thm:compareComplete}
-  \uses{def:filteredCompare}
-  \lean{Interval.compare?_complete}
-  \notready
+  \uses{def:intervalCompare}
+  \lean{CGLean.compare?_complete}
+  \leanok
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  % TODO (prose):
+  %  * decline = overlap; max of lower bounds lies in both
+  %  * witnesses: that point with itself (eq), an endpoint pair (strict)
+\end{proof}
 
 \chapter{Applications}
 
@@ -721,18 +791,11 @@ be worth naming as a habit rather than rediscovering each time.
 
 \section{Deferred components}
 
-Interval arithmetic, and with it the \code{FilteredReal} layer of
-Chapter~\ref{chap:numbers}, is not currently built. It depends on an external
-floating-point interval library which lags the Mathlib version used here.
-
-There is a difficulty of principle behind that, not merely of packaging. Sound
-interval arithmetic requires reasoning about floating-point, and Lean's
-\code{Float} is an opaque primitive with no specification --- fast, but nothing
-can be proved about it. A library that wants proofs must therefore supply its own
-software floating-point, which costs exactly the speed that made the filtering
-worth doing. The way out is to axiomatise \code{Float} against IEEE~754, as
-Flocq does for Coq, so that the containment proofs become theorems relative to a
-published standard rather than to bespoke code.
+% TODO (prose): hardware floating point.
+%  * now built on LeanCert dyadic intervals (software, unbounded exponent)
+%  * hardware Float: opaque in Lean; option is IEEE 754 axioms, Flocq-style
+%  * swap design: see the note after def:filteredInv
+%  * performance unmeasured
 
 Extraction of a reasonably efficient executable has not been attempted. The
 ordering on $A[\sqrt{n}]$ is computable by construction --- decidability of cone

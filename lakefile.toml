@@ -13,5 +13,19 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.32.2"
 
+# Dyadic interval arithmetic with containment proofs. Pins the same Mathlib
+# revision as above; `LeanCert.Core.IntervalDyadic` does not reach the modules
+# carrying that library's sanctioned `sorry`s.
+[[require]]
+name = "LeanCert"
+scope = "alerad"
+rev = "main"
+
 [[lean_lib]]
 name = "CGLean"
+
+# Benchmark: exact vs filtered arithmetic in ℚ[√2][√3]. Not a default target.
+[[lean_exe]]
+name = "bench"
+srcDir = "bench"
+root = "Main"
