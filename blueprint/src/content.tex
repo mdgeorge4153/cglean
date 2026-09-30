@@ -104,7 +104,7 @@ represent them using $ℚ[\sqrt{2}][\sqrt{3}]$.
 The second implementation is intended to improve performance by using
 floating-point approximations wherever possible, and only falling back on the
 exact computations when the floating-point arithmetic is not precise enough. We
-define \code{FilteredReal α} which wraps deferred values of $α$
+define \code{FilteredReal $α$} which wraps deferred values of $α$
 inside a floating-point interval.
 
 We can summarize the example from this section in the following corollary:
@@ -192,7 +192,7 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
 
 %% A[√n] has √n
 
-Of course, the whole point of $A[√n]$ is that it contains a square root of $n$:
+Of course, the whole point of $A[\sqrt{n}]$ is that it contains a square root of $n$:
 \begin{theorem}
   \label{thm:adjoinHasSqrtN}
   \lean{AdjoinSqrt.root_n_squared}
@@ -512,7 +512,7 @@ TODO: informal definitions for homs.
   \leanok
   \uses{def:adjoin}
   Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
-  there is a corresponding function $AdjoinSqrt.toReal : A[√n] → ℝ$ given by
+  there is a corresponding function $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ given by
   $(a_1 + a_n\sqrt{n}).toReal := a_1.toReal + a_n.toReal * \sqrt{n.toReal}$.
 \end{definition}
 
@@ -544,7 +544,7 @@ TODO: informal definitions for homs.
 \end{lemma}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Converting from $A$ to $A[√n]$}
+\subsection{Converting from $A$ to $A[\sqrt{n}]$}
 
 % TODO: "interesting" twice
 These are some interesting results that aren't directly needed to use these
@@ -681,7 +681,7 @@ number representations, but are interesting nonetheless.
   ordered field.
 \end{theorem}
 
-\subsection{Converting between $A$ and \code{FilteredReal (f : A → ℝ)}}
+\subsection{Converting between $A$ and \code{FilteredReal (f : A → $ℝ$)}}
 
 The whole point of \code{FilteredReal} is that it encapsulates values of
 $A$.
@@ -690,7 +690,7 @@ $A$.
   \label{def:filteredToA}
   \uses{def:filtered}
   \notready
-  There is a nice injection $i$ from \code{FilteredReal (f : A → ℝ)} to
+  There is a nice injection $i$ from \code{FilteredReal (f : A → $ℝ$)} to
   $A$, and $f \circ i = toReal$.
 \end{definition}
 
