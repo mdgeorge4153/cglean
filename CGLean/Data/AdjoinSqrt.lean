@@ -228,6 +228,8 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 /-- `a₁ + aₙ√n ≥ 0`, phrased in `A`. Both disjuncts are needed: the first covers
 `aₙ < 0`, where `a₁` must dominate `aₙ√n`, and the second covers `a₁ < 0`,
 where `aₙ√n` must dominate. -/
+
+/- TODO: this definition should maybe be moved to the top with the definitions of +, *, etc -/
 def IsNonneg (x : AdjoinSqrt R n) : Prop :=
   (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)
 
@@ -616,4 +618,3 @@ end Order
 
 theorem root_n_squared [CommRing R]: root n * root n = (n : AdjoinSqrt R n) := by
   ext <;> simp
-

@@ -25,13 +25,13 @@
 
 \chapter{Minkowski Sum}
 
-\begin{definition}
+\begin{definition}[Minkowski sum]
   \label{def:minkowski}
   Given sets of points $A$ and $B$, the Minkowski sum of $A$ and $B$, written
   $A ⊕ B$ is the set $\{a + b \mid a ∈ A, b ∈ B\}$.
 \end{definition}
 
-\begin{theorem}
+\begin{theorem}[Minkowski sum of convex polygons]
   \label{thm:minkowski_convex_poly}
   \uses{def:minkowski}
   \notready
@@ -39,7 +39,7 @@
   taking the convex hull of the sums of the corners.
 \end{theorem}
 
-\begin{theorem}
+\begin{theorem}[Minkowski sum of a union]
   \label{thm:minkowski_union}
   \uses{def:minkowski}
   \notready
@@ -90,7 +90,8 @@ operations, and that those operations behave as you would expect. More
 concretely, we show that the number representations form ``linearly ordered
 fields,'' which are types that support addition, multiplication, subtraction,
 division, and computable comparisons (equality and inequality), all of which
-must satisfy certain axioms.
+must satisfy certain axioms. The geometric constructions in the remainder of
+the development are designed to work with any linearly ordered field.
 
 The first implementation is \code{AdjoinSqrt A n} (abbreviated $A[\sqrt{n}]$),
 which represents numbers of the form $a_1 + a_n\sqrt{n}$. Instead of requiring
@@ -150,7 +151,7 @@ for this library so we don't describe them here.
 
 %% Definition
 
-\begin{definition}
+\begin{definition}[Adjoining a square root]
   \label{def:adjoin}
   \lean{AdjoinSqrt}
   \leanok
@@ -161,7 +162,7 @@ for this library so we don't describe them here.
 We begin by checking that $A[\sqrt{n}]$ is a ring. We will then proceed to check
 that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
 
-\begin{definition}
+\begin{definition}[{Ring operations on $A[\sqrt{n}]$}]
   \label{def:adjoinRingOps}
   \uses{def:adjoin}
   \lean{AdjoinSqrt.ringOps}
@@ -196,7 +197,7 @@ Of course, the whole point of $A[√n]$ is that it contains a square root of $n$
   \lean{AdjoinSqrt.root_n_squared}
   \uses{def:adjoin, thm:adjoinRing}
   \leanok
-  If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} * \sqrt{n} = n$
+  If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} \cdot \sqrt{n} = n$
 \end{theorem}
 
 \begin{proof}
@@ -210,7 +211,7 @@ In order to check that $A[\sqrt{n}]$ is a field, we need to define division. In
 fact, we only need to define $x^{-1}$ for $x ∈ A[\sqrt{n}]$, which we do as
 follows:
 
-\begin{definition}
+\begin{definition}[Inverse]
   \label{def:adjoinInv}
   \lean{AdjoinSqrt.instInv}
   \leanok
@@ -244,136 +245,232 @@ follows:
   cause a technical problem with the proof.
 \end{proof}
 
+%% Norm
+
+Two expressions in the definition above are quite useful in the proofs because they allow relating
+values in $A[\sqrt{n}]$ with values in $A$:
+
+\begin{definition}[Conjugate]
+  \label{def:conj}
+  \lean{AdjoinSqrt.conj}
+  \uses{def:adjoinRingOps}
+  \leanok
+  We refer to $a_1 - a_n\sqrt{n}$ as the \emph{conjugate} of $a$ (written
+  $\conj{a}$)
+\end{definition}
+\begin{definition}[Norm]
+  \label{def:norm}
+  \lean{AdjoinSqrt.norm}
+  \uses{def:conj}
+  \leanok
+  We refer to $a_1^2 - na_n^2$ as the \emph{norm} of $a$ (written $\norm{a}$).
+  Note that it is an element of $A$, not just $A[\sqrt{n}]$. With these
+  definitions, we have $\norm{a} = a \cdot \conj{a}$ and $a^{-1} =
+  \conj{a}\norm{a}^{-1}$.
+\end{definition}
+
 %% A[√n] is ordered ring
 
 Now we can proceed to check the ordering properties on $A[\sqrt{n}]$. Instead
-of defining comparisons like $<$ and $≤$ directly, it is easier to define a
-$\sign$ operator that indicates whether a number is greater than, equal to,
-or less than 0 (this reduces the case analysis considerably).
+of defining comparisons like $<$ and $≤$ directly, it is easier to start by
+defining a comparison with 0. Then we can define $a \leq b$ if and only if $0
+\leq b - a$. The set of values greater than 0 is referred to as a
+\emph{positive cone}.
 
-% TODO (prose): order-first formulation
-%  * order is now primary: positive cone (AdjoinSqrt.nonnegCone), as in Mathlib
-%  * sign is Mathlib's SignType.sign, derived from the order
-%  * SignedRing no longer exists in Lean; keep as informal motivation or drop
+As with the other operations, we will use an ordering on $A$ to define the
+positive cone on $A[\sqrt{n}]$. The key idea is that we compare the squares
+to see if $|a_1|$ or $|a_n\sqrt{n}|$ is larger, and then take the sign of
+whichever one dominates.
+\begin{definition}[{Positive cone on $A[\sqrt{n}]$}]
+  \label{def:posCone}
+  \lean{AdjoinSqrt.IsNonneg}
+  \leanok
+  \uses{def:adjoin}
+  We say $0 \leq a_1 + a_n\sqrt{n}$ if either $a_1^2 \geq na_n^2$ and $a_1 \geq
+  0$ (i.e. if $a_1$ dominates and is nonnegative) or if $a_1^2 \leq na_n^2$ and $a_n \geq 0$
+  (i.e. if $a_n\sqrt{n}$ dominates and is nonnegative).
 
-\begin{definition}
-  \label{def:signedRing}
-  % TODO: no Lean counterpart any more (order-first); restate or drop
-  A signed ring is a ring $A$ coupled with a function $\sign : A → \{0, 1, -1\}$
-  satisfying the following properties: \begin{itemize}
-    \item $\sign(0) = 0$
-    \item $\sign(1) = 1$
-    \item $\sign(ab) = \sign(a)\sign(b)$
-    \item if $\sign(a) = 0$ then $a = 0$
-    \item $\sign(-a) = -\sign(a)$
-    \item if $\sign(a) \geq 0$ and $\sign(b) \geq 0$ then $\sign(a + b) \geq 0$
+  Note that we can rewrite $a_1^2 \geq na_n^2$ as $\norm{a} \geq 0$.
+\end{definition}
+
+In order to use the positive cone $0 \leq \cdot$ to define a linearly ordered
+ring, we need to check that the positive cone interacts properly with the ring
+operations. The full set of axioms and the proof that a
+well-behaved positive cone can be turned into a linearly ordered ring are
+defined by Mathlib:
+
+\begin{definition}[Well-behaved positive cone]
+  \label{def:ringCone}
+  \lean{RingCone, IsOrderedRing.mkOfCone}
+  \mathlibok
+  A well-behaved positive cone on a ring $A$ is a relation $0 \leq \cdot$ that satisfies:
+  \begin{itemize}
+    \item $0 \leq 0$
+    \item $0 \leq 1$
+    \item either $0 \leq a$ or $0 \leq -a$
+    \item if $0 \leq a$ and $0 \leq -a$ then $a = 0$
+    \item (multiplicativity) if $0 \leq a$ and $0 \leq b$ then $0 \leq ab$
+    \item (additivity) if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$
   \end{itemize}
 \end{definition}
 
-\begin{lemma}
-  \label{thm:orderFromSign}
-  \uses{def:signedRing}
-  % TODO: no Lean counterpart any more (order-first); restate or drop
-  Given a signed ring $A$, we can define an ordered ring structure on $A$.
+
+What's left for us is to prove that our positive cone definition for
+$A[\sqrt{n}]$ is well-behaved. The first four properties follow immediately
+from the definitions and the fact that $A$'s order is well-behaved; the latter
+two are more tricky and we state them as lemmas:
+
+\begin{lemma}[Multiplicativity]
+  \label{thm:multiplicativity}
+  \lean{AdjoinSqrt.nonneg_mul}
+  \leanok
+  \uses{def:posCone}
+  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  $A[\sqrt{n}]$ satisfies the multiplicative property: for all $a, b ∈
+  A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq ab$.
 \end{lemma}
 \begin{proof}
-  This is mostly borrowed from Mathlib.
-\end{proof}
-\begin{lemma}
-  \label{thm:signFromOrder}
-  \uses{def:signedRing}
-  \lean{SignType.sign, sign_mul, Left.sign_neg}
   \leanok
-  Conversely, given an ordered ring $A$ we can define a well-behaved $\sign$
-  function.
+  You can split into four cases based on whether $a$ is $a_1$ dominated and
+  whether $b$ is $b_1$ dominated; since $\norm{ab} = \norm{a}\norm{b}$ you can
+  determine the sign of $\norm{ab}$ in each of the cases. You can also assume
+  without loss of generality that at least one of $a$ or $b$ is $x_1$
+  dominated; if both are $x_n$ dominated you can multiply everything by
+  $\sqrt{n}$ which preserves the sign but exchanges $x_1$-dominated and
+  $x_n$-dominated values. The remaining three cases all follow from juggling
+  signs.
+\end{proof}
+
+The last proof is the trickiest:
+
+\begin{lemma}[Additivity]
+  \label{thm:additivity}
+  \lean{AdjoinSqrt.nonneg_add}
+  \leanok
+  \uses{def:posCone}
+  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  $A[\sqrt{n}]$ satisfies the additive property: for all $a, b ∈
+  A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$.
 \end{lemma}
 \begin{proof}
-  \leanok
-  This follows immediately from the definitions.
-\end{proof}
+  % TODO: \leanok once nonneg_add is reproved via the multiplier m
+  \uses{thm:multiplicativity}
+  This is the trickiest proof of this section. To keep track of the cases, it
+  is helpful to organize them into the following diagram:
 
-%% Ordering on A[√n]
+  \begin{center}
+    \begin{tikzpicture}[scale=1.2]
+      % Axes: a₁ horizontal, aₙ√n vertical
+      \draw[<->] (-3,0) -- (3,0) node[right] {$a_1$};
+      \draw[<->] (0,-3) -- (0,3) node[above] {$a_n\sqrt{n}$};
 
-With this tool in hand, we can define an ordering on $A[\sqrt{n}]$:
+      % |a₁| = |aₙ√n|: separates a₁-dominated from aₙ-dominated
+      \draw[dashed] (-2.5,-2.5) -- (2.5,2.5)
+        node[pos=0.9, sloped, above, align=center, font=\small]
+          {$\norm{a} \leq 0$ \\ $a_n$-dominated}
+        node[pos=0.9, sloped, below, align=center, font=\small]
+          {$a_1$-dominated \\ $\norm{a} \geq 0$};
 
-\begin{definition}
-  \label{def:adjoinSign}
-  \lean{AdjoinSqrt.IsNonneg, AdjoinSqrt.nonnegCone, AdjoinSqrt.cmpZero, AdjoinSqrt.sign_eq}
-  \leanok
-  \uses{def:signedRing, def:adjoin, def:adjoinRingOps}
-  % TODO (prose): statement is out of date
-  %  * now: the positive cone of A[√n], decided by cmpZero
-  %  * the sign formula below is now a theorem (sign_eq) about SignType.sign
-  If $A$ is a signed ring and $n ∈ A \geq 0$ is not a square in $A$, then
-  $A[\sqrt{n}]$ is a signed ring.
-\end{definition}
+      % a₁ + aₙ√n = 0: separates a ≥ 0 from a ≤ 0
+      \draw[dashed] (-2.5,2.5) -- (2.5,-2.5)
+        node[pos=0.85, sloped, above, font=\small] {$a \geq 0$}
+        node[pos=0.85, sloped, below, font=\small] {$a \leq 0$};
 
-\begin{proof}
-  We want to define $\sign : A → \{0,1,-1\}$ which compares $a := a_1 + a_n\sqrt{n}$
-  with 0. The trick to defining this is to determine whether $|a_1|$ or
-  $|a_n\sqrt{n}|$ is bigger: if $|a_1|$ dominates then the sign of $a$ is just
-  the sign of $a_1$, otherwise the sign of $a$ is the sign of $a_n$.
+      % Quadrant names
+      \node at (0,3.8) {N};
+      \node at (3.8,0) {E};
+      \node at (0,-3.8) {S};
+      \node at (-3.8,0) {W};
+    \end{tikzpicture}
+  \end{center}
 
-  Of course we can't compare $a_1$ and $a_n\sqrt{n}$ directly, because we're
-  defining comparison on $A[\sqrt{n}]$. Instead, we can square both sides and
-  compare in $A$:
+  I'll refer to quadrants of the diagram by their cardinal directions; for
+  example $a$ is in the north quadrant (N) when $\norm{a} \leq 0$ and $a \geq 0$,
+  while $a$ is in the NE quadrant if $a_1 \geq 0$ and $a_n \geq 0$. Our
+  assumption that $a$ and $b$ are nonnegative say that $a$ and $b$ live in the
+  NE half-plane. Anything in the NE quadrant is obviously nonnegative because
+  regardless of which coefficient dominates, it is nonnegative.
 
+  As with multiplicativity, you can divide into cases depending on whether $a$
+  and $b$ are $x_1$- or $x_n$-dominated. The difficulty arises because the goal
+  $0 \leq a + b$ is a statement about the coefficients $a_i$ and $b_i$, but the
+  assumptions about the norm talk about $a_i^2$ and $b_i^2$.
+
+  The trick is to add a multiplier so that the goal becomes a statement about
+  the squares of $a_i$ and $b_i$, which makes the assumptions about the norms
+  more useful. Instead of proving $0 \leq (a + b)$ directly, we instead prove
+  that $0 \leq (a + b)m$ for a well-chosen and obviously-nonnegative $m$, and then
+  use the multiplicative property to conclude that $0 \leq a + b$.
+
+  To choose $m$, we need something with terms that come from $a$ and $b$ or
+  their conjugates, and we need something obviously nonnegative. It turns out that
+  summing the absolute values of the coefficients works out: it is obviously
+  nonnegative because both $|a_1|$ and $|a_n|$ are nonnegative so either branch of
+  the definition of nonnegativity gives a nonnegative value. It is useful because
+  $|a_1| + |a_n|\sqrt{n}$ is always either $a$, $\conj{a}$, $-a$, or
+  $-\conj{a}$, so many of the terms of $(a + b)m$ are either $\pm a^2$ or $\pm
+  a\conj{a} = \pm \norm{a}$.
+
+  Specifically, we choose $m = (|a_1| + |a_n|\sqrt{n}) + (|b_1| + |b_n|\sqrt{n})$.
+
+  In the diagram, everything in the NE quadrant is obviously nonnegative, and
+  we choose $m$ by reflecting $a$ and $b$ into the NE quadrant.
+
+  Even after this transformation there are still a bunch of cases that require
+  some analysis. In each case, we expand $(a+b)m$ and show that it is obviously
+  nonnegative. We'll prove two of them here, the remainder are similar.
+
+  % TODO: I still have a feeling that these cases can be condensed using facts
+  % about absolute values or threading a sign variable through, but I'm not
+  % sure it's worth my effort at this point.
+
+  First, consider the case where $a$ is in the NNW wedge (i.e. $a_1 \leq 0$ and
+  $a \geq 0$), and $b$ is in the ESE wedge. In this case, we have $m = \conj{b}
+  - \conj{a}$, so
   \begin{eqnarray*}
-    |a_1| \geq |a_n\sqrt{n}| & \iff & a_1^2 \geq na_n^2 \quad\textrm{(assuming $n > 0$)} \\
-                             & \iff & a_1^2 - na_n^2 \geq 0
+    (a + b)m
+      & = & b\conj{b} - a\conj{a} + a\conj{b} - b\conj{a} \\
+      & = & \norm{b} - \norm{a} + 2(a_nb_1 - a_1b_n)\sqrt{n} \\
   \end{eqnarray*}
 
-  We refer to this last expression $(a_1^2 - na_n^2)$ as the \emph{norm} of $a$
-  and write it as $\norm{a}$; if we define the conjugate of $a_1 + a_n\sqrt{n}$ as
-  $a_1 - a_n\sqrt{n}$ then the norm of $a$ is just $a$ times its conjugate.
-  It's useful because it lives in $A$.
+  Now, because of the wedges that $a$ and $b$ are in, we have $\norm{a} \leq 0
+  \leq \norm{b}$ so the $A$ coefficient $\norm{b} - \norm{a} \geq 0$ (we can
+  use additivity here because the norms are in $A$, not $A[\sqrt{n}]$).
+  We also have $0 \leq a_1^2 \leq na_n^2$ and $0 \leq nb_n^2 \leq b_1^2$;
+  multiplying these we get $na_1^2b_n^2 \leq na_n^2b_1^2$. Since $n$ is
+  non-negative, we can conclude $a_1b_n \leq |a_1b_n| \leq |b_1a_n|$ so the
+  $\sqrt{n}$ coefficient $2(a_nb_1 - a_1b_n)$ is also nonnegative. That means
+  $(a+b)m$ is in the NE quadrant, and is therefore obviously nonnegative so
+  we're done.
 
-  With this in hand, we can define the sign operation:
-  \begin{displaymath}
-    \sign(a_1 + a_n\sqrt{n}) = \left\{\begin{array}{ll}
-      \sign(a_1) & \text{if }\sign(\norm{a}) \geq 0 \\
-      \sign(a_n) & \text{otherwise} \\
-    \end{array}
-    \right.
-  \end{displaymath}
+  Now, consider the case where both $a$ and $b$ are in the ESE wedge. In this
+  case, $m = \conj{a} + \conj{b}$, so
+  \begin{eqnarray*}
+    (a + b)m
+      & = & b\conj{b} + a\conj{a} + a\conj{b} + b\conj{a} \\
+      & = & \norm{b} + \norm{a} + 2(a_1b_1 - na_nb_n) \\
+  \end{eqnarray*}
 
-  There are some easy properties about sign and the norm that are useful in
-  proving the signed ring properties:
-  \begin{itemize}
-    \item $\sign(a) = \sign(a\sqrt{n})$
-    \item $\sign(\norm{a}) = -\sign(\norm{a\sqrt{n}})$
-    \item $\norm{ab} = \norm{a} \cdot \norm{b}$
-    \item $\norm{a} = 0$ if and only if $a = 0$ (this requires $n$ to be non-square)
-  \end{itemize}
+  Since $a$ and $b$ are both in the E quadrant, the norm terms are nonnegative.
+  We also have $0 \leq na_n^2 \leq a_1^2$ and $0 \leq nb_n^2 \leq b_1^2$;
+  multiplying these gives $n^2a_n^2b_n^2 \leq a_1^2b_1^2$, so the other two
+  terms are nonnegative. As in the previous case, $(a + b)m$ is obviously
+  nonnegative.
 
-  The first two of these facts reduce the case analysis because you can always
-  assume that $\norm{a} \geq 0$ without loss of generality by multiplying through by
-  $\sqrt{n}$.
-
-  % TODO: overclaim? closure under addition still needs one further
-  % multiplier-style trick inside norm_add_nonneg's hard case, not just
-  % bookkeeping from the facts above -- reword if "entirely mechanical" is
-  % too strong.
-  With these tricks, checking the signed ring properties is entirely mechanical.
-  \leanok
+  The remaining cases are similar. In all cases, we conclude that $m$ and $(a +
+  b)m$ are obviously nonnegative. If $a + b$ were negative, then $m$ would have
+  to be 0, which means all the coefficents of $a$ and $b$ are 0; this would be
+  a contradiction, so we conclude $a + b$ must be nonnegative, as required.
 \end{proof}
 
 \begin{corollary}
   \label{thm:adjoinOrderedRing}
-  \lean{AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
-  \uses{thm:adjoinRing, def:adjoinSign, thm:orderFromSign, thm:signFromOrder}
+  \lean{AdjoinSqrt.nonnegCone, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \leanok
-  If $A$ is a linearly ordered ring, and if $n$ is a positive non-square in $A$
-  then $A[\sqrt{n}]$ is also linearly ordered.
+  \uses{def:ringCone, thm:multiplicativity, thm:additivity}
+  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  $A[\sqrt{n}]$ is also a linearly ordered ring.
 \end{corollary}
-
-\begin{proof}
-  \leanok
-  Since $A$ is a linearly ordered ring, it is a signed ring. Therefore $A[\sqrt{n}]$ is signed,
-  which implies that it is a linearly ordered ring.
-  % TODO (prose): out of date (order-first)
-  %  * cone closed under + and × (nonneg_add, nonneg_mul); Mathlib builds the order
-\end{proof}
 
 %% A[√n] is an ordered field
 
@@ -407,7 +504,7 @@ TODO: informal definitions for homs.
 
 %% A[√n] → ℝ
 
-\begin{definition}
+\begin{definition}[Conversion to $ℝ$]
   \label{def:adjoinToReal}
   \lean{AdjoinSqrt.toReal}
   \leanok
@@ -450,7 +547,7 @@ number representations, but are interesting nonetheless.
 
 %% A → A[√n]
 
-\begin{definition}
+\begin{definition}[Embedding of $A$]
   \label{def:adjoinOfA}
   \lean{AdjoinSqrt.instCoe}
   \leanok
@@ -481,9 +578,16 @@ number representations, but are interesting nonetheless.
 \end{lemma}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Avoiding computation using signs}
+
+% TODO: talk about sign-based formulation and how it avoids the addition and
+% multiplication in the cone computation. Link it to the implementation, cite
+% lemma that two definitions are equivalent.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Interval arithmetic}
 
-\begin{definition}
+\begin{definition}[Filtered real]
   \label{def:filtered}
   \notready
   \lean{FilteredReal}
@@ -494,7 +598,7 @@ number representations, but are interesting nonetheless.
   approximation.
 \end{definition}
 
-\begin{definition}
+\begin{definition}[Ring operations]
   \label{def:filteredRingOps}
   \uses{def:filtered}
   \lean{FilteredReal.instRingOps}
@@ -524,7 +628,7 @@ number representations, but are interesting nonetheless.
   \notready
 \end{proof}
 
-\begin{definition}
+\begin{definition}[Division]
   \label{def:filteredInv}
   \lean{FilteredReal.instInv}
   \uses{def:filtered}
@@ -545,7 +649,7 @@ number representations, but are interesting nonetheless.
   \notready
 \end{proof}
 
-\begin{definition}
+\begin{definition}[Comparison]
   \label{def:filteredCompare}
   \uses{def:filtered}
   \lean{FilteredReal.instOrd}
@@ -598,7 +702,7 @@ unless strictly necessary, but we can at least prove that the interval
 comparison only fails if the comparison can't be determined just from the
 intervals. We formalize this as follows:
 
-\begin{lemma}
+\begin{lemma}[Completeness of interval comparison]
   \label{thm:compareComplete}
   \uses{def:filteredCompare}
   \lean{Interval.compare?_complete}
@@ -607,6 +711,8 @@ intervals. We formalize this as follows:
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
 \end{lemma}
+
+% TODO: mention benchmark results
 
 \chapter{Applications}
 
