@@ -181,6 +181,7 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
   \lean{AdjoinSqrt.instCommRing}
   \leanok
   \uses{def:adjoinRingOps}
+  % TODO: A must be commutative (Lean: CommRing); same for thm:adjoinAlgebra
   If $A$ satisfies the ring properties, then so does $A[\sqrt{n}]$.
 \end{proposition}
 
@@ -504,6 +505,7 @@ TODO: informal definitions for homs.
 
 %% A[√n] → ℝ
 
+% TODO: toReal renders italic; \code or \operatorname
 \begin{definition}[Conversion to $ℝ$]
   \label{def:adjoinToReal}
   \lean{AdjoinSqrt.toReal}
@@ -515,6 +517,7 @@ TODO: informal definitions for homs.
 \end{definition}
 
 \begin{lemma}
+  % TODO: needs toReal(n) ≥ 0; non-square not needed
   \label{thm:adjoinToRealRingHom}
   \uses{def:adjoinToReal, thm:adjoinRing}
   If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
@@ -523,6 +526,7 @@ TODO: informal definitions for homs.
 \end{lemma}
 
 \begin{lemma}
+  % TODO: monotone isn't enough; needs ordered ring hom
   \label{thm:adjoinToRealOrderHom}
   \uses{def:adjoinToReal, thm:adjoinOrderedRing}
   If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
@@ -542,6 +546,7 @@ TODO: informal definitions for homs.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A$ to $A[√n]$}
 
+% TODO: "interesting" twice
 These are some interesting results that aren't directly needed to use these
 number representations, but are interesting nonetheless.
 
@@ -567,6 +572,7 @@ number representations, but are interesting nonetheless.
 \end{lemma}
 
 \begin{proof}
+  % TODO: \leanok first, as elsewhere
   Trivial
   \leanok
 \end{proof}
@@ -760,6 +766,7 @@ development defines by hand. Under this correspondence:
 That last point explains why the ordering can be described at all. The order
 asks whether one particular eigenvalue is non-negative, and $\sqrt{n}$ appears
 in the roots but never in the coefficients; the criterion of
+% TODO: def:adjoinSign is gone; cite def:posCone. Pairing TODO below is stale
 Definition~\ref{def:adjoinSign} is the standard way of locating a root of a
 quadratic from its coefficients. It also explains the shape of the argument for
 closure under addition, which still turns on elementary symmetric combinations
