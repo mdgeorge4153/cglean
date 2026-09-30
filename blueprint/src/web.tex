@@ -9,6 +9,9 @@
 \usepackage{amssymb, amsthm, amsmath}
 \usepackage{hyperref}
 \usepackage[showmore, dep_graph]{blueprint}
+% dvisvgm (plasTeX's vector imager) can't render tikz's default PostScript output
+\def\pgfsysdriver{pgfsys-dvisvgm.def}
+\usepackage{tikz}
 
 
 \input{common-macros}
