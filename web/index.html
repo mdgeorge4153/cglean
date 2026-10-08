@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CGLean drag test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    svg  { border: 1px solid #ccc; width: 400px; max-width: 100%; touch-action: none; }
+  </style>
+</head>
+<body>
+  <p>Drag the dot. Its coordinates are exact, in ℚ[√2]; the state, the clamping,
+  and the drawing are all in Lean
+  (<code>CGLeanWeb/Drag.lean</code>), compiled to WebAssembly.</p>
+  <svg id="canvas" viewBox="0 0 400 400"></svg>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
