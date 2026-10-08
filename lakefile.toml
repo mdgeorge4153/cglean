@@ -37,3 +37,7 @@ allowNonModules = true
 name = "bench"
 srcDir = "bench"
 root = "Main"
+
+# Code for the WebAssembly build; see web/README.md.
+[[lean_lib]]
+name = "CGLeanWeb"
