@@ -196,9 +196,9 @@ Of course, the whole point of $A[\sqrt{n}]$ is that it contains a square root of
 \begin{theorem}
   \label{thm:adjoinHasSqrtN}
   \lean{AdjoinSqrt.root_n_squared}
-  \uses{def:adjoin, thm:adjoinRing}
+  \uses{def:adjoin, def:adjoinOfA, thm:adjoinRing}
   \leanok
-  If $A$ is a ring, then in $A[\sqrt{n}]$, $\sqrt{n} \cdot \sqrt{n} = n$
+  If $A$ is a commutative ring, then in $A[\sqrt{n}]$, $\sqrt{n} \cdot \sqrt{n} = n$.
 \end{theorem}
 
 \begin{proof}
@@ -257,7 +257,7 @@ values in $A[\sqrt{n}]$ with values in $A$:
   \uses{def:adjoinRingOps}
   \leanok
   We refer to $a_1 - a_n\sqrt{n}$ as the \emph{conjugate} of $a$ (written
-  $\conj{a}$)
+  $\conj{a}$).
 \end{definition}
 \begin{definition}[Norm]
   \label{def:norm}
@@ -275,7 +275,7 @@ values in $A[\sqrt{n}]$ with values in $A$:
 Now we can proceed to check the ordering properties on $A[\sqrt{n}]$. Instead
 of defining comparisons like $<$ and $≤$ directly, it is easier to start by
 defining a comparison with 0. Then we can define $a \leq b$ if and only if $0
-\leq b - a$. The set of values greater than 0 is referred to as a
+\leq b - a$. The set of values greater than or equal to 0 is referred to as a
 \emph{positive cone}.
 
 As with the other operations, we will use an ordering on $A$ to define the
@@ -286,7 +286,7 @@ whichever one dominates.
   \label{def:posCone}
   \lean{AdjoinSqrt.IsNonneg}
   \leanok
-  \uses{def:adjoin}
+  \uses{def:adjoin, def:norm}
   We say $0 \leq a_1 + a_n\sqrt{n}$ if either $a_1^2 \geq na_n^2$ and $a_1 \geq
   0$ (i.e. if $a_1$ dominates and is nonnegative) or if $a_1^2 \leq na_n^2$ and $a_n \geq 0$
   (i.e. if $a_n\sqrt{n}$ dominates and is nonnegative).
@@ -326,7 +326,7 @@ two are more tricky and we state them as lemmas:
   \lean{AdjoinSqrt.nonneg_mul}
   \leanok
   \uses{def:posCone}
-  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ satisfies the multiplicative property: for all $a, b ∈
   A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq ab$.
 \end{lemma}
@@ -342,20 +342,19 @@ two are more tricky and we state them as lemmas:
   signs.
 \end{proof}
 
-The last proof is the trickiest:
 
 \begin{lemma}[Additivity]
   \label{thm:additivity}
   \lean{AdjoinSqrt.nonneg_add}
   \leanok
   \uses{def:posCone}
-  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ satisfies the additive property: for all $a, b ∈
   A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$.
 \end{lemma}
 \begin{proof}
   % TODO: \leanok once nonneg_add is reproved via the multiplier m
-  \uses{thm:multiplicativity}
+  \uses{def:ringCone, thm:multiplicativity}
   This is the trickiest proof of this section. To keep track of the cases, it
   is helpful to organize them into the following diagram:
 
@@ -388,7 +387,7 @@ The last proof is the trickiest:
   I'll refer to quadrants of the diagram by their cardinal directions; for
   example $a$ is in the north quadrant (N) when $\norm{a} \leq 0$ and $a \geq 0$,
   while $a$ is in the NE quadrant if $a_1 \geq 0$ and $a_n \geq 0$. Our
-  assumption that $a$ and $b$ are nonnegative say that $a$ and $b$ live in the
+  assumption that $a$ and $b$ are nonnegative says that $a$ and $b$ live in the
   NE half-plane. Anything in the NE quadrant is obviously nonnegative because
   regardless of which coefficient dominates, it is nonnegative.
 
@@ -439,7 +438,7 @@ The last proof is the trickiest:
   use additivity here because the norms are in $A$, not $A[\sqrt{n}]$).
   We also have $0 \leq a_1^2 \leq na_n^2$ and $0 \leq nb_n^2 \leq b_1^2$;
   multiplying these we get $na_1^2b_n^2 \leq na_n^2b_1^2$. Since $n$ is
-  non-negative, we can conclude $a_1b_n \leq |a_1b_n| \leq |b_1a_n|$ so the
+  positive, we can conclude $a_1b_n \leq |a_1b_n| \leq |b_1a_n| = a_nb_1$ so the
   $\sqrt{n}$ coefficient $2(a_nb_1 - a_1b_n)$ is also nonnegative. That means
   $(a+b)m$ is in the NE quadrant, and is therefore obviously nonnegative so
   we're done.
@@ -460,7 +459,7 @@ The last proof is the trickiest:
 
   The remaining cases are similar. In all cases, we conclude that $m$ and $(a +
   b)m$ are obviously nonnegative. If $a + b$ were negative, then $m$ would have
-  to be 0, which means all the coefficents of $a$ and $b$ are 0; this would be
+  to be 0, which means all the coefficients of $a$ and $b$ are 0; this would be
   a contradiction, so we conclude $a + b$ must be nonnegative, as required.
 \end{proof}
 
@@ -469,9 +468,14 @@ The last proof is the trickiest:
   \lean{AdjoinSqrt.nonnegCone, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \leanok
   \uses{def:ringCone, thm:multiplicativity, thm:additivity}
-  If $A$ is a linear ordered ring and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ is also a linearly ordered ring.
 \end{corollary}
+\begin{proof}
+  \leanok
+  Apply Mathlib's construction (Definition~\ref{def:ringCone}) to
+  Lemmas~\ref{thm:multiplicativity} and~\ref{thm:additivity}.
+\end{proof}
 
 %% A[√n] is an ordered field
 
