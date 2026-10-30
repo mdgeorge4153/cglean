@@ -286,7 +286,7 @@ whichever one dominates.
   \label{def:posCone}
   \lean{AdjoinSqrt.IsNonneg}
   \leanok
-  \uses{def:adjoin, def:norm}
+  \uses{def:adjoin}
   We say $0 \leq a_1 + a_n\sqrt{n}$ if either $a_1^2 \geq na_n^2$ and $a_1 \geq
   0$ (i.e. if $a_1$ dominates and is nonnegative) or if $a_1^2 \leq na_n^2$ and $a_n \geq 0$
   (i.e. if $a_n\sqrt{n}$ dominates and is nonnegative).
@@ -354,7 +354,7 @@ two are more tricky and we state them as lemmas:
 \end{lemma}
 \begin{proof}
   % TODO: \leanok once nonneg_add is reproved via the multiplier m
-  \uses{def:ringCone, thm:multiplicativity}
+  \uses{thm:multiplicativity}
   This is the trickiest proof of this section. To keep track of the cases, it
   is helpful to organize them into the following diagram:
 
@@ -467,12 +467,12 @@ two are more tricky and we state them as lemmas:
   \label{thm:adjoinOrderedRing}
   \lean{AdjoinSqrt.nonnegCone, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \leanok
-  \uses{def:ringCone, thm:multiplicativity, thm:additivity}
   If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ is also a linearly ordered ring.
 \end{corollary}
 \begin{proof}
   \leanok
+  \uses{def:ringCone, thm:multiplicativity, thm:additivity}
   Apply Mathlib's construction (Definition~\ref{def:ringCone}) to
   Lemmas~\ref{thm:multiplicativity} and~\ref{thm:additivity}.
 \end{proof}
