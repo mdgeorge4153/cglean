@@ -332,16 +332,33 @@ two are more tricky and we state them as lemmas:
 \end{lemma}
 \begin{proof}
   \leanok
-  You can split into four cases based on whether $a$ is $a_1$ dominated and
-  whether $b$ is $b_1$ dominated; since $\norm{ab} = \norm{a}\norm{b}$ you can
-  determine the sign of $\norm{ab}$ in each of the cases. You can also assume
-  without loss of generality that at least one of $a$ or $b$ is $x_1$
-  dominated; if both are $x_n$ dominated you can multiply everything by
-  $\sqrt{n}$ which preserves the sign but exchanges $x_1$-dominated and
-  $x_n$-dominated values. The remaining three cases all follow from juggling
-  signs.
-\end{proof}
+  You can split into four cases based on whether $a$ is $a_1$-dominated and
+  whether $b$ is $b_1$-dominated; since $\norm{ab} = \norm{a}\norm{b}$ you can
+  determine the sign of $\norm{ab}$ in each of the cases which tells you which
+  coefficient of $ab$ you need to prove is nonnegative.
 
+  In each of the cases, the coefficient in question is a sum of two terms, one
+  of which is obviously nonnegative from the assumptions. The goal is then to
+  prove that the other term is smaller in absolute value (so that the sum is
+  also nonnegative), which you can do by writing out the difference of the squares.
+
+  For example, let's take the case where $a$ is $a_1$-dominated and $b$ is
+  $b_n$-dominated. Then we know $\norm{ab} = \norm{a}\norm{b} \leq 0$ (so that
+  $ab$ is $(ab)_n$-dominated), $a_1 \geq 0$, and $b_n \geq 0$. To show $ab \geq
+  0$ we must show that $(ab)_n \geq 0$. We have $(ab)_n = a_1b_n + b_1a_n$; the
+  first term is nonnegative so we just need to show that $|b_1a_n| \leq |a_1b_n|$.
+
+  Comparing the squares, we have
+  \begin{displaymath}
+    (a_1b_n)^2 - (b_1a_n)^2 = b_n^2\norm{a} - a_n^2\norm{b}
+  \end{displaymath}
+  the two terms on the right are both nonnegative since $\norm{a} \geq 0$ and
+  $\norm{b} \leq 0$. Therefore $|b_1a_n| \leq |a_1b_n|$, so we have $(ab)_n
+  \geq 0$ as required.
+
+  The other three cases are almost identical, although the cases where both
+  norms have the same sign also require $n > 0$ for the inequalities to work out.
+\end{proof}
 
 \begin{lemma}[Additivity]
   \label{thm:additivity}

@@ -49,34 +49,34 @@ which agrees with this one only up to a proof. -/
 @[simps] instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
   coe x := ⟨x, 0⟩
 
-abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
+section Ops
+variable [Add R] [Mul R] [Sub R] [Neg R]
 
-/-- The norm `x * conj x`, which lies in `R` rather than `R[√n]`. -/
-@[simps] instance instCoeDepNorm [Mul R] [Add R] [Neg R] {x : AdjoinSqrt R n} :
-    CoeDep (AdjoinSqrt R n) (x * conj x) R where
-  coe := (x * conj x).a₁
+@[simps] def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
+def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
 
-@[simps] instance instInv [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
-  inv x := x.conj * (x * x.conj : R)⁻¹
+@[simps] instance instInv [Inv R] [Zero R]: Inv (AdjoinSqrt R n) where
+  inv x := x.conj * x.norm⁻¹
+end Ops
 
 /-- The element `√n` itself. -/
-@[simp] def root (n : R) [Zero R] [One R] : AdjoinSqrt R n := ⟨0, 1⟩
+@[simp] def root [Zero R] [One R] (n : R): AdjoinSqrt R n := ⟨0, 1⟩
 
-/-- Multiplying by `√n` moves `a₁` into the `√n`-coefficient slot, and `aₙ`
-(scaled by `n`) into the rational slot. -/
-lemma mul_root_a₁ [CommRing R] (x : AdjoinSqrt R n) :
-    (x * root n).a₁ = n * x.aₙ := by simp [root]
+/-- `a₁ + aₙ√n ≥ 0` if either `a₁ ≥ 0` and `a₁` dominates, or `aₙ ≥ 0` and `aₙ` dominates -/
+def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
+  (0 ≤ x.a₁ ∧ 0 ≤ (norm x : R)) ∨ (0 ≤ x.aₙ ∧ (norm x : R) ≤ 0)
 
-lemma mul_root_aₙ [CommRing R] (x : AdjoinSqrt R n) :
-    (x * root n).aₙ = x.a₁ := by simp [root]
+/-- We compare with zero using a faster technique that avoids computing the norm sometimes -/
+def cmpZero [Ord R] [Zero R] [Mul R] (x : AdjoinSqrt R n) : Ordering :=
+  match compare x.a₁ 0, compare x.aₙ 0 with
+  | .eq, o => o
+  | o, .eq => o
+  | .gt, .gt => .gt
+  | .lt, .lt => .lt
+  | .gt, .lt => compare (x.a₁ * x.a₁) (n * x.aₙ * x.aₙ)
+  | .lt, .gt => compare (n * x.aₙ * x.aₙ) (x.a₁ * x.a₁)
 
-/-- The norm `a₁² - n·aₙ²`, written out. Only needs enough structure to state
-the formula, so that the order (below) can use it directly. -/
-abbrev norm [Mul R] [Add R] [Neg R] (x : AdjoinSqrt R n) : R :=
-  x.a₁ * x.a₁ + -(n * x.aₙ * x.aₙ)
-
-
-/-- Theorems ------------------------------------------------------------------/
+/-  Theorems ------------------------------------------------------------------/
 
 instance instAddSemigroup [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
   add_assoc := by intros; ext <;> apply add_assoc
@@ -90,19 +90,7 @@ instance instAddCommMonoid [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := 
   constructor; intros; ext <;> apply add_comm
 
 instance instNonUnitalAssocSemiring [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
-  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> try conv =>
-    -- this proof just involves finding the right places to commute things. We
-    -- should just hand this off to something like `ring`, but I don't think
-    -- there are nice tactics like that for things higher in the hierarchy
-    --
-    -- we use all_goals so that the two goals are focused on the same part of
-    -- the expression as you navigate through the proof
-    congr
-    all_goals rhs
-    rw [add_comm, add_assoc]
-    all_goals rhs
-    rw [add_comm]
-    all_goals rfl
+  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib] <;> ac_rfl
 
 instance instNonUnitalSemiring [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
@@ -132,47 +120,25 @@ instance instRing [CommRing R]: Ring (AdjoinSqrt R n) where
 instance instCommRing [CommRing R]: CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
 
-class Nonsquare (R : Type) [Mul R] (n : R) where
-  not_square : ∀ x : R, x * x ≠ n
-
-lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
-  intro H
-  have H' : a + -b + b = b := by rw [H]; exact zero_add b
-  rw [← H']
-  ring
-
 /-- A field is more than this needs: an integrally closed domain, a UFD say,
 would do. There `a₁ / aₙ` is integral over `R`, being a root of `X² - n`, so it
 already lies in `R` and `n` is a square after all. A bare domain is not enough
 --- in `k[x², x³]`, `n = x²` has no square root, yet `a₁ = x³`, `aₙ = x²` gives
 `a₁² = n * aₙ²`. Every intended instance is a field, so the generality is not
 worth the proof. -/
-lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R) = 0 → x = 0 := by
-  intros x H
-  simp at H
-  by_cases an0 : x.aₙ = 0
-  case pos =>
-    rw [an0] at H
-    simp at H
+lemma norm_0 [Field R] [nonsquare: Fact (¬ IsSquare n)] (x : AdjoinSqrt R n) (H: x.norm = 0): x = 0 := by
+  simp [norm] at H
+  if x.aₙ = 0 then
     ext <;> simp_all
-  case neg =>
+  else
     -- here's where we need division in this proof
-    have H'' : (x.a₁ * x.aₙ⁻¹) * (x.a₁  * x.aₙ⁻¹) = n := by
-      field_simp
-      apply cancel_neg
-      linear_combination H
-    apply Nonsquare.not_square at H''
-    exfalso; assumption
+    exact absurd ⟨x.a₁ / x.aₙ, by field_simp; linear_combination -H⟩ nonsquare.out
 
-instance instField [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
+instance instField [Field R] [Fact (¬ IsSquare n)]: Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
     intro x xne0
-    -- the norm `x * conj x` is non-zero, which is `conj_0` contrapositive
-    have hd : x.a₁ ^ 2 + -(n * x.aₙ ^ 2) ≠ 0 := fun h =>
-      xne0 (conj_0 x (by simp [AdjoinSqrt.conj]; linear_combination h))
-    ext <;> simp [AdjoinSqrt.conj]
-    · field_simp
-    · ring
+    have hd : norm x ≠ 0 := fun h => xne0 (norm_0 x h)
+    ext <;> simp <;> field_simp <;> simp [norm]; ring
 
   inv_zero := by
     ext <;> simp
@@ -187,6 +153,47 @@ instance instField [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
   nnqsmul := _
 
 
+/- ## Conj and norm -/
+
+section Conj
+
+variable [CommRing R]
+
+lemma conj_mul (x y : AdjoinSqrt R n) : (x * y).conj = x.conj*y.conj := by
+  ext <;> simp; ring
+
+lemma norm_eq (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
+  simp [norm]; ring
+
+lemma norm_mul (x y : AdjoinSqrt R n) :
+    norm (x * y) = norm x * norm y := by
+  simp [norm]; ring
+
+/-- Negation doesn't change the norm. -/
+lemma norm_neg (x : AdjoinSqrt R n) : norm (-x) = norm x := by simp [norm]
+
+/-- Neither does conjugation: `norm` only sees `x.aₙ²`. -/
+lemma norm_conj (x : AdjoinSqrt R n) : norm (conj x) = norm x := by simp [norm]
+
+/-- Multiplying by `√n` moves `a₁` into the `√n`-coefficient slot, and `aₙ`
+(scaled by `n`) into the rational slot. -/
+lemma mul_root_a₁ (x : AdjoinSqrt R n) :
+    (x * root n).a₁ = n * x.aₙ := by simp [root]
+
+lemma mul_root_aₙ (x : AdjoinSqrt R n) :
+    (x * root n).aₙ = x.a₁ := by simp [root]
+
+
+/-- Multiplying by `√n` swaps the roles of `a₁` and `aₙ` (up to a factor of
+`n`), so it negates the norm. This is the algebraic engine behind the
+`A`-dominated/`√n`-dominated symmetry: rotating an element by `√n` trades one
+regime for the other while flipping the norm's sign. -/
+lemma norm_mul_rootN (x : AdjoinSqrt R n) :
+    norm (x * root n) = -n * norm x := by
+  simp [norm, root]; ring
+
+end Conj
+
 /-! ## Order
 
 `A[√n]` is ordered by designating its non-negative elements, the *positive
@@ -194,47 +201,13 @@ cone*, as Mathlib does for any ordered ring. Membership is decided in `A`:
 `a₁ + aₙ√n ≥ 0` when a non-negative part dominates the other, which, since
 `n > 0`, is a comparison of squares, i.e. the sign of the norm. -/
 
-/-- `n` is positive, so that `√n` exists in the ordered sense. -/
-class Pos (R : Type) [Zero R] [LT R] (n : R) : Prop where
-  n_pos : 0 < n
-
-lemma norm_eq [CommRing R] (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
-  simp [conj, norm]
-
-lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
-    norm (x * y) = norm x * norm y := by
-  simp [norm]; ring
-
-/-- Negation doesn't change the norm. -/
-lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) : norm (-x) = norm x := by
-  simp [norm]
-
-/-- Neither does conjugation: `norm` only sees `x.aₙ²`. -/
-lemma norm_conj [CommRing R] (x : AdjoinSqrt R n) : norm (conj x) = norm x := by
-  simp [norm]
-
-/-- Multiplying by `√n` swaps the roles of `a₁` and `aₙ` (up to a factor of
-`n`), so it negates the norm. This is the algebraic engine behind the
-`A`-dominated/`√n`-dominated symmetry: rotating an element by `√n` trades one
-regime for the other while flipping the norm's sign. -/
-lemma norm_mul_rootN [CommRing R] (x : AdjoinSqrt R n) :
-    norm (x * root n) = -n * norm x := by
-  simp [norm, root]; ring
-
 section Order
 
-variable [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-
-/-- `a₁ + aₙ√n ≥ 0`, phrased in `A`. Both disjuncts are needed: the first covers
-`aₙ < 0`, where `a₁` must dominate `aₙ√n`, and the second covers `a₁ < 0`,
-where `aₙ√n` must dominate. -/
-
-/- TODO: this definition should maybe be moved to the top with the definitions of +, *, etc -/
-def IsNonneg (x : AdjoinSqrt R n) : Prop :=
-  (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)
+variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Comparison of squares reflects, given the larger side is non-negative.
 Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
+-- TODO: remove
 lemma le_of_mul_self_le {a b : R} (hb : 0 ≤ b)
     (h : a * a ≤ b * b) : a ≤ b :=
   le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
@@ -242,22 +215,24 @@ lemma le_of_mul_self_le {a b : R} (hb : 0 ≤ b)
 
 /-- When both norms are non-negative and both rational parts are, the rational
 part dominates the cross term. -/
-lemma cross_le [Pos R n] {x y : AdjoinSqrt R n}
+-- TODO: remove
+lemma cross_le [pos: Fact (0 < n)] {x y : AdjoinSqrt R n}
     (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
     n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   simp only [norm] at hxN hyN
   nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
     mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
     sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
 
 /-- Dual of `cross_le`. -/
-lemma cross_ge [Pos R n] {x y : AdjoinSqrt R n}
+-- TODO: remove
+lemma cross_ge [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
     x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
   -- Obtained for free by rotating both x, y by √n (which swaps a₁ ↔ n·aₙ and
   -- negates the norm) and dividing the resulting cross_le instance by n.
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx
   have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy
   have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
@@ -266,65 +241,51 @@ lemma cross_ge [Pos R n] {x y : AdjoinSqrt R n}
   rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
   nlinarith [h]
 
-/-- `x` and `conj y` share `.a₁` and `norm`, so `cross_le`/`cross_ge` apply to
-either pairing of `x` with `y` or `conj y`; the two conclusions bound
-`n * x.aₙ * y.aₙ` from opposite sides. This is the tool `nonneg_mul`'s
-same-regime cases use to avoid re-deriving the cross-term certificate. -/
-lemma cross_le_conj [Pos R n] {x y : AdjoinSqrt R n}
-    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
-    -(n * x.aₙ * y.aₙ) ≤ x.a₁ * y.a₁ := by
-  have h := cross_le hx (show 0 ≤ (conj y).a₁ from hy) hxN
-    (show 0 ≤ norm (conj y) from norm_conj y ▸ hyN)
-  rw [show (conj y).a₁ = y.a₁ from rfl, show (conj y).aₙ = -y.aₙ from rfl] at h
-  linarith
-
 /-- The non-negative elements are closed under multiplication. Each case turns
 on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
 through the two norms. -/
-lemma nonneg_mul [Pos R n] {x y : AdjoinSqrt R n}
-    (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
-    (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
-    (0 ≤ (x*y).a₁ ∧ 0 ≤ norm (x*y)) ∨ (0 ≤ (x*y).aₙ ∧ norm (x*y) ≤ 0) := by
-  have hn : 0 < n := Pos.n_pos
-  have hprod : norm (x*y) = norm x * norm y := norm_mul x y
+lemma nonneg_mul [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x*y) := by
   have ha : (x*y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := rfl
   have hb : (x*y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁ := rfl
+  have hn : 0 < n := pos.elim
   rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
   · left
-    refine ⟨?_, by rw [hprod]; exact mul_nonneg hxN hyN⟩
-    rw [ha]; linarith [cross_le_conj hx1 hy1 hxN hyN]
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonneg hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hn.le (mul_self_nonneg x.aₙ)
+    ]
   · right
-    refine ⟨?_, by rw [hprod]; exact mul_nonpos_of_nonneg_of_nonpos hxN hyN⟩
-    rw [hb]
-    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hxN (mul_self_nonneg y.aₙ),
-      mul_nonneg (mul_self_nonneg x.aₙ) (neg_nonneg.mpr hyN),
-      sq_nonneg (x.a₁*y.aₙ - x.aₙ*y.a₁), sq_nonneg (x.a₁*y.aₙ + x.aₙ*y.a₁)]
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonpos_of_nonneg_of_nonpos hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hxN (mul_self_nonneg y.aₙ),
+      mul_nonneg (mul_self_nonneg x.aₙ) (neg_nonneg.mpr hyN)
+    ]
   · right
-    refine ⟨?_, by rw [hprod]; exact mul_nonpos_of_nonpos_of_nonneg hxN hyN⟩
-    rw [hb]
-    nlinarith [mul_nonneg hx1 hy1, mul_nonneg hyN (mul_self_nonneg x.aₙ),
-      mul_nonneg (mul_self_nonneg y.aₙ) (neg_nonneg.mpr hxN),
-      sq_nonneg (x.a₁*y.aₙ - x.aₙ*y.a₁), sq_nonneg (x.a₁*y.aₙ + x.aₙ*y.a₁)]
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonpos_of_nonpos_of_nonneg hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hyN (mul_self_nonneg x.aₙ),
+      mul_nonneg (mul_self_nonneg y.aₙ) (neg_nonneg.mpr hxN)
+    ]
   · left
-    refine ⟨?_, by
-      rw [hprod]; nlinarith [mul_nonneg (neg_nonneg.mpr hxN) (neg_nonneg.mpr hyN)]⟩
-    rw [ha]
-    -- Rotate both by √n (swapping into the L-regime `cross_le_conj` covers)
-    -- and divide the resulting bound by `n`.
-    have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx1
-    have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy1
-    have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
-    have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
-    have h := cross_le_conj hx' hy' hxN' hyN'
-    rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
-    nlinarith [h]
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonneg_of_nonpos_of_nonpos hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg (mul_nonneg hn.le hx1) hy1
+    ]
 
 /-- In a mixed pair, if the rational parts sum to something non-positive then the
 `√n` parts sum to something non-negative. -/
-lemma aₙ_add_nonneg [Pos R n] {x y : AdjoinSqrt R n}
+lemma aₙ_add_nonneg [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
     (h : x.a₁ + y.a₁ ≤ 0) : 0 ≤ x.aₙ + y.aₙ := by
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   simp only [norm] at hxN hyN
   have h1 : x.a₁ * x.a₁ ≤ (-y.a₁) * (-y.a₁) :=
     mul_self_le_mul_self hx1 (by linarith)
@@ -335,12 +296,12 @@ lemma aₙ_add_nonneg [Pos R n] {x y : AdjoinSqrt R n}
 
 /-- Dual of `norm_add_nonpos`: if the `√n` parts sum to something non-positive,
 the sum sits on the rational-dominated side. -/
-lemma norm_add_nonneg [Pos R n] {x y : AdjoinSqrt R n}
+lemma norm_add_nonneg [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
     (h : x.aₙ + y.aₙ ≤ 0) : 0 ≤ norm (x+y) := by
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   have hsum : norm (x+y)
-      = (x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) := by simp [norm]; ring
+      = (x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) := by simp [norm]
   rw [hsum]
   simp only [norm] at hxN hyN
   have hb : x.aₙ ≤ 0 := by linarith
@@ -381,7 +342,7 @@ lemma norm_add_nonneg [Pos R n] {x y : AdjoinSqrt R n}
       nlinarith [key, hlt]
 
 /-- The `√n`-dominated twin of `norm_add_nonneg`. -/
-lemma norm_add_nonpos [Pos R n] {x y : AdjoinSqrt R n}
+lemma norm_add_nonpos [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
     (h : x.a₁ + y.a₁ ≤ 0) : norm (x+y) ≤ 0 := by
   -- Obtained for free by rotating both summands by √n: x' := y*√n and
@@ -389,7 +350,7 @@ lemma norm_add_nonpos [Pos R n] {x y : AdjoinSqrt R n}
   -- x'.aₙ + y'.aₙ = y.a₁ + x.a₁ is exactly the given hypothesis (relabelled).
   -- So norm_add_nonneg applies directly to (x', y'), giving
   -- 0 ≤ norm (x'+y') = norm ((x+y)*√n) = -n * norm (x+y), i.e. norm (x+y) ≤ 0.
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   have hx' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy1
   have hy' : 0 ≤ (x * root n).aₙ := by rw [mul_root_aₙ]; exact hx1
   have hxN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
@@ -402,8 +363,65 @@ lemma norm_add_nonpos [Pos R n] {x y : AdjoinSqrt R n}
   rw [hrot, norm_mul_rootN] at hsum
   nlinarith
 
+/-- Only `0` is both non-negative and non-positive. -/
+lemma nonneg_antisymm [Fact (¬ IsSquare n)] [pos: Fact (n > 0)] {x : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hnx : IsNonneg (-x)) : x = 0 := by
+  have hn : 0 < n := pos.elim
+  have hN : norm (-x) = norm x := norm_neg x
+  have h1 : (-x).a₁ = -x.a₁ := rfl
+  have h2 : (-x).aₙ = -x.aₙ := rfl
+  unfold IsNonneg at hx hnx
+  rw [hN, h1, h2] at hnx
+  have hzero : norm x = 0 → x = 0 := fun h => norm_0 x (by rw [norm_eq]; exact h)
+  -- every case forces `norm x = 0`
+  apply hzero
+  rcases hx with ⟨p, _⟩ | ⟨p, _⟩ <;> rcases hnx with ⟨q, _⟩ | ⟨q, _⟩ <;> simp only [norm] at * <;>
+    nlinarith [mul_nonneg p q, mul_nonneg (mul_nonneg hn.le p) q,
+      mul_nonneg hn.le (mul_self_nonneg x.aₙ), mul_self_nonneg x.a₁]
+
+/-- Every element is non-negative or non-positive. -/
+lemma nonneg_or_neg_nonneg (x : AdjoinSqrt R n) : IsNonneg x ∨ IsNonneg (-x) := by
+  have hN : norm (-x) = norm x := norm_neg x
+  unfold IsNonneg; rw [hN]
+  show _ ∨ (0 ≤ -x.a₁ ∧ _) ∨ (0 ≤ -x.aₙ ∧ _)
+  rcases le_total 0 (norm x) with h | h
+  · rcases le_total 0 x.a₁ with ha | ha
+    · exact Or.inl (Or.inl ⟨ha, h⟩)
+    · exact Or.inr (Or.inl ⟨by linarith, h⟩)
+  · rcases le_total 0 x.aₙ with hb | hb
+    · exact Or.inl (Or.inr ⟨hb, h⟩)
+    · exact Or.inr (Or.inr ⟨by linarith, h⟩)
+
+/-- values in the NE quadrant are obviously positive -/
+lemma nonneg_of_coeffs_nonneg { x : AdjoinSqrt R n } ( h₁ : 0 ≤ x.a₁) (hₙ : 0 ≤ x.aₙ) : IsNonneg x := by
+  rcases le_total 0 x.norm <;> unfold IsNonneg <;> aesop
+
+/-- utility for the proof of nonneg_add; we prove (x + y)(multiplier x y) is
+  nonnegative, and conclude that (x+y) is nonnegative -/
+def multiplier (x y : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨|x.a₁| + |y.a₁|, |x.aₙ| + |y.aₙ|⟩
+
+lemma nonneg_multiplier (x y : AdjoinSqrt R n) : IsNonneg (multiplier x y) := by
+  unfold multiplier; apply nonneg_of_coeffs_nonneg <;> positivity
+
+lemma eq_zero_of_multiplier_eq_zero {x y : AdjoinSqrt R n} (h : multiplier x y = 0) : (x = 0) ∧ (y = 0) := by
+  sorry
+
+lemma nonneg_mul_of_nonneg {x y : AdjoinSqrt R n} [Fact (n > 0)] [Fact (¬ IsSquare n)] (hmul : IsNonneg (x * y)) (hy : IsNonneg y) (hne : y ≠ 0) : IsNonneg x := by
+  rcases (nonneg_or_neg_nonneg x) with h | h
+  . exact h
+  . have hNegMul : (-(x*y)).IsNonneg := by rw [<- neg_mul]; apply nonneg_mul <;> assumption
+    have hMulZero : x*y = 0 := nonneg_antisymm hmul hNegMul
+    have hZero : x = 0 := Or.resolve_right (mul_eq_zero.mp hMulZero) hne
+    rw [hZero]; simp [IsNonneg]
+
 /-- The non-negative elements are closed under addition. -/
-lemma nonneg_add [Pos R n] {x y : AdjoinSqrt R n}
+lemma nonneg_add [Fact (n > 0)] [Fact (¬ IsSquare n)] {x y : AdjoinSqrt R n}
+  (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x + y) := by
+  sorry
+
+/-
+/-- The non-negative elements are closed under addition. -/
+lemma nonneg_add [Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
     (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
     (0 ≤ (x+y).a₁ ∧ 0 ≤ norm (x+y)) ∨ (0 ≤ (x+y).aₙ ∧ norm (x+y) ≤ 0) := by
@@ -436,37 +454,10 @@ lemma nonneg_add [Pos R n] {x y : AdjoinSqrt R n}
         exact norm_add_nonpos hy1 hx1 hyN hxN (by linarith)
   · exact Or.inr ⟨by rw [hb]; linarith,
       by rw [hsum]; linarith [cross_ge hx1 hy1 hxN hyN]⟩
-/-- Only `0` is both non-negative and non-positive. -/
-lemma nonneg_antisymm [Nonsquare R n] [Pos R n] {x : AdjoinSqrt R n}
-    (hx : IsNonneg x) (hnx : IsNonneg (-x)) : x = 0 := by
-  have hn : 0 < n := Pos.n_pos
-  have hN : norm (-x) = norm x := norm_neg x
-  have h1 : (-x).a₁ = -x.a₁ := rfl
-  have h2 : (-x).aₙ = -x.aₙ := rfl
-  unfold IsNonneg at hx hnx
-  rw [hN, h1, h2] at hnx
-  have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
-  -- every case forces `norm x = 0`
-  apply hzero
-  rcases hx with ⟨p, _⟩ | ⟨p, _⟩ <;> rcases hnx with ⟨q, _⟩ | ⟨q, _⟩ <;> simp only [norm] at * <;>
-    nlinarith [mul_nonneg p q, mul_nonneg (mul_nonneg hn.le p) q,
-      mul_nonneg hn.le (mul_self_nonneg x.aₙ), mul_self_nonneg x.a₁]
-
-/-- Every element is non-negative or non-positive. -/
-lemma nonneg_or_neg_nonneg (x : AdjoinSqrt R n) : IsNonneg x ∨ IsNonneg (-x) := by
-  have hN : norm (-x) = norm x := norm_neg x
-  unfold IsNonneg; rw [hN]
-  show _ ∨ (0 ≤ -x.a₁ ∧ _) ∨ (0 ≤ -x.aₙ ∧ _)
-  rcases le_total 0 (norm x) with h | h
-  · rcases le_total 0 x.a₁ with ha | ha
-    · exact Or.inl (Or.inl ⟨ha, h⟩)
-    · exact Or.inr (Or.inl ⟨by linarith, h⟩)
-  · rcases le_total 0 x.aₙ with hb | hb
-    · exact Or.inl (Or.inr ⟨hb, h⟩)
-    · exact Or.inr (Or.inr ⟨by linarith, h⟩)
+-/
 
 /-- The non-negative elements of `A[√n]`. -/
-def nonnegCone [Nonsquare R n] [Pos R n] : RingCone (AdjoinSqrt R n) where
+def nonnegCone [Fact (¬ IsSquare n)] [Fact (n > 0)] : RingCone (AdjoinSqrt R n) where
   carrier := {x | IsNonneg x}
   zero_mem' := Or.inl ⟨le_refl _, by simp [norm]⟩
   one_mem' := Or.inl ⟨zero_le_one, by simp [norm]⟩
@@ -476,23 +467,9 @@ def nonnegCone [Nonsquare R n] [Pos R n] : RingCone (AdjoinSqrt R n) where
 
 /-! ### Deciding the order
 
-`cmpZero x` compares `x` with `0`. It looks at the signs of the parts first;
-only when they differ does it need the squares, so the norm is computed for
-at most one comparison in `A`. -/
-
-/-- Compare `a₁ + aₙ√n` with `0`. -/
-def cmpZero (x : AdjoinSqrt R n) : Ordering :=
-  match compare x.a₁ 0, compare x.aₙ 0 with
-  | .eq, o => o
-  | o, .eq => o
-  | .gt, .gt => .gt
-  | .lt, .lt => .lt
-  | .gt, .lt => compare (x.a₁ * x.a₁) (n * x.aₙ * x.aₙ)
-  | .lt, .gt => compare (n * x.aₙ * x.aₙ) (x.a₁ * x.a₁)
-
-theorem cmpZero_spec [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) :
+theorem cmpZero_spec [Fact (¬ IsSquare n)] [pos: Fact (n > 0)] (x : AdjoinSqrt R n) :
     (cmpZero x = .lt ↔ ¬ IsNonneg x) ∧ (cmpZero x = .eq ↔ x = 0) := by
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
   have hx0 : x = 0 ↔ x.a₁ = 0 ∧ x.aₙ = 0 := AdjoinSqrt.ext_iff
   have sq := mul_self_nonneg x.a₁
@@ -516,7 +493,7 @@ theorem cmpZero_spec [Nonsquare R n] [Pos R n] (x : AdjoinSqrt R n) :
 
 section Instances
 
-variable [Nonsquare R n] [Pos R n]
+variable [Fact (¬ IsSquare n)] [Fact (n > 0)]
 
 theorem cmpZero_eq_lt_iff (x : AdjoinSqrt R n) : cmpZero x = .lt ↔ ¬ IsNonneg x :=
   (cmpZero_spec x).1
@@ -581,7 +558,7 @@ theorem sign_eq (x : AdjoinSqrt R n) :
     SignType.sign x = match SignType.sign (norm x) with
       | .neg => SignType.sign x.aₙ
       | _ => SignType.sign x.a₁ := by
-  have hn : 0 < n := Pos.n_pos
+  have hn : 0 < n := pos.elim
   have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
   have key : ∀ {s : R}, (0 < s ↔ 0 < x) → (s = 0 ↔ x = 0) → SignType.sign x = SignType.sign s := by
     intro s hpos hz
