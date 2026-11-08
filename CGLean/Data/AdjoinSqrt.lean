@@ -8,7 +8,6 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Algebra.Order.Ring.Cone
-import Mathlib.Data.Sign.Basic
 import CGLean.Classes.RingOps
 
 /-- Definitions ---------------------------------------------------------------/
@@ -66,6 +65,11 @@ end Ops
 def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
   (0 ≤ x.a₁ ∧ 0 ≤ (norm x : R)) ∨ (0 ≤ x.aₙ ∧ (norm x : R) ≤ 0)
 
+-- TODO: efficient comparison. Reinstate `cmpZero`, prove
+-- `cmpZero x = .lt ↔ ¬ IsNonneg x` and `cmpZero x = .eq ↔ x = 0`, and override
+-- `compare` (and decidability) in `instLinearOrder` with it. The earlier
+-- proofs (`cmpZero_spec`, `lt_iff_cmpZero`, the hand-built instance) are in ee3b01f.
+/-
 /-- We compare with zero using a faster technique that avoids computing the norm sometimes -/
 def cmpZero [Ord R] [Zero R] [Mul R] (x : AdjoinSqrt R n) : Ordering :=
   match compare x.a₁ 0, compare x.aₙ 0 with
@@ -75,6 +79,7 @@ def cmpZero [Ord R] [Zero R] [Mul R] (x : AdjoinSqrt R n) : Ordering :=
   | .lt, .lt => .lt
   | .gt, .lt => compare (x.a₁ * x.a₁) (n * x.aₙ * x.aₙ)
   | .lt, .gt => compare (n * x.aₙ * x.aₙ) (x.a₁ * x.a₁)
+-/
 
 /-  Theorems ------------------------------------------------------------------/
 
@@ -126,7 +131,7 @@ already lies in `R` and `n` is a square after all. A bare domain is not enough
 --- in `k[x², x³]`, `n = x²` has no square root, yet `a₁ = x³`, `aₙ = x²` gives
 `a₁² = n * aₙ²`. Every intended instance is a field, so the generality is not
 worth the proof. -/
-lemma norm_0 [Field R] [nonsquare: Fact (¬ IsSquare n)] (x : AdjoinSqrt R n) (H: x.norm = 0): x = 0 := by
+lemma norm_0 [Field R] [nonsquare: Fact (¬ IsSquare n)] {x : AdjoinSqrt R n} (H: x.norm = 0): x = 0 := by
   simp [norm] at H
   if x.aₙ = 0 then
     ext <;> simp_all
@@ -137,7 +142,7 @@ lemma norm_0 [Field R] [nonsquare: Fact (¬ IsSquare n)] (x : AdjoinSqrt R n) (H
 instance instField [Field R] [Fact (¬ IsSquare n)]: Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
     intro x xne0
-    have hd : norm x ≠ 0 := fun h => xne0 (norm_0 x h)
+    have hd : norm x ≠ 0 := fun h => xne0 (norm_0 h)
     ext <;> simp <;> field_simp <;> simp [norm]; ring
 
   inv_zero := by
@@ -159,38 +164,12 @@ section Conj
 
 variable [CommRing R]
 
-lemma conj_mul (x y : AdjoinSqrt R n) : (x * y).conj = x.conj*y.conj := by
-  ext <;> simp; ring
-
-lemma norm_eq (x : AdjoinSqrt R n) : (x * conj x).a₁ = norm x := by
-  simp [norm]; ring
-
 lemma norm_mul (x y : AdjoinSqrt R n) :
     norm (x * y) = norm x * norm y := by
   simp [norm]; ring
 
 /-- Negation doesn't change the norm. -/
 lemma norm_neg (x : AdjoinSqrt R n) : norm (-x) = norm x := by simp [norm]
-
-/-- Neither does conjugation: `norm` only sees `x.aₙ²`. -/
-lemma norm_conj (x : AdjoinSqrt R n) : norm (conj x) = norm x := by simp [norm]
-
-/-- Multiplying by `√n` moves `a₁` into the `√n`-coefficient slot, and `aₙ`
-(scaled by `n`) into the rational slot. -/
-lemma mul_root_a₁ (x : AdjoinSqrt R n) :
-    (x * root n).a₁ = n * x.aₙ := by simp [root]
-
-lemma mul_root_aₙ (x : AdjoinSqrt R n) :
-    (x * root n).aₙ = x.a₁ := by simp [root]
-
-
-/-- Multiplying by `√n` swaps the roles of `a₁` and `aₙ` (up to a factor of
-`n`), so it negates the norm. This is the algebraic engine behind the
-`A`-dominated/`√n`-dominated symmetry: rotating an element by `√n` trades one
-regime for the other while flipping the norm's sign. -/
-lemma norm_mul_rootN (x : AdjoinSqrt R n) :
-    norm (x * root n) = -n * norm x := by
-  simp [norm, root]; ring
 
 end Conj
 
@@ -203,48 +182,10 @@ cone*, as Mathlib does for any ordered ring. Membership is decided in `A`:
 
 section Order
 
-variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-
-/-- Comparison of squares reflects, given the larger side is non-negative.
-Mathlib states this for `^2`; this is the `mul_self` form the norms use. -/
--- TODO: remove
-lemma le_of_mul_self_le {a b : R} (hb : 0 ≤ b)
-    (h : a * a ≤ b * b) : a ≤ b :=
-  le_of_sq_le_sq (by rw [sq, sq]; exact h) hb
-
-
-/-- When both norms are non-negative and both rational parts are, the rational
-part dominates the cross term. -/
--- TODO: remove
-lemma cross_le [pos: Fact (0 < n)] {x y : AdjoinSqrt R n}
-    (hx : 0 ≤ x.a₁) (hy : 0 ≤ y.a₁) (hxN : 0 ≤ norm x) (hyN : 0 ≤ norm y) :
-    n * x.aₙ * y.aₙ ≤ x.a₁ * y.a₁ := by
-  have hn : 0 < n := pos.elim
-  simp only [norm] at hxN hyN
-  nlinarith [mul_nonneg hx hy, mul_nonneg hxN (mul_self_nonneg y.a₁),
-    mul_nonneg (mul_nonneg hn.le (mul_self_nonneg x.aₙ)) hyN,
-    sq_nonneg (x.a₁*y.a₁ - n*x.aₙ*y.aₙ), sq_nonneg (x.a₁*y.a₁ + n*x.aₙ*y.aₙ)]
-
-/-- Dual of `cross_le`. -/
--- TODO: remove
-lemma cross_ge [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
-    (hx : 0 ≤ x.aₙ) (hy : 0 ≤ y.aₙ) (hxN : norm x ≤ 0) (hyN : norm y ≤ 0) :
-    x.a₁ * y.a₁ ≤ n * x.aₙ * y.aₙ := by
-  -- Obtained for free by rotating both x, y by √n (which swaps a₁ ↔ n·aₙ and
-  -- negates the norm) and dividing the resulting cross_le instance by n.
-  have hn : 0 < n := pos.elim
-  have hx' : 0 ≤ (x * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hx
-  have hy' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy
-  have hxN' : 0 ≤ norm (x * root n) := by rw [norm_mul_rootN]; nlinarith
-  have hyN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
-  have h := cross_le hx' hy' hxN' hyN'
-  rw [mul_root_a₁, mul_root_a₁, mul_root_aₙ, mul_root_aₙ] at h
-  nlinarith [h]
-
 /-- The non-negative elements are closed under multiplication. Each case turns
 on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
 through the two norms. -/
-lemma nonneg_mul [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
+lemma nonneg_mul [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
     (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x*y) := by
   have ha : (x*y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := rfl
   have hb : (x*y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁ := rfl
@@ -280,184 +221,103 @@ lemma nonneg_mul [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
       mul_nonneg (mul_nonneg hn.le hx1) hy1
     ]
 
-/-- In a mixed pair, if the rational parts sum to something non-positive then the
-`√n` parts sum to something non-negative. -/
-lemma aₙ_add_nonneg [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
-    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
-    (h : x.a₁ + y.a₁ ≤ 0) : 0 ≤ x.aₙ + y.aₙ := by
-  have hn : 0 < n := pos.elim
-  simp only [norm] at hxN hyN
-  have h1 : x.a₁ * x.a₁ ≤ (-y.a₁) * (-y.a₁) :=
-    mul_self_le_mul_self hx1 (by linarith)
-  have h2 : n * (x.aₙ * x.aₙ) ≤ n * (y.aₙ * y.aₙ) := by nlinarith [h1]
-  have h3 : x.aₙ * x.aₙ ≤ y.aₙ * y.aₙ := le_of_mul_le_mul_left h2 hn
-  have h4 : -x.aₙ ≤ y.aₙ := le_of_mul_self_le hy1 (by nlinarith [h3])
-  linarith
-
-/-- Dual of `norm_add_nonpos`: if the `√n` parts sum to something non-positive,
-the sum sits on the rational-dominated side. -/
-lemma norm_add_nonneg [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
-    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
-    (h : x.aₙ + y.aₙ ≤ 0) : 0 ≤ norm (x+y) := by
-  have hn : 0 < n := pos.elim
-  have hsum : norm (x+y)
-      = (x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) := by simp [norm]
-  rw [hsum]
-  simp only [norm] at hxN hyN
-  have hb : x.aₙ ≤ 0 := by linarith
-  rcases le_total 0 y.a₁ with hc | hc
-  · -- `c ≥ 0`: the rational part only grows, the `√n` part only shrinks
-    nlinarith [hxN, hn, hx1, hc, hy1, hb, h,
-      mul_self_nonneg (x.aₙ + y.aₙ), mul_nonneg hx1 hc,
-      mul_le_mul_of_nonneg_left
-        (show (x.aₙ+y.aₙ)*(x.aₙ+y.aₙ) ≤ x.aₙ*x.aₙ by nlinarith [hy1, hb, h]) hn.le]
-  · -- `c ≤ 0`: the mirrored certificate, multiplier `a - c`
-    have hac : 0 ≤ x.a₁ - y.a₁ := by linarith
-    have step1 : x.aₙ * y.a₁ ≤ x.a₁ * y.aₙ := by
-      refine le_of_mul_self_le (mul_nonneg hx1 hy1) ?_
-      nlinarith [mul_self_nonneg x.aₙ, mul_self_nonneg y.aₙ, hxN, hyN, hn,
-        mul_le_mul_of_nonneg_left hyN (mul_self_nonneg x.aₙ),
-        mul_le_mul_of_nonneg_right hxN (mul_self_nonneg y.aₙ)]
-    -- `a + c ≥ 0`, again by comparing squares
-    have hdb : y.aₙ ≤ -x.aₙ := by linarith
-    have hpr : 0 ≤ x.a₁ + y.a₁ := by
-      have hsq : (-y.a₁) * (-y.a₁) ≤ x.a₁ * x.a₁ := by
-        nlinarith [hxN, hyN, hn, hy1, mul_self_le_mul_self hy1 hdb]
-      linarith [le_of_mul_self_le hx1 hsq]
-    rcases eq_or_lt_of_le hac with heq | hlt
-    · have hz : x.a₁ = 0 := le_antisymm (by linarith) hx1
-      have hy0 : y.a₁ = 0 := by linarith
-      have hb0 : x.aₙ = 0 := by
-        have hsq : x.aₙ * x.aₙ ≤ 0 := by
-          have h' := hxN; rw [hz] at h'; nlinarith [h', hn]
-        exact mul_self_eq_zero.mp (le_antisymm hsq (mul_self_nonneg _))
-      have hd0 : y.aₙ = 0 := le_antisymm (by linarith) hy1
-      simp [hz, hy0, hb0, hd0]
-    · have key : 0 ≤ (x.a₁ - y.a₁) *
-          ((x.a₁+y.a₁)*(x.a₁+y.a₁) - n*(x.aₙ+y.aₙ)*(x.aₙ+y.aₙ)) := by
-        nlinarith [step1, hxN, hyN, hx1, hy1, hb, hc, h, hac, hpr, hn,
-          mul_nonneg (mul_nonneg hn.le (neg_nonneg.mpr h)) hac,
-          mul_nonneg hpr hac, mul_nonneg (neg_nonneg.mpr h) hpr,
-          mul_nonneg hx1 hy1]
-      nlinarith [key, hlt]
-
-/-- The `√n`-dominated twin of `norm_add_nonneg`. -/
-lemma norm_add_nonpos [pos: Fact (n > 0)] {x y : AdjoinSqrt R n}
-    (hx1 : 0 ≤ x.a₁) (hy1 : 0 ≤ y.aₙ) (hxN : 0 ≤ norm x) (hyN : norm y ≤ 0)
-    (h : x.a₁ + y.a₁ ≤ 0) : norm (x+y) ≤ 0 := by
-  -- Obtained for free by rotating both summands by √n: x' := y*√n and
-  -- y' := x*√n swap regimes (L↔R) and negate their norms, and
-  -- x'.aₙ + y'.aₙ = y.a₁ + x.a₁ is exactly the given hypothesis (relabelled).
-  -- So norm_add_nonneg applies directly to (x', y'), giving
-  -- 0 ≤ norm (x'+y') = norm ((x+y)*√n) = -n * norm (x+y), i.e. norm (x+y) ≤ 0.
-  have hn : 0 < n := pos.elim
-  have hx' : 0 ≤ (y * root n).a₁ := by rw [mul_root_a₁]; exact mul_nonneg hn.le hy1
-  have hy' : 0 ≤ (x * root n).aₙ := by rw [mul_root_aₙ]; exact hx1
-  have hxN' : 0 ≤ norm (y * root n) := by rw [norm_mul_rootN]; nlinarith
-  have hyN' : norm (x * root n) ≤ 0 := by rw [norm_mul_rootN]; nlinarith
-  have hsum : 0 ≤ norm (y * root n + x * root n) := by
-    refine norm_add_nonneg hx' hy' hxN' hyN' ?_
-    rw [mul_root_aₙ, mul_root_aₙ]; linarith
-  have hrot : y * root n + x * root n = (x + y) * root n := by
-    rw [← right_distrib, add_comm y x]
-  rw [hrot, norm_mul_rootN] at hsum
-  nlinarith
-
-/-- Only `0` is both non-negative and non-positive. -/
-lemma nonneg_antisymm [Fact (¬ IsSquare n)] [pos: Fact (n > 0)] {x : AdjoinSqrt R n}
-    (hx : IsNonneg x) (hnx : IsNonneg (-x)) : x = 0 := by
-  have hn : 0 < n := pos.elim
-  have hN : norm (-x) = norm x := norm_neg x
-  have h1 : (-x).a₁ = -x.a₁ := rfl
-  have h2 : (-x).aₙ = -x.aₙ := rfl
-  unfold IsNonneg at hx hnx
-  rw [hN, h1, h2] at hnx
-  have hzero : norm x = 0 → x = 0 := fun h => norm_0 x (by rw [norm_eq]; exact h)
-  -- every case forces `norm x = 0`
-  apply hzero
-  rcases hx with ⟨p, _⟩ | ⟨p, _⟩ <;> rcases hnx with ⟨q, _⟩ | ⟨q, _⟩ <;> simp only [norm] at * <;>
-    nlinarith [mul_nonneg p q, mul_nonneg (mul_nonneg hn.le p) q,
-      mul_nonneg hn.le (mul_self_nonneg x.aₙ), mul_self_nonneg x.a₁]
-
-/-- Every element is non-negative or non-positive. -/
-lemma nonneg_or_neg_nonneg (x : AdjoinSqrt R n) : IsNonneg x ∨ IsNonneg (-x) := by
-  have hN : norm (-x) = norm x := norm_neg x
-  unfold IsNonneg; rw [hN]
-  show _ ∨ (0 ≤ -x.a₁ ∧ _) ∨ (0 ≤ -x.aₙ ∧ _)
-  rcases le_total 0 (norm x) with h | h
-  · rcases le_total 0 x.a₁ with ha | ha
-    · exact Or.inl (Or.inl ⟨ha, h⟩)
-    · exact Or.inr (Or.inl ⟨by linarith, h⟩)
-  · rcases le_total 0 x.aₙ with hb | hb
-    · exact Or.inl (Or.inr ⟨hb, h⟩)
-    · exact Or.inr (Or.inr ⟨by linarith, h⟩)
-
-/-- values in the NE quadrant are obviously positive -/
-lemma nonneg_of_coeffs_nonneg { x : AdjoinSqrt R n } ( h₁ : 0 ≤ x.a₁) (hₙ : 0 ≤ x.aₙ) : IsNonneg x := by
-  rcases le_total 0 x.norm <;> unfold IsNonneg <;> aesop
+variable [Field R] [LinearOrder R]
 
 /-- utility for the proof of nonneg_add; we prove (x + y)(multiplier x y) is
   nonnegative, and conclude that (x+y) is nonnegative -/
 def multiplier (x y : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨|x.a₁| + |y.a₁|, |x.aₙ| + |y.aₙ|⟩
 
-lemma nonneg_multiplier (x y : AdjoinSqrt R n) : IsNonneg (multiplier x y) := by
-  unfold multiplier; apply nonneg_of_coeffs_nonneg <;> positivity
+/-- values in the NE quadrant are obviously positive -/
+lemma nonneg_of_coeffs_nonneg { x : AdjoinSqrt R n } ( h₁ : 0 ≤ x.a₁) (hₙ : 0 ≤ x.aₙ) : IsNonneg x := by
+  rcases le_total 0 x.norm <;> unfold IsNonneg <;> aesop
 
+/-- The nonnegative elements fall into the four quadrants ENE, ESE, NNW, NNE -/
+lemma IsNonneg.wedges {x : AdjoinSqrt R n} (hx : IsNonneg x) :
+    (0 ≤ x.a₁ ∧ 0 ≤ x.aₙ ∧ 0 ≤ norm x) ∨ (0 ≤ x.a₁ ∧ x.aₙ ≤ 0 ∧ 0 ≤ norm x) ∨
+    (0 ≤ x.a₁ ∧ 0 ≤ x.aₙ ∧ norm x ≤ 0) ∨ (x.a₁ ≤ 0 ∧ 0 ≤ x.aₙ ∧ norm x ≤ 0) := by
+  rcases hx with ⟨h1, hN⟩ | ⟨hn, hN⟩
+  · rcases le_total 0 x.aₙ with hn | hn <;> tauto
+  · rcases le_total 0 x.a₁ with h1 | h1 <;> tauto
+
+variable [IsStrictOrderedRing R]
+
+/-- Every element is non-negative or non-positive. -/
+lemma nonneg_or_neg_nonneg (x : AdjoinSqrt R n) : IsNonneg x ∨ IsNonneg (-x) := by
+  unfold IsNonneg; rw [norm_neg]
+  rcases le_total 0 (norm x) with h | h
+    <;> rcases le_total 0 x.a₁ with ha | ha
+    <;> rcases le_total 0 x.aₙ with hb | hb
+    <;> aesop
+
+/-- If the multiplier is 0, the two factors are 0 --/
 lemma eq_zero_of_multiplier_eq_zero {x y : AdjoinSqrt R n} (h : multiplier x y = 0) : (x = 0) ∧ (y = 0) := by
-  sorry
+  injection h with h1 hn
+  obtain ⟨_,_⟩ : |x.a₁| = 0 ∧ |y.a₁| = 0 := (add_eq_zero_iff_of_nonneg (abs_nonneg x.a₁) (abs_nonneg y.a₁)).mp h1
+  obtain ⟨_,_⟩ : |x.aₙ| = 0 ∧ |y.aₙ| = 0 := (add_eq_zero_iff_of_nonneg (abs_nonneg x.aₙ) (abs_nonneg y.aₙ)).mp hn
+  constructor <;> ext <;> simp <;> rw [<-abs_eq_zero] <;> assumption
 
-lemma nonneg_mul_of_nonneg {x y : AdjoinSqrt R n} [Fact (n > 0)] [Fact (¬ IsSquare n)] (hmul : IsNonneg (x * y)) (hy : IsNonneg y) (hne : y ≠ 0) : IsNonneg x := by
+lemma multiplier_nonneg {x y : AdjoinSqrt R n} : IsNonneg (multiplier x y) := by
+  apply nonneg_of_coeffs_nonneg <;> simp [multiplier] <;> positivity
+
+variable [Fact (¬ IsSquare n)] [pos: Fact (n > 0)]
+
+/-- Only `0` is both non-negative and non-positive. -/
+lemma nonneg_antisymm {x : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hnx : IsNonneg (-x)) : x = 0 := by
+  rw [<- norm_0]
+  have h1 : (-x).a₁ = -x.a₁ := rfl
+  have h2 : (-x).aₙ = -x.aₙ := rfl
+  rcases hx with ⟨p,q⟩ | ⟨p,q⟩ <;> rcases hnx with ⟨r,s⟩ | ⟨r, s⟩
+    <;> rw [norm_neg, h1, h2, norm] at *
+    <;> nlinarith [mul_self_nonneg x.aₙ, pos.elim,mul_nonneg pos.elim.le (mul_nonneg p r)]
+
+/-- if xy ≥ 0 and y > 0 then x ≥ 0 -/
+lemma nonneg_mul_of_pos {x y : AdjoinSqrt R n}
+  (hmul : IsNonneg (x * y)) (hy : IsNonneg y) (hne : y ≠ 0) : IsNonneg x := by
   rcases (nonneg_or_neg_nonneg x) with h | h
   . exact h
   . have hNegMul : (-(x*y)).IsNonneg := by rw [<- neg_mul]; apply nonneg_mul <;> assumption
     have hMulZero : x*y = 0 := nonneg_antisymm hmul hNegMul
     have hZero : x = 0 := Or.resolve_right (mul_eq_zero.mp hMulZero) hne
-    rw [hZero]; simp [IsNonneg]
+    rw [hZero]; simp [IsNonneg, norm]
 
 /-- The non-negative elements are closed under addition. -/
-lemma nonneg_add [Fact (n > 0)] [Fact (¬ IsSquare n)] {x y : AdjoinSqrt R n}
-  (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x + y) := by
-  sorry
+lemma nonneg_add {x y : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x + y) := by
+  -- if the multiplier is 0, x and y are 0 so we're done
+  rcases eq_or_ne (x.multiplier y) 0 with h | hMultiplier
+  . obtain ⟨hx,hy⟩ := eq_zero_of_multiplier_eq_zero h
+    simp [hx,hy,IsNonneg,norm]
 
-/-
-/-- The non-negative elements are closed under addition. -/
-lemma nonneg_add [Fact (n > 0)] {x y : AdjoinSqrt R n}
-    (hx : (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0))
-    (hy : (0 ≤ y.a₁ ∧ 0 ≤ norm y) ∨ (0 ≤ y.aₙ ∧ norm y ≤ 0)) :
-    (0 ≤ (x+y).a₁ ∧ 0 ≤ norm (x+y)) ∨ (0 ≤ (x+y).aₙ ∧ norm (x+y) ≤ 0) := by
-  have ha : (x+y).a₁ = x.a₁ + y.a₁ := rfl
-  have hb : (x+y).aₙ = x.aₙ + y.aₙ := rfl
-  have hsum : norm (x+y) = norm x + norm y + 2*(x.a₁*y.a₁ - n*x.aₙ*y.aₙ) := by
-    simp [norm]; ring
-  rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
-  · exact Or.inl ⟨by rw [ha]; linarith,
-      by rw [hsum]; linarith [cross_le hx1 hy1 hxN hyN]⟩
-  · rcases le_total 0 (x.a₁ + y.a₁) with hle | hle
-    · rcases le_total 0 (x.aₙ + y.aₙ) with hbd | hbd
-      · rcases le_total 0 (norm (x+y)) with hN | hN
-        · exact Or.inl ⟨by rw [ha]; exact hle, hN⟩
-        · exact Or.inr ⟨by rw [hb]; exact hbd, hN⟩
-      · exact Or.inl ⟨by rw [ha]; exact hle, norm_add_nonneg hx1 hy1 hxN hyN hbd⟩
-    · exact Or.inr ⟨by rw [hb]; exact aₙ_add_nonneg hx1 hy1 hxN hyN hle,
-        norm_add_nonpos hx1 hy1 hxN hyN hle⟩
-  · rcases le_total 0 (x.a₁ + y.a₁) with hle | hle
-    · rcases le_total 0 (x.aₙ + y.aₙ) with hbd | hbd
-      · rcases le_total 0 (norm (x+y)) with hN | hN
-        · exact Or.inl ⟨by rw [ha]; exact hle, hN⟩
-        · exact Or.inr ⟨by rw [hb]; exact hbd, hN⟩
-      · refine Or.inl ⟨by rw [ha]; exact hle, ?_⟩
-        rw [show x + y = y + x from add_comm x y]
-        exact norm_add_nonneg hy1 hx1 hyN hxN (by linarith)
-    · refine Or.inr ⟨?_, ?_⟩
-      · rw [hb, add_comm]; exact aₙ_add_nonneg hy1 hx1 hyN hxN (by linarith)
-      · rw [show x + y = y + x from add_comm x y]
-        exact norm_add_nonpos hy1 hx1 hyN hxN (by linarith)
-  · exact Or.inr ⟨by rw [hb]; linarith,
-      by rw [hsum]; linarith [cross_ge hx1 hy1 hxN hyN]⟩
--/
+  -- now we proceed by proving (x + y)(multiplier) ≥ 0 by showing the coefficients are nonneg
+  apply nonneg_mul_of_pos _ multiplier_nonneg hMultiplier
+  have hn : 0 < n := Fact.out
+  rcases hx.wedges with ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩
+    <;> rcases hy.wedges with ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩
+    <;> apply nonneg_of_coeffs_nonneg
+    <;> simp only [multiplier, mul_a₁, mul_aₙ, add_a₁, add_aₙ, norm, sub_nonneg, sub_nonpos] at hxN hyN ⊢
+    <;> simp only [abs_of_nonneg, abs_of_nonpos, *]
+
+  -- now we've split into 32 cases; we add a bunch of simple facts and then crush them with linarith / nlinarith
+  all_goals
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hxn)
+    have := mul_nonneg (sub_nonneg.mpr hy1) (sub_nonneg.mpr hyn)
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hy1)
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hyn)
+    have := mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hy1)
+    have := mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hyn)
+    have := mul_nonneg hn.le (mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hyn))
+    have := mul_nonneg hn.le (mul_self_nonneg x.aₙ)
+    have := mul_nonneg hn.le (mul_self_nonneg y.aₙ)
+    have := mul_self_nonneg x.a₁
+    have := mul_self_nonneg y.a₁
+
+  -- linarith closes most goals; the remaining ones need to compare n * |x.aₙ| * |y.aₙ| to |x.a₁| * |y.a₁|
+  -- we could add lemmas about these cases, but nlinarith is able to figure it out.
+  all_goals first | linarith | nlinarith
 
 /-- The non-negative elements of `A[√n]`. -/
-def nonnegCone [Fact (¬ IsSquare n)] [Fact (n > 0)] : RingCone (AdjoinSqrt R n) where
+def nonnegCone : RingCone (AdjoinSqrt R n) where
   carrier := {x | IsNonneg x}
   zero_mem' := Or.inl ⟨le_refl _, by simp [norm]⟩
   one_mem' := Or.inl ⟨zero_le_one, by simp [norm]⟩
@@ -465,81 +325,17 @@ def nonnegCone [Fact (¬ IsSquare n)] [Fact (n > 0)] : RingCone (AdjoinSqrt R n)
   mul_mem' := nonneg_mul
   eq_zero_of_mem_of_neg_mem' := nonneg_antisymm
 
-/-! ### Deciding the order
+/-! ### The order from the cone -/
 
-theorem cmpZero_spec [Fact (¬ IsSquare n)] [pos: Fact (n > 0)] (x : AdjoinSqrt R n) :
-    (cmpZero x = .lt ↔ ¬ IsNonneg x) ∧ (cmpZero x = .eq ↔ x = 0) := by
-  have hn : 0 < n := pos.elim
-  have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
-  have hx0 : x = 0 ↔ x.a₁ = 0 ∧ x.aₙ = 0 := AdjoinSqrt.ext_iff
-  have sq := mul_self_nonneg x.a₁
-  have sqn : 0 ≤ n * x.aₙ * x.aₙ := by rw [mul_assoc]; exact mul_nonneg hn.le (mul_self_nonneg _)
-  have sqpos : x.aₙ ≠ 0 → 0 < n * x.aₙ * x.aₙ := fun h => by
-    rw [mul_assoc]; exact mul_pos hn (mul_self_pos.mpr h)
-  unfold cmpZero IsNonneg
-  simp only [norm, hx0] at hzero ⊢
-  rcases lt_trichotomy x.a₁ 0 with h1 | h1 | h1 <;>
-    rcases lt_trichotomy x.aₙ 0 with h2 | h2 | h2 <;>
-    simp only [compare_lt_iff_lt.mpr, compare_eq_iff_eq.mpr, compare_gt_iff_gt.mpr, h1, h2,
-      hx0]
-  all_goals simp only [compare_lt_iff_lt, compare_eq_iff_eq, reduceCtorEq, true_iff, false_iff,
-    not_or, not_and, not_le, and_true, true_and, le_refl, neg_zero, add_zero, zero_add,
-    mul_zero, not_true_eq_false, and_false]
-  -- Nine cases on the signs of `a₁` and `aₙ`. When they agree, or one is zero,
-  -- the answer is immediate; when they differ, `norm x` decides. Each case is
-  -- propositional structure over linear facts, except `0 < n·aₙ²`, which is
-  -- `sqpos`.
-  all_goals aesop (add unsafe 50% (by linarith), unsafe 30% (by nlinarith), unsafe apply sqpos)
+instance : HasMemOrNegMem (nonnegCone (R := R) (n := n)) where
+  mem_or_neg_mem := nonneg_or_neg_nonneg
 
-section Instances
+instance : DecidablePred (· ∈ nonnegCone (R := R) (n := n)) := fun x =>
+  decidable_of_iff ((0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)) Iff.rfl
 
-variable [Fact (¬ IsSquare n)] [Fact (n > 0)]
-
-theorem cmpZero_eq_lt_iff (x : AdjoinSqrt R n) : cmpZero x = .lt ↔ ¬ IsNonneg x :=
-  (cmpZero_spec x).1
-
-theorem cmpZero_eq_eq_iff (x : AdjoinSqrt R n) : cmpZero x = .eq ↔ x = 0 :=
-  (cmpZero_spec x).2
-
-/-- The partial order of the cone: `a ≤ b` when `b - a` is non-negative. -/
-abbrev partialOrder : PartialOrder (AdjoinSqrt R n) :=
-  PartialOrder.mkOfAddGroupCone (nonnegCone (R := R) (n := n))
-
-section
-attribute [local instance] partialOrder
-
-theorem le_iff_isNonneg {a b : AdjoinSqrt R n} : a ≤ b ↔ IsNonneg (b - a) := Iff.rfl
-
-theorem lt_iff_cmpZero {a b : AdjoinSqrt R n} : a < b ↔ cmpZero (a - b) = .lt := by
-  rw [lt_iff_le_not_ge, le_iff_isNonneg, le_iff_isNonneg, cmpZero_eq_lt_iff]
-  refine ⟨fun h => h.2, fun h => ⟨?_, h⟩⟩
-  have := (nonneg_or_neg_nonneg (a - b)).resolve_left h
-  rwa [neg_sub] at this
-
-/-- The order on `A[√n]`. Comparisons go through `cmpZero`, so each costs one
-call to it, rather than the two that deriving `<` and `compare` from `≤` would. -/
-instance instLinearOrder : LinearOrder (AdjoinSqrt R n) where
-  __ := partialOrder
-  le_total a b := by
-    rcases nonneg_or_neg_nonneg (b - a) with h | h
-    · exact Or.inl h
-    · exact Or.inr (by rw [le_iff_isNonneg, ← neg_sub]; exact h)
-  toDecidableLE a b :=
-    decidable_of_iff (cmpZero (b - a) ≠ .lt) (by rw [ne_eq, cmpZero_eq_lt_iff, not_not]; rfl)
-  toDecidableLT a b := decidable_of_iff (cmpZero (a - b) = .lt) lt_iff_cmpZero.symm
-  toDecidableEq a b := decidable_of_iff (a.a₁ = b.a₁ ∧ a.aₙ = b.aₙ) AdjoinSqrt.ext_iff.symm
-  compare a b := cmpZero (a - b)
-  compare_eq_compareOfLessAndEq a b := by
-    unfold compareOfLessAndEq
-    split_ifs with h1 h2
-    · exact lt_iff_cmpZero.mp h1
-    · rw [h2, sub_self]; exact (cmpZero_eq_eq_iff 0).mpr rfl
-    · cases h : cmpZero (a - b)
-      · exact absurd (lt_iff_cmpZero.mpr h) h1
-      · exact absurd (sub_eq_zero.mp ((cmpZero_eq_eq_iff _).mp h)) h2
-      · rfl
-
-end
+/-- The order on `A[√n]`: `a ≤ b` when `b - a` is in the non-negative cone. -/
+instance instLinearOrder : LinearOrder (AdjoinSqrt R n) :=
+  LinearOrder.mkOfAddGroupCone nonnegCone
 
 instance instIsStrictOrderedRing : IsStrictOrderedRing (AdjoinSqrt R n) :=
   haveI : IsOrderedRing (AdjoinSqrt R n) := IsOrderedRing.mkOfCone (nonnegCone (R := R) (n := n))
@@ -548,47 +344,6 @@ instance instIsStrictOrderedRing : IsStrictOrderedRing (AdjoinSqrt R n) :=
 theorem nonneg_iff (x : AdjoinSqrt R n) : 0 ≤ x ↔ IsNonneg x := by
   show IsNonneg (x - 0) ↔ _; rw [sub_zero]
 
-/-- `compare` is `cmpZero` of the difference, by definition. -/
-theorem compare_eq (a b : AdjoinSqrt R n) : compare a b = cmpZero (a - b) := rfl
-
-/-- The sign of `a₁ + aₙ√n`: that of `a₁` when the rational part dominates
-(`norm ≥ 0`), otherwise that of `aₙ`. This was the definition of `sign` in the
-sign-based formulation; here it is a theorem about Mathlib's `SignType.sign`. -/
-theorem sign_eq (x : AdjoinSqrt R n) :
-    SignType.sign x = match SignType.sign (norm x) with
-      | .neg => SignType.sign x.aₙ
-      | _ => SignType.sign x.a₁ := by
-  have hn : 0 < n := pos.elim
-  have hzero : norm x = 0 → x = 0 := fun h => conj_0 x (by rw [norm_eq]; exact h)
-  have key : ∀ {s : R}, (0 < s ↔ 0 < x) → (s = 0 ↔ x = 0) → SignType.sign x = SignType.sign s := by
-    intro s hpos hz
-    rcases lt_trichotomy s 0 with h | h | h
-    · have hx : x < 0 := lt_of_le_of_ne (not_lt.mp (hpos.not.mp (not_lt.mpr h.le)))
-        (fun e => h.ne (hz.mpr e))
-      rw [sign_neg h, sign_neg hx]
-    · rw [h, hz.mp h, sign_zero, sign_zero]
-    · rw [sign_pos h, sign_pos (hpos.mp h)]
-  rcases lt_trichotomy (norm x) 0 with hN | hN | hN
-  · rw [show SignType.sign (norm x) = .neg from (sign_neg hN).trans SignType.neg_eq_neg_one.symm]
-    have haₙ : x.aₙ ≠ 0 := fun h => by simp only [norm, h, mul_zero, neg_zero, add_zero] at hN; nlinarith [mul_self_nonneg x.a₁]
-    have hx : x ≠ 0 := fun h => by rw [h] at hN; simp [norm] at hN
-    refine key ⟨fun h => lt_of_le_of_ne ((nonneg_iff x).mpr (Or.inr ⟨h.le, hN.le⟩)) (Ne.symm hx), fun h => ?_⟩
-      ⟨fun h => absurd h haₙ, fun h => absurd h hx⟩
-    rcases (nonneg_iff x).mp h.le with ⟨_, h'⟩ | ⟨h', _⟩
-    · exact absurd h' (not_le.mpr hN)
-    · exact lt_of_le_of_ne h' (Ne.symm haₙ)
-  · rw [hzero hN]; simp [norm]
-  · rw [show SignType.sign (norm x) = .pos from (sign_pos hN).trans rfl]
-    have ha₁ : x.a₁ ≠ 0 := fun h => by
-      simp only [norm, h, mul_zero, zero_add] at hN; nlinarith [mul_nonneg hn.le (mul_self_nonneg x.aₙ)]
-    have hx : x ≠ 0 := fun h => by rw [h] at hN; simp [norm] at hN
-    refine key ⟨fun h => lt_of_le_of_ne ((nonneg_iff x).mpr (Or.inl ⟨h.le, hN.le⟩)) (Ne.symm hx), fun h => ?_⟩
-      ⟨fun h => absurd h ha₁, fun h => absurd h hx⟩
-    rcases (nonneg_iff x).mp h.le with ⟨h', _⟩ | ⟨_, h'⟩
-    · exact lt_of_le_of_ne h' (Ne.symm ha₁)
-    · exact absurd h' (not_le.mpr hN)
-
-end Instances
 
 end Order
 
