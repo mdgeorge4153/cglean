@@ -241,9 +241,8 @@ follows:
   This basically boils down to the computation given in the definition above.
 
   However, we need the extra condition that $n$ is not a square because
-  otherwise we could define the same number in two different ways. For example,
-  if $n$ was $4$, we would have $0 + 1\sqrt{4} = 2 + 0\sqrt{4}$. This would
-  cause a technical problem with the proof.
+  otherwise $a_1^2 - na_n^2$ might be 0 even if $a$ isn't zero, in which case
+  $a$ wouldn't have an inverse.
 \end{proof}
 
 %% Norm
@@ -309,7 +308,7 @@ defined by Mathlib:
     \item $0 \leq 0$
     \item $0 \leq 1$
     \item either $0 \leq a$ or $0 \leq -a$
-    \item if $0 \leq a$ and $0 \leq -a$ then $a = 0$
+    \item (antisymmetry) if $0 \leq a$ and $0 \leq -a$ then $a = 0$
     \item (multiplicativity) if $0 \leq a$ and $0 \leq b$ then $0 \leq ab$
     \item (additivity) if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$
   \end{itemize}
@@ -317,9 +316,29 @@ defined by Mathlib:
 
 
 What's left for us is to prove that our positive cone definition for
-$A[\sqrt{n}]$ is well-behaved. The first four properties follow immediately
+$A[\sqrt{n}]$ is well-behaved. The first three properties follow immediately
 from the definitions and the fact that $A$'s order is well-behaved; the latter
-two are more tricky and we state them as lemmas:
+three are more tricky and we state them as lemmas:
+
+\begin{lemma}[Antisymmetry]
+  \label{def:antisymm}
+  \lean{AdjoinSqrt.nonneg_antisymm}
+  \leanok
+  \uses{def:posCone}
+  If $A$ is a linearly ordered \emph{field} and $n$ is a positive non-square in
+  $A$ then $A[\sqrt{n}]$ satisfies the antisymmetry property: if $0 \leq a$ and
+  $0 \leq -a$ then $a = 0$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  If $a$ is $a_1$-dominated then so is $-a$, and we can conclude that $a_1 =
+  0$, so $a_n$ must also be 0, so $a = 0$. Similarly, if $a$ is $a_n$-dominated
+  then $a$ must be 0.
+
+  The only tricky corner case is if $\norm{a} = 0$. This case requires that $A$
+  is a field and that $n$ is non-square.  But we have $a_1^2 = na_n^2$ so that
+  $n = (a_1/a_n)^2$, a contradiction unless $a_1 = a_n = 0$.
+\end{proof}
 
 \begin{lemma}[Multiplicativity]
   \label{thm:multiplicativity}
@@ -365,7 +384,7 @@ two are more tricky and we state them as lemmas:
   \lean{AdjoinSqrt.nonneg_add}
   \leanok
   \uses{def:posCone}
-  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered \emph{ring} and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ satisfies the additive property: for all $a, b ∈
   A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$.
 \end{lemma}
@@ -470,9 +489,9 @@ two are more tricky and we state them as lemmas:
 
   Since $a$ and $b$ are both in the E quadrant, the norm terms are nonnegative.
   We also have $0 \leq na_n^2 \leq a_1^2$ and $0 \leq nb_n^2 \leq b_1^2$;
-  multiplying these gives $n^2a_n^2b_n^2 \leq a_1^2b_1^2$, so the other two
-  terms are nonnegative. As in the previous case, $(a + b)m$ is obviously
-  nonnegative.
+  multiplying these gives $n^2a_n^2b_n^2 \leq a_1^2b_1^2$ (and we know $a_1b_1
+  \geq 0$), so the sum of the other two terms is nonnegative. As in the
+  previous case, $(a + b)m$ is obviously nonnegative.
 
   The remaining cases are similar. In all cases, we conclude that $m$ and $(a +
   b)m$ are obviously nonnegative. If $a + b$ were negative, then $m$ would have
@@ -484,8 +503,8 @@ two are more tricky and we state them as lemmas:
   \label{thm:adjoinOrderedRing}
   \lean{AdjoinSqrt.nonnegCone, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \leanok
-  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
-  $A[\sqrt{n}]$ is also a linearly ordered ring.
+  If $A$ is a linearly ordered field and $n$ is a positive non-square in $A$, then
+  $A[\sqrt{n}]$ is also a linearly ordered field.
 \end{corollary}
 \begin{proof}
   \leanok

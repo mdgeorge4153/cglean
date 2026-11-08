@@ -158,21 +158,6 @@ instance instField [Field R] [Fact (¬ IsSquare n)]: Field (AdjoinSqrt R n) wher
   nnqsmul := _
 
 
-/- ## Conj and norm -/
-
-section Conj
-
-variable [CommRing R]
-
-lemma norm_mul (x y : AdjoinSqrt R n) :
-    norm (x * y) = norm x * norm y := by
-  simp [norm]; ring
-
-/-- Negation doesn't change the norm. -/
-lemma norm_neg (x : AdjoinSqrt R n) : norm (-x) = norm x := by simp [norm]
-
-end Conj
-
 /-! ## Order
 
 `A[√n]` is ordered by designating its non-negative elements, the *positive
@@ -181,6 +166,13 @@ cone*, as Mathlib does for any ordered ring. Membership is decided in `A`:
 `n > 0`, is a comparison of squares, i.e. the sign of the norm. -/
 
 section Order
+
+lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
+    norm (x * y) = norm x * norm y := by
+  simp [norm]; ring
+
+/-- Negation doesn't change the norm. -/
+lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) : norm (-x) = norm x := by simp [norm]
 
 /-- The non-negative elements are closed under multiplication. Each case turns
 on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
