@@ -23,8 +23,8 @@ instance : Inhabited K := ⟨0⟩
 
 -- TODO: √2 is irrational. Proofs are erased from compiled code, so this sorry
 -- doesn't affect what runs.
-instance : Nonsquare ℚ 2 := ⟨sorry⟩
-instance : Pos ℚ 2 := ⟨by norm_num⟩
+instance : Fact (¬ IsSquare (2 : ℚ)) := ⟨sorry⟩
+instance : Fact ((0 : ℚ) < 2) := ⟨by norm_num⟩
 
 def toFloat (a : K) : Float := Floatable.toFloat a.a₁ + Floatable.toFloat a.aₙ * Float.sqrt 2
 
