@@ -18,8 +18,9 @@ open AdjoinSqrt
 theorem nonsquare_of_sqrt {q : ℚ} (h : Rat.sqrt q * Rat.sqrt q ≠ q) : ∀ x : ℚ, x * x ≠ q :=
   fun x hx => h ((Rat.exists_mul_self q).mp ⟨x, hx⟩)
 
-instance : Nonsquare ℚ 2 := ⟨nonsquare_of_sqrt (by decide +kernel)⟩
-instance : Pos ℚ 2 := ⟨by norm_num⟩
+instance : Fact (¬ IsSquare (2 : ℚ)) :=
+  ⟨fun ⟨x, h⟩ => nonsquare_of_sqrt (by decide +kernel) x h.symm⟩
+instance : Fact ((0 : ℚ) < 2) := ⟨by norm_num⟩
 
 /-! ## `ℚ[√2]` -/
 
@@ -33,9 +34,11 @@ theorem three_eq : (3 : K) = ⟨3, 0⟩ := by
 
 /-- `3` is not a square in `ℚ[√2]`: `(a + b√2)² = 3` forces `ab = 0`, and then
 `a² = 3` or `2b² = 3`, neither of which has a rational solution. -/
-instance : Nonsquare K 3 where
-  not_square x h := by
+instance : Fact (¬ IsSquare (3 : K)) where
+  out := by
+    rintro ⟨x, h⟩
     rw [three_eq] at h
+    replace h := h.symm
     have h₁ : x.a₁ * x.a₁ + 2 * x.aₙ * x.aₙ = 3 := by
       simpa using congrArg AdjoinSqrt.a₁ h
     have hₙ : x.a₁ * x.aₙ + x.aₙ * x.a₁ = 0 := by
@@ -44,7 +47,7 @@ instance : Nonsquare K 3 where
     · exact nonsquare_of_sqrt (q := 6) (by decide +kernel) (2 * x.aₙ) (by rw [ha] at h₁; linarith)
     · exact nonsquare_of_sqrt (q := 3) (by decide +kernel) x.a₁ (by rw [hb] at h₁; linarith)
 
-instance : Pos K 3 := ⟨by norm_num⟩
+instance : Fact ((0 : K) < 3) := ⟨by norm_num⟩
 
 /-! ## The embeddings -/
 

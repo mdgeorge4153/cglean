@@ -42,7 +42,7 @@ theorem realApprox_toRingHom [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRin
 
 /-- The embedding is strictly monotone for the order on `A[√n]`, given that the
 one on `A` is. -/
-instance [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Nonsquare R n] [Pos R n]
+instance [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [Fact (0 < n)]
     (e : RealApprox R) (hn : 0 ≤ e.toRingHom n)
     [he : Fact (StrictMono e.toRingHom)] :
     Fact (StrictMono (realApprox e hn).toRingHom) := by
