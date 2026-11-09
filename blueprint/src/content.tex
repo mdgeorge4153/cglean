@@ -165,7 +165,7 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
 \begin{definition}[{Ring operations on $A[\sqrt{n}]$}]
   \label{def:adjoinRingOps}
   \uses{def:adjoin}
-  \lean{AdjoinSqrt.ringOps}
+  \lean{AdjoinSqrt.instRingOps}
   \leanok
   We define the basic ring operations of addition, negation, and multiplication
   in the usual way.
@@ -195,7 +195,7 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
 Of course, the whole point of $A[\sqrt{n}]$ is that it contains a square root of $n$:
 \begin{theorem}
   \label{thm:adjoinHasSqrtN}
-  \lean{AdjoinSqrt.root_n_squared}
+  \lean{AdjoinSqrt.root_mul_self}
   \uses{def:adjoin, def:adjoinOfA, thm:adjoinRing}
   \leanok
   If $A$ is a commutative ring, then in $A[\sqrt{n}]$, $\sqrt{n} \cdot \sqrt{n} = n$.
@@ -321,7 +321,7 @@ from the definitions and the fact that $A$'s order is well-behaved; the latter
 three are more tricky and we state them as lemmas:
 
 \begin{lemma}[Antisymmetry]
-  \label{def:antisymm}
+  \label{thm:antisymm}
   \lean{AdjoinSqrt.nonneg_antisymm}
   \leanok
   \uses{def:posCone}
@@ -342,10 +342,10 @@ three are more tricky and we state them as lemmas:
 
 \begin{lemma}[Multiplicativity]
   \label{thm:multiplicativity}
-  \lean{AdjoinSqrt.nonneg_mul}
+  \lean{AdjoinSqrt.IsNonneg.mul}
   \leanok
   \uses{def:posCone}
-  If $A$ is a linearly ordered ring and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered ring and $n$ is positive in $A$, then
   $A[\sqrt{n}]$ satisfies the multiplicative property: for all $a, b ∈
   A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq ab$.
 \end{lemma}
@@ -381,16 +381,16 @@ three are more tricky and we state them as lemmas:
 
 \begin{lemma}[Additivity]
   \label{thm:additivity}
-  \lean{AdjoinSqrt.nonneg_add}
+  \lean{AdjoinSqrt.IsNonneg.add}
   \leanok
   \uses{def:posCone}
-  If $A$ is a linearly ordered \emph{ring} and $n$ is a positive non-square in $A$, then
+  If $A$ is a linearly ordered \emph{field} and $n$ is a positive non-square in $A$, then
   $A[\sqrt{n}]$ satisfies the additive property: for all $a, b ∈
   A[\sqrt{n}]$, if $0 \leq a$ and $0 \leq b$ then $0 \leq a + b$.
 \end{lemma}
 \begin{proof}
   \leanok
-  \uses{thm:multiplicativity}
+  \uses{thm:multiplicativity, thm:antisymm}
   This is the trickiest proof of this section. To keep track of the cases, it
   is helpful to organize them into the following diagram:
 
@@ -428,9 +428,9 @@ three are more tricky and we state them as lemmas:
   regardless of which coefficient dominates, it is nonnegative.
 
   As with multiplicativity, you can divide into cases depending on whether $a$
-  and $b$ are $x_1$- or $x_n$-dominated. The difficulty arises because the goal
-  $0 \leq a + b$ is a statement about the coefficients $a_i$ and $b_i$, but the
-  assumptions about the norm talk about $a_i^2$ and $b_i^2$.
+  and $b$ are first- or second-coefficient dominated. The difficulty arises
+  because the goal $0 \leq a + b$ is a statement about the coefficients $a_i$
+  and $b_i$, but the assumptions about the norm talk about $a_i^2$ and $b_i^2$.
 
   The trick is to add a multiplier so that the goal becomes a statement about
   the squares of $a_i$ and $b_i$, which makes the assumptions about the norms
@@ -454,11 +454,7 @@ three are more tricky and we state them as lemmas:
 
   Even after this transformation there are still a bunch of cases that require
   some analysis. In each case, we expand $(a+b)m$ and show that it is obviously
-  nonnegative. We'll prove two of them here, the remainder are similar.
-
-  % TODO: I still have a feeling that these cases can be condensed using facts
-  % about absolute values or threading a sign variable through, but I'm not
-  % sure it's worth my effort at this point.
+  nonnegative. We'll prove two of them here; the remainder are similar.
 
   First, consider the case where $a$ is in the NNW wedge (i.e. $a_1 \leq 0$ and
   $a \geq 0$), and $b$ is in the ESE wedge. In this case, we have $m = \conj{b}
@@ -504,7 +500,7 @@ three are more tricky and we state them as lemmas:
   \lean{AdjoinSqrt.nonnegCone, AdjoinSqrt.instLinearOrder, AdjoinSqrt.instIsStrictOrderedRing}
   \leanok
   If $A$ is a linearly ordered field and $n$ is a positive non-square in $A$, then
-  $A[\sqrt{n}]$ is also a linearly ordered field.
+  $A[\sqrt{n}]$ is also a linearly ordered ring.
 \end{corollary}
 \begin{proof}
   \leanok
