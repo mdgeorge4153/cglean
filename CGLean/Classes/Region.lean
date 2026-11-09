@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Defs
 
-inductive Location :=
+inductive Location where
   | inside
   | boundary
   | outside

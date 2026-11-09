@@ -1,14 +1,22 @@
 import Mathlib.Algebra.Ring.Basic
+import Mathlib.Algebra.Algebra.Defs
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Algebra.Order.Ring.Defs
-import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.LinearCombination
-import CGLean.Algebra.Signed
+import Mathlib.Tactic.Linarith
+import Mathlib.Algebra.Order.Ring.Cone
 import CGLean.Classes.RingOps
 
-/-- Definitions ---------------------------------------------------------------/
+/-! # Adjoining a square root -/
 
--- Numbers of the form a₁ + aₙ√n
+/- ----------------------------------------------------------------------------/
+/-! ## Definitions -/
+/- ----------------------------------------------------------------------------/
+
+/-- Numbers of the form a₁ + aₙ√n -/
 @[ext] structure AdjoinSqrt (R : Type) (n : R) where
   a₁ : R
   aₙ : R
@@ -18,87 +26,98 @@ namespace AdjoinSqrt
 variable {R : Type} {n : R}
 
 @[simps] instance instZero [Zero R] : Zero (AdjoinSqrt R n) where
-  zero := ⟨0,0⟩
+  zero := ⟨0, 0⟩
 
 @[simps] instance instOne [One R] [Zero R] : One (AdjoinSqrt R n) where
-  one := ⟨1,0⟩
+  one := ⟨1, 0⟩
 
 @[simps] instance instAdd [Add R] : Add (AdjoinSqrt R n) where
-  add x y := ⟨ x.a₁ + y.a₁, x.aₙ + y.aₙ ⟩
+  add x y := ⟨x.a₁ + y.a₁, x.aₙ + y.aₙ⟩
 
 @[simps] instance instNeg [Neg R] : Neg (AdjoinSqrt R n) where
-  neg x := ⟨ -x.a₁, -x.aₙ ⟩
+  neg x := ⟨-x.a₁, -x.aₙ⟩
 
 @[simps] instance instMul [Mul R] [Add R] : Mul (AdjoinSqrt R n) where
   mul x y := ⟨x.a₁*y.a₁ + n*x.aₙ*y.aₙ, x.a₁*y.aₙ + x.aₙ*y.a₁⟩
 
 /-- marker instance to encapsulate the above -/
-instance ringOps [RingOps R]: RingOps (AdjoinSqrt R n) where
+instance instRingOps [RingOps R] : RingOps (AdjoinSqrt R n) where
 
-@[simps] instance instSMul [Mul R] : SMul R (AdjoinSqrt R n) where
+/-- `R` acting on `A[√n]` componentwise. Not an instance: for `R = ℕ`, `ℤ` or
+`ℚ` it would compete with the action every semiring, ring or field already has,
+which agrees with this one only up to a proof. -/
+@[reducible, simps] def componentSMul [Mul R] : SMul R (AdjoinSqrt R n) where
   smul x y := ⟨x*y.a₁, x*y.aₙ⟩
 
 @[simps] instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
   coe x := ⟨x, 0⟩
 
-abbrev conj [Neg R] (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
+section Ops
+variable [Add R] [Mul R] [Sub R] [Neg R]
 
-/-- The norm `x * conj x`, which lies in `R` rather than `R[√n]`. -/
-@[simps] instance instCoeDepNorm [Mul R] [Add R] [Neg R] {x : AdjoinSqrt R n} :
-    CoeDep (AdjoinSqrt R n) (x * conj x) R where
-  coe := (x * conj x).a₁
+/-- `conj (a₁ + aₙ √n)` is `a₁ - aₙ√n` -/
+@[simps] def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
-@[simps] instance instInv [Zero R] [Neg R] [Mul R] [Add R] [Inv R]: Inv (AdjoinSqrt R n) where
-  inv x := x.conj * (x * x.conj : R)⁻¹
+/-- `norm (a₁ + aₙ √n)` is `a₁² - naₙ²` -/
+def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
 
-open Signed
+@[simps] instance instInv [Inv R] [Zero R] : Inv (AdjoinSqrt R n) where
+  inv x := x.conj * x.norm⁻¹
+end Ops
 
-@[simps] instance instSigned [Signed R] [Mul R] [Add R] [Neg R]: Signed (AdjoinSqrt R n) where
-  sign x :=
-    match (sign x.a₁, sign x.aₙ) with
-      | (.zero, .zero) => .zero
-      | (.pos, .pos) | (.pos,.zero) | (.zero, .pos) => .pos
-      | (.neg, .neg) | (.neg,.zero) | (.zero, .neg) => .neg
-      | (.pos, .neg) =>  sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² > b²n (since both sides of inequality are pos)
-      | (.neg, .pos) => -sign (x * x.conj : R) -- a + b√n > 0 ↔ a > -b√n ↔ a² < b²n (since both sides of inequality are neg)
+/-- The element `√n` itself. -/
+@[simp] def root [Zero R] [One R] (n : R) : AdjoinSqrt R n := ⟨0, 1⟩
 
+/-- `a₁ + aₙ√n ≥ 0` if either `a₁ ≥ 0` and `a₁` dominates, or `aₙ ≥ 0` and `aₙ` dominates -/
+def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
+  (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)
 
-/-- Theorems ------------------------------------------------------------------/
+-- TODO: efficient comparison. Reinstate `cmpZero`, prove
+-- `cmpZero x = .lt ↔ ¬ IsNonneg x` and `cmpZero x = .eq ↔ x = 0`, and override
+-- `compare` (and decidability) in `instLinearOrder` with it. The earlier
+-- proofs (`cmpZero_spec`, `lt_iff_cmpZero`, the hand-built instance) are in ee3b01f.
+/-
+/-- We compare with zero using a faster technique that avoids computing the norm sometimes -/
+def cmpZero [Ord R] [Zero R] [Mul R] (x : AdjoinSqrt R n) : Ordering :=
+  match compare x.a₁ 0, compare x.aₙ 0 with
+  | .eq, o => o
+  | o, .eq => o
+  | .gt, .gt => .gt
+  | .lt, .lt => .lt
+  | .gt, .lt => compare (x.a₁ * x.a₁) (n * x.aₙ * x.aₙ)
+  | .lt, .gt => compare (n * x.aₙ * x.aₙ) (x.a₁ * x.a₁)
+-/
 
-instance instAddSemigroup [AddSemigroup R]: AddSemigroup (AdjoinSqrt R n) where
+/- ----------------------------------------------------------------------------/
+/-! ## Theory -/
+/- ----------------------------------------------------------------------------/
+
+instance instAddSemigroup [AddSemigroup R] : AddSemigroup (AdjoinSqrt R n) where
   add_assoc := by intros; ext <;> apply add_assoc
 
-instance instAddMonoid [AddMonoid R]: AddMonoid (AdjoinSqrt R n) where
+instance instAddMonoid [AddMonoid R] : AddMonoid (AdjoinSqrt R n) where
   zero_add := by intros a; ext <;> simp
   add_zero := by intros; ext <;> simp
   nsmul := nsmulRec
 
-instance instAddCommMonoid [AddCommMonoid R]: AddCommMonoid (AdjoinSqrt R n) := by
+instance instAddCommMonoid [AddCommMonoid R] : AddCommMonoid (AdjoinSqrt R n) := by
   constructor; intros; ext <;> apply add_comm
 
-instance instNonUnitalAssocSemiring [NonUnitalNonAssocSemiring R]: NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
-  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib, add_assoc] <;> try conv =>
-    -- this proof just involves finding the right places to commute things. We
-    -- should just hand this off to something like `ring`, but I don't think
-    -- there are nice tactics like that for things higher in the hierarchy
-    --
-    -- we use all_goals so that the two goals are focused on the same part of
-    -- the expression as you navigate through the proof
-    congr
-    all_goals rhs
-    rw [add_comm, add_assoc]
-    all_goals rhs
-    rw [add_comm]
-    all_goals rfl
+instance instNonUnitalNonAssocSemiring [NonUnitalNonAssocSemiring R] :
+    NonUnitalNonAssocSemiring (AdjoinSqrt R n) := by
+  constructor <;> intros <;> ext <;> simp [left_distrib, right_distrib] <;> ac_rfl
 
-instance instNonUnitalSemiring [CommSemiring R]: NonUnitalSemiring (AdjoinSqrt R n) := by
+instance instNonUnitalSemiring [CommSemiring R] : NonUnitalSemiring (AdjoinSqrt R n) := by
   constructor; intros; ext <;> simp <;> ring
 
-instance instSemiring [CommSemiring R]: Semiring (AdjoinSqrt R n) where
+instance instSemiring [CommSemiring R] : Semiring (AdjoinSqrt R n) where
   one_mul := by intros; ext <;> simp
   mul_one := by intros; ext <;> simp
 
-instance instAlgebra [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
+/-- `A[√n]` is an `A`-algebra. Not an instance, for the same reason as
+`componentSMul`; bring it into scope with `letI := AdjoinSqrt.algebra`. -/
+abbrev algebra [CommSemiring R] : Algebra R (AdjoinSqrt R n) where
+  toSMul := componentSMul
   algebraMap := {
     toFun (x : R) := (x : AdjoinSqrt R n)
     map_one'  := rfl
@@ -109,116 +128,239 @@ instance instAlgebra [CommSemiring R]: Algebra R (AdjoinSqrt R n) where
   commutes' := by intros; ext <;> simp <;> ring
   smul_def' := by intros; ext <;> simp
 
-instance instRing [CommRing R]: Ring (AdjoinSqrt R n) where
+instance instRing [CommRing R] : Ring (AdjoinSqrt R n) where
   neg_add_cancel := by intros; ext <;> simp
   zsmul := zsmulRec
 
-instance instCommRing [CommRing R]: CommRing (AdjoinSqrt R n) where
+instance instCommRing [CommRing R] : CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
 
-class Nonsquare (R : Type) [Mul R] (n : R) where
-  not_square : ∀ x : R, x * x ≠ n
+lemma root_mul_self [CommRing R] : root n * root n = (n : AdjoinSqrt R n) := by
+  ext <;> simp
 
-lemma cancel_neg [CommRing R] (a b : R) : a + -b = 0 -> a = b := by
-  intro H
-  have H' : a + -b + b = b := by rw [H]; exact zero_add b
-  rw [← H']
-  ring
+lemma norm_mul [CommRing R] (x y : AdjoinSqrt R n) :
+    norm (x * y) = norm x * norm y := by
+  simp [norm]; ring
 
--- TODO: need this for a CommRing, not just a field
--- should be possible just using cancellation maybe? Might need a UFD or something
-lemma conj_0 [Field R] [Nonsquare R n] : ∀ x : AdjoinSqrt R n, (x * x.conj : R) = 0 → x = 0 := by
-  intros x H
-  simp at H
-  by_cases an0 : x.aₙ = 0
-  case pos =>
-    rw [an0] at H
-    simp at H
+/-- Negation doesn't change the norm. -/
+lemma norm_neg [CommRing R] (x : AdjoinSqrt R n) : norm (-x) = norm x := by simp [norm]
+
+/-- A nonzero element has a nonzero norm.
+
+A field is more than this needs: an integrally closed domain, a UFD say,
+would do. There `a₁ / aₙ` is integral over `R`, being a root of `X² - n`, so it
+already lies in `R` and `n` is a square after all. A bare domain is not enough
+--- in `k[x², x³]`, `n = x²` has no square root, yet `a₁ = x³`, `aₙ = x²` gives
+`a₁² = n * aₙ²`. Every intended instance is a field, so the generality is not
+worth the proof. -/
+lemma eq_zero_of_norm_eq_zero [Field R] [nonsq : Fact (¬ IsSquare n)] {x : AdjoinSqrt R n}
+    (h : x.norm = 0) : x = 0 := by
+  simp [norm] at h
+  if x.aₙ = 0 then
     ext <;> simp_all
-  case neg =>
+  else
     -- here's where we need division in this proof
-    have H'' : (x.a₁ * x.aₙ⁻¹) * (x.a₁  * x.aₙ⁻¹) = n := by
-      field_simp
-      apply cancel_neg
-      linear_combination H
-    apply Nonsquare.not_square at H''
-    exfalso; assumption
+    exact absurd ⟨x.a₁ / x.aₙ, by field_simp; linear_combination -h⟩ nonsq.out
 
-instance instField [Field R] [Nonsquare R n]: Field (AdjoinSqrt R n) where
+instance instField [Field R] [Fact (¬ IsSquare n)] : Field (AdjoinSqrt R n) where
   mul_inv_cancel := by
     intro x xne0
-    -- the norm `x * conj x` is non-zero, which is `conj_0` contrapositive
-    have hd : x.a₁ ^ 2 + -(n * x.aₙ ^ 2) ≠ 0 := fun h =>
-      xne0 (conj_0 x (by simp [AdjoinSqrt.conj]; linear_combination h))
-    ext <;> simp [AdjoinSqrt.conj]
-    · field_simp
-    · ring
+    have hd : norm x ≠ 0 := fun h => xne0 (eq_zero_of_norm_eq_zero h)
+    ext <;> simp <;> field_simp <;> simp [norm]; ring
 
   inv_zero := by
     ext <;> simp
 
   exists_pair_ne := by
-    obtain ⟨ x, y, pf ⟩ := exists_pair_ne R
-    exists x, y
-    simp;
-    assumption
+    obtain ⟨x, y, _⟩ := exists_pair_ne R
+    exact ⟨x, y, by simpa⟩
 
   qsmul := _
   nnqsmul := _
 
 
-example [CommRing R] (x y : AdjoinSqrt R n) : AdjoinSqrt R n := x - y
+/-! ## Order
 
-class Pos (R : Type) [Signed R] (n : R) where
-  n_pos : sign n = .pos
+`A[√n]` is ordered by designating its non-negative elements, the *positive
+cone*, as Mathlib does for any ordered ring. Membership is decided in `A`:
+`a₁ + aₙ√n ≥ 0` when a non-negative part dominates the other, which, since
+`n > 0`, is a comparison of squares, i.e. the sign of the norm. -/
 
-open SignedRing
+/-- The non-negative elements are closed under multiplication. Each case turns
+on comparing `(a₁*b₁)²` with `(n*aₙ*bₙ)²`, whose difference factors
+through the two norms. -/
+lemma IsNonneg.mul [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (0 < n)]
+    {x y : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x*y) := by
+  have ha : (x*y).a₁ = x.a₁*y.a₁ + n*x.aₙ*y.aₙ := rfl
+  have hb : (x*y).aₙ = x.a₁*y.aₙ + x.aₙ*y.a₁ := rfl
+  have hn : 0 < n := Fact.out
+  rcases hx with ⟨hx1, hxN⟩ | ⟨hx1, hxN⟩ <;> rcases hy with ⟨hy1, hyN⟩ | ⟨hy1, hyN⟩
+  · left
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonneg hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hn.le (mul_self_nonneg x.aₙ)
+    ]
+  · right
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonpos_of_nonneg_of_nonpos hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hxN (mul_self_nonneg y.aₙ),
+      mul_nonneg (mul_self_nonneg x.aₙ) (neg_nonneg.mpr hyN)
+    ]
+  · right
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonpos_of_nonpos_of_nonneg hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg hx1 hy1,
+      mul_nonneg hyN (mul_self_nonneg x.aₙ),
+      mul_nonneg (mul_self_nonneg y.aₙ) (neg_nonneg.mpr hxN)
+    ]
+  · left
+    refine ⟨?_, by rw [norm_mul x y]; exact mul_nonneg_of_nonpos_of_nonpos hxN hyN⟩
+    simp only [norm] at *
+    nlinarith [
+      mul_nonneg (mul_nonneg hn.le hx1) hy1
+    ]
 
-instance instSignedRing [i: SignedRing R] [Nonsquare R n] [Pos R n]: SignedRing (AdjoinSqrt R n) := sorry
+section OrderRing
 
--- TODO
---   sign_zero := by simp [SignedRing.sign_zero]
---   sign_one := by simp [SignedRing.sign_zero, SignedRing.sign_one]
---   sign_neg := by
---     intros a
---     cases h1: sign a.a₁ <;> cases hn: sign a.aₙ <;> simp [SignedRing.sign_neg, h1, hn]
--- 
---   zero_sign := by
---     intro a
---     cases asign : sign (a.a₁) <;> cases bsign : sign (a.aₙ) <;> simp [asign, bsign]
---     case zero.zero => apply SignedRing.zero_sign at asign; apply SignedRing.zero_sign at bsign; ext <;> trivial
--- 
---     case neg.pos =>
---       intro h
---       rw [← SignedRing.sign_neg] at h
---       apply SignedRing.zero_sign at h
---       rw [neg_eq_zero] at h
---       apply conj_0
---       simp; trivial
--- 
---     case pos.neg =>
---       intro h
---       apply SignedRing.zero_sign at h
---       apply @conj_0 _ _ f.toField _ a
---       simp; trivial
--- 
---   sign_mul := sorry
---   sign_plus := sorry
+variable [CommRing R] [LinearOrder R]
 
-/-- The order on `A[√n]`, obtained from its `SignedRing` structure via
-`CGLean.Algebra.Signed`. -/
-def linearOrderOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
-    LinearOrder (AdjoinSqrt R n) := inferInstance
+/-- Utility for the proof of IsNonneg.add; we prove `(x + y)(multiplier x y)` is
+nonnegative, and conclude that `(x+y)` is nonnegative -/
+def multiplier (x y : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨|x.a₁| + |y.a₁|, |x.aₙ| + |y.aₙ|⟩
 
-/-- That order is compatible with the ring operations, so `A[√n]` is a linearly
-ordered ring whenever `A` is one and `n` is a positive non-square. -/
-def isStrictOrderedRingOfNonsquareOfPos [SignedRing R] [Nonsquare R n] [Pos R n] :
-    IsStrictOrderedRing (AdjoinSqrt R n) := inferInstance
+/-- Values in the NE quadrant are obviously nonnegative -/
+lemma nonneg_of_coeffs_nonneg {x : AdjoinSqrt R n}
+    (h₁ : 0 ≤ x.a₁) (hₙ : 0 ≤ x.aₙ) : IsNonneg x := by
+  rcases le_total 0 x.norm <;> unfold IsNonneg <;> aesop
 
-def toReal (f : R → ℝ) (x : AdjoinSqrt R n) : ℝ := sorry -- TODO: (f x.a₁) + (f x.aₙ) * (Real.sqrt (f n))
+/-- The nonnegative elements fall into the four wedges ENE, ESE, NNE, NNW -/
+lemma IsNonneg.wedges {x : AdjoinSqrt R n} (hx : IsNonneg x) :
+    (0 ≤ x.a₁ ∧ 0 ≤ x.aₙ ∧ 0 ≤ norm x) ∨ (0 ≤ x.a₁ ∧ x.aₙ ≤ 0 ∧ 0 ≤ norm x) ∨
+    (0 ≤ x.a₁ ∧ 0 ≤ x.aₙ ∧ norm x ≤ 0) ∨ (x.a₁ ≤ 0 ∧ 0 ≤ x.aₙ ∧ norm x ≤ 0) := by
+  rcases hx with ⟨h1, hN⟩ | ⟨hn, hN⟩
+  · rcases le_total 0 x.aₙ with hn | hn <;> tauto
+  · rcases le_total 0 x.a₁ with h1 | h1 <;> tauto
 
-@[simp] def root (n : R) [Zero R] [One R] : AdjoinSqrt R n := ⟨0, 1⟩
+/-- Every element is non-negative or non-positive. -/
+lemma nonneg_or_neg_nonneg [IsStrictOrderedRing R] (x : AdjoinSqrt R n) :
+    IsNonneg x ∨ IsNonneg (-x) := by
+  unfold IsNonneg; rw [norm_neg]
+  rcases le_total 0 (norm x) with h | h
+    <;> rcases le_total 0 x.a₁ with ha | ha
+    <;> rcases le_total 0 x.aₙ with hb | hb
+    <;> aesop
 
-theorem root_n_squared [CommRing R]: root n * root n = (n : AdjoinSqrt R n) := by
-  sorry
+/-- If the multiplier of `x` and `y` is 0, then `x` and `y` must be 0 -/
+lemma eq_zero_of_multiplier_eq_zero [IsStrictOrderedRing R] {x y : AdjoinSqrt R n}
+    (h : multiplier x y = 0) : x = 0 ∧ y = 0 := by
+  injection h with h1 hn
+  obtain ⟨_, _⟩ : |x.a₁| = 0 ∧ |y.a₁| = 0 :=
+    (add_eq_zero_iff_of_nonneg (abs_nonneg x.a₁) (abs_nonneg y.a₁)).mp h1
+  obtain ⟨_, _⟩ : |x.aₙ| = 0 ∧ |y.aₙ| = 0 :=
+    (add_eq_zero_iff_of_nonneg (abs_nonneg x.aₙ) (abs_nonneg y.aₙ)).mp hn
+  constructor <;> ext <;> simp <;> rw [← abs_eq_zero] <;> assumption
 
+lemma multiplier_nonneg [IsStrictOrderedRing R] {x y : AdjoinSqrt R n} :
+    IsNonneg (multiplier x y) := by
+  apply nonneg_of_coeffs_nonneg <;> simp [multiplier] <;> positivity
+
+end OrderRing
+
+section OrderField
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [pos : Fact (0 < n)]
+
+/-- Only `0` is both non-negative and non-positive. -/
+lemma nonneg_antisymm {x : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hnx : IsNonneg (-x)) : x = 0 := by
+  rw [← eq_zero_of_norm_eq_zero]
+  rcases hx with ⟨p, q⟩ | ⟨p, q⟩ <;> rcases hnx with ⟨r, s⟩ | ⟨r, s⟩
+    <;> simp only [norm, neg_a₁, neg_aₙ] at *
+    <;> nlinarith [mul_self_nonneg x.aₙ, pos.elim, mul_nonneg pos.elim.le (mul_nonneg p r)]
+
+/-- If `x * y ≥ 0` and `y > 0` then `x ≥ 0` -/
+lemma nonneg_of_mul_nonneg_left {x y : AdjoinSqrt R n}
+    (hmul : IsNonneg (x * y)) (hy : IsNonneg y) (hne : y ≠ 0) : IsNonneg x := by
+  rcases nonneg_or_neg_nonneg x with h | h
+  · exact h
+  · have hNegMul : (-(x*y)).IsNonneg := by rw [← neg_mul]; apply IsNonneg.mul <;> assumption
+    have hMulZero : x*y = 0 := nonneg_antisymm hmul hNegMul
+    have hZero : x = 0 := (mul_eq_zero.mp hMulZero).resolve_right hne
+    simp [hZero, IsNonneg, norm]
+
+/-- The non-negative elements are closed under addition. -/
+lemma IsNonneg.add {x y : AdjoinSqrt R n}
+    (hx : IsNonneg x) (hy : IsNonneg y) : IsNonneg (x + y) := by
+  -- if the multiplier is 0, x and y are 0 so we're done
+  rcases eq_or_ne (x.multiplier y) 0 with h | hMultiplier
+  · obtain ⟨hx, hy⟩ := eq_zero_of_multiplier_eq_zero h
+    simp [hx, hy, IsNonneg, norm]
+
+  -- now we proceed by proving (x + y)(multiplier) ≥ 0 by showing the coefficients are nonneg
+  apply nonneg_of_mul_nonneg_left _ multiplier_nonneg hMultiplier
+  have hn : 0 < n := pos.out
+  rcases hx.wedges with ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩ | ⟨hx1, hxn, hxN⟩
+    <;> rcases hy.wedges with ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩ | ⟨hy1, hyn, hyN⟩
+    <;> apply nonneg_of_coeffs_nonneg
+    <;> simp only [multiplier, mul_a₁, mul_aₙ, add_a₁, add_aₙ, norm, sub_nonneg, sub_nonpos] at *
+    <;> simp only [abs_of_nonneg, abs_of_nonpos, *]
+
+  -- now we've split into 32 cases; we add a bunch of simple facts and then crush them with linarith
+  all_goals
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hxn)
+    have := mul_nonneg (sub_nonneg.mpr hy1) (sub_nonneg.mpr hyn)
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hy1)
+    have := mul_nonneg (sub_nonneg.mpr hx1) (sub_nonneg.mpr hyn)
+    have := mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hy1)
+    have := mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hyn)
+    have := mul_nonneg hn.le (mul_nonneg (sub_nonneg.mpr hxn) (sub_nonneg.mpr hyn))
+    have := mul_nonneg hn.le (mul_self_nonneg x.aₙ)
+    have := mul_nonneg hn.le (mul_self_nonneg y.aₙ)
+    have := mul_self_nonneg x.a₁
+    have := mul_self_nonneg y.a₁
+
+  -- linarith closes most goals; the remaining ones need to compare
+  --   n * |x.aₙ| * |y.aₙ| to |x.a₁| * |y.a₁|
+  -- we could add lemmas about these cases, but nlinarith is able to figure it out.
+  all_goals first | linarith | nlinarith
+
+/-- The non-negative elements of `A[√n]`. -/
+def nonnegCone : RingCone (AdjoinSqrt R n) where
+  carrier := {x | IsNonneg x}
+  zero_mem' := Or.inl ⟨le_refl _, by simp [norm]⟩
+  one_mem' := Or.inl ⟨zero_le_one, by simp [norm]⟩
+  add_mem' := IsNonneg.add
+  mul_mem' := IsNonneg.mul
+  eq_zero_of_mem_of_neg_mem' := nonneg_antisymm
+
+/-! ### The order from the cone -/
+
+instance : HasMemOrNegMem (nonnegCone (R := R) (n := n)) where
+  mem_or_neg_mem := nonneg_or_neg_nonneg
+
+instance (x : AdjoinSqrt R n) : Decidable (IsNonneg x) := by unfold IsNonneg; infer_instance
+
+instance : DecidablePred (· ∈ nonnegCone (R := R) (n := n)) := fun x =>
+  inferInstanceAs (Decidable (IsNonneg x))
+
+/-- The order on `A[√n]`: `a ≤ b` when `b - a` is in the non-negative cone. -/
+instance instLinearOrder : LinearOrder (AdjoinSqrt R n) :=
+  LinearOrder.mkOfAddGroupCone nonnegCone
+
+instance instIsStrictOrderedRing : IsStrictOrderedRing (AdjoinSqrt R n) :=
+  haveI : IsOrderedRing (AdjoinSqrt R n) := IsOrderedRing.mkOfCone (nonnegCone (R := R) (n := n))
+  IsOrderedRing.toIsStrictOrderedRing _
+
+/-- `IsNonneg` and `≤` are compatible -/
+lemma nonneg_iff (x : AdjoinSqrt R n) : 0 ≤ x ↔ IsNonneg x := by
+  show IsNonneg (x - 0) ↔ _; rw [sub_zero]
+
+end OrderField
+
+end AdjoinSqrt
