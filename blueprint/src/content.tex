@@ -537,72 +537,55 @@ In order to use $A[\sqrt{n}]$ with \code{FilteredReal}, we need to have a way of
 converting values in $A[\sqrt{n}]$ to real numbers, and this conversion has to preserve
 the operations defined on $A[\sqrt{n}]$.
 
-TODO: informal definitions for homs.
-
 %% A[√n] → ℝ
 
 % TODO: toReal renders italic; \code or \operatorname
 \begin{definition}[Conversion to $ℝ$]
   \label{def:adjoinToReal}
-  \lean{AdjoinSqrt.toReal}
+  \lean{AdjoinSqrt.toRealHom}
   \leanok
   \uses{def:adjoin}
-  Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
-  there is a corresponding function $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ given by
-  $(a_1 + a_n\sqrt{n}).toReal := a_1.toReal + a_n.toReal * \sqrt{n.toReal}$.
+  Given a function $\toReal : A → ℝ$ and $n ∈ A$ with $n.\toReal \geq 0$,
+  there is a corresponding function $AdjoinSqrt.\toReal : A[\sqrt{n}] → ℝ$ given by
+  $(a_1 + a_n\sqrt{n}).\toReal := a_1.\toReal + a_n.\toReal * \sqrt{n.\toReal}$.
 \end{definition}
 
-\begin{lemma}
+The definition of a well-behaved map in this context is one that preserves all
+of the operations:
+
+\begin{definition}[Ordered ring homomorphism (mathlib)]
+  If $A$ and $B$ are linearly ordered rings, an \emph{ordered ring homomorphism} is a function $f : A → B$
+  that preserves the order and the ring operations. Specifically:
+  \begin{itemize}
+    \item $f(0) = 0$
+    \item $f(1) = 1$
+    \item $f(a + b) = f(a) + f(b)$
+    \item $f(ab) = f(a)f(b)$
+    \item if $a \leq b$ then $f(a) \leq f(b)$.
+  \end{itemize}
+\end{definition}
+
+\begin{lemma}[$\toReal$ is an ordered ring homomorphism]
   % TODO: needs toReal(n) ≥ 0; non-square not needed
-  \label{thm:adjoinToRealRingHom}
-  \lean{AdjoinSqrt.toReal_zero, AdjoinSqrt.toReal_one, AdjoinSqrt.toReal_add, AdjoinSqrt.toReal_mul}
+  \label{thm:adjoinToRealOrderHom}
+  \lean{AdjoinSqrt.toRealOrderHom}
   \leanok
   \uses{def:adjoinToReal, thm:adjoinRing}
-  If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
-  ring homomorphism, then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is a ring
-  homomorphism.
+  If $A$ is an ordered ring with a non-square $n ∈ A$ and $\toReal : A → ℝ$ is
+  an ordered ring homomorphism, then $AdjoinSqrt.\toReal : A[\sqrt{n}] → ℝ$ is
+  an ordered ring homomorphism.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  % TODO (prose):
-  %  * zero, one, add: immediate
-  %  * mul: cross terms need sqrt(n.toReal)^2 = n.toReal; uses n.toReal >= 0
-\end{proof}
+  Most of the requirements are immediate from the definitions. To check the ordering property,
+  we first prove that if $0 \leq a$ then $0 \leq AdjoinSqrt.\toReal a$, from
+  which the main result follows.
 
-\begin{lemma}
-  % TODO: monotone isn't enough; needs ordered ring hom
-  \label{thm:adjoinToRealOrderHom}
-  \lean{AdjoinSqrt.toReal_monotone}
-  \leanok
-  \uses{def:adjoinToReal, thm:adjoinOrderedRing}
-  If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
-  $toReal : A → ℝ$ is monotonic then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is
-  also monotonic.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  % TODO (prose):
-  %  * reduce to: non-negative maps to non-negative
-  %  * each disjunct of def:adjoinSign, directly: sqrt exists in R
-\end{proof}
-
-
-\begin{lemma}
-  \label{thm:adjoinToRealOrderedFieldHom}
-  \lean{AdjoinSqrt.toReal_mul, AdjoinSqrt.toReal_monotone}
-  \leanok
-  \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
-  If $A$ is an ordered field with a positive non-square $n ∈ A$ and $toReal : A
-  → ℝ$ is an ordered field homomorphism then $AdjoinSqrt.toReal : A[\sqrt{n}] →
-  ℝ$ is also an ordered field homomorphism.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  % TODO (prose):
-  %  * the two preceding lemmas together
+  To check that, we consider the cases where $\norm{a} \geq 0$ and $\norm{a}
+  \leq 0$ separately. In each case, one of the two terms in $AdjoinSqrt.\toReal
+  a$ is positive by assumption, and by squaring you can check that the positive
+  one dominates.
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
