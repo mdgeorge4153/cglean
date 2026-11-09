@@ -79,7 +79,7 @@ private lemma add_nonneg_of_sq_ge {A B t : ℝ} (ht : 0 ≤ t) (hB : 0 ≤ B)
   nlinarith [mul_pos (show (0:ℝ) < -A - B * t by linarith)
     (show (0:ℝ) < -A + B * t by linarith)]
 
-variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Nonsquare R n] [Pos R n]
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [pos : Fact (0 < n)]
   (f : R →+* ℝ) (hf : Monotone f)
 
 include hf in
@@ -88,7 +88,7 @@ corresponding statement inside `A`, this one is straightforward: `√(f n)` real
 exists in `ℝ`, so each disjunct of the criterion can be compared directly. -/
 theorem toReal_nonneg (x : AdjoinSqrt R n) (hx : (0 : AdjoinSqrt R n) ≤ x) :
     0 ≤ toReal f x := by
-  have hn0 : (0 : R) < n := Pos.n_pos
+  have hn0 : (0 : R) < n := pos.out
   have hfn : 0 ≤ f n := by simpa using hf hn0.le
   have hs : Real.sqrt (f n) * Real.sqrt (f n) = f n := Real.mul_self_sqrt hfn
   have hs0 : (0:ℝ) ≤ Real.sqrt (f n) := Real.sqrt_nonneg _
@@ -97,11 +97,11 @@ theorem toReal_nonneg (x : AdjoinSqrt R n) (hx : (0 : AdjoinSqrt R n) ≤ x) :
     with ⟨h1, hN⟩ | ⟨h1, hN⟩
   · have a1 : 0 ≤ f x.a₁ := by simpa using hf h1
     have aN : 0 ≤ f (norm x) := by simpa using hf hN
-    simp only [norm, map_add, map_neg, map_mul] at aN
+    simp only [norm, map_sub, map_mul] at aN
     exact add_nonneg_of_sq_le hs0 a1 (by rw [hs]; linarith)
   · have aN : 0 ≤ f x.aₙ := by simpa using hf h1
     have a1 : f (norm x) ≤ 0 := by simpa using hf hN
-    simp only [norm, map_add, map_neg, map_mul] at a1
+    simp only [norm, map_sub, map_mul] at a1
     exact add_nonneg_of_sq_ge hs0 aN (by rw [hs]; linarith)
 
 include hf in
