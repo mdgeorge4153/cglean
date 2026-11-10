@@ -110,13 +110,12 @@ inside a floating-point interval.
 We can summarize the example from this section in the following corollary:
 \begin{corollary}
   \label{thm:numberType}
-  \uses{def:adjoin, def:filtered}
+  \uses{def:adjoin, def:filtered, thm:adjoinToRealOrderHom}
   \code{FilteredReal $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
-
 \begin{proof}
-  \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderedFieldHom}
-  TODO
+  \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderHom}
+  Follows from the results below.
 \end{proof}
 
 The definition of a linearly ordered field can be broken down into parts, and
@@ -155,7 +154,7 @@ for this library so we don't describe them here.
   \label{def:adjoin}
   \lean{AdjoinSqrt}
   \leanok
-  $A[\sqrt{n}]$ is stored as a pair $(a_1, a_n)$, representing the value
+  An element of $A[\sqrt{n}]$ is stored as a pair $(a_1, a_n)$, representing the value
   $a_1 + a_n\sqrt{n}$.
 \end{definition}
 
@@ -181,7 +180,6 @@ that it is a field, and that it has a natural ordering on it ($<$ and $≤$).
   \lean{AdjoinSqrt.instCommRing}
   \leanok
   \uses{def:adjoinRingOps}
-  % TODO: A must be commutative (Lean: CommRing); same for thm:adjoinAlgebra
   If $A$ satisfies the ring properties, then so does $A[\sqrt{n}]$.
 \end{proposition}
 
@@ -216,7 +214,7 @@ follows:
   \label{def:adjoinInv}
   \lean{AdjoinSqrt.instInv}
   \leanok
-  \uses{def:adjoinRingOps}
+  \uses{def:adjoinRingOps, def:norm}
   We define $(a_1 + a_n\sqrt{n})^{-1}$ as follows:
   \begin{eqnarray*}
     \frac{1}{a_1 + a_n\sqrt{n}}
@@ -231,7 +229,7 @@ follows:
   \label{thm:adjoinField}
   \lean{AdjoinSqrt.instField}
   \leanok
-  \uses{def:adjoin, thm:adjoinRing, def:adjoinInv}
+  \uses{def:adjoin, thm:adjoinRing, def:adjoinInv, def:norm}
   If $A$ is a field and $n$ is not a square in $A$, then $A[\sqrt{n}]$ is a
   field.
 \end{lemma}
@@ -301,7 +299,6 @@ defined by Mathlib:
 
 \begin{definition}[Well-behaved positive cone]
   \label{def:ringCone}
-  \lean{RingCone, IsOrderedRing.mkOfCone}
   \mathlibok
   A well-behaved positive cone on a ring $A$ is a relation $0 \leq \cdot$ that satisfies:
   \begin{itemize}
@@ -504,7 +501,7 @@ three are more tricky and we state them as lemmas:
 \end{corollary}
 \begin{proof}
   \leanok
-  \uses{def:ringCone, thm:multiplicativity, thm:additivity}
+  \uses{thm:multiplicativity, thm:additivity, def:ringCone}
   Apply Mathlib's construction (Definition~\ref{def:ringCone}) to
   Lemmas~\ref{thm:multiplicativity} and~\ref{thm:additivity}.
 \end{proof}
@@ -537,54 +534,66 @@ In order to use $A[\sqrt{n}]$ with \code{FilteredReal}, we need to have a way of
 converting values in $A[\sqrt{n}]$ to real numbers, and this conversion has to preserve
 the operations defined on $A[\sqrt{n}]$.
 
-TODO: informal definitions for homs.
-
 %% A[√n] → ℝ
 
-% TODO: toReal renders italic; \code or \operatorname
 \begin{definition}[Conversion to $ℝ$]
   \label{def:adjoinToReal}
   \lean{AdjoinSqrt.toReal}
   \leanok
   \uses{def:adjoin}
-  Given a function $toReal : A → ℝ$ and $n ∈ A$ with $n.toReal \geq 0$,
-  there is a corresponding function $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ given by
-  $(a_1 + a_n\sqrt{n}).toReal := a_1.toReal + a_n.toReal * \sqrt{n.toReal}$.
+  Given a function $f : A → ℝ$ and $n ∈ A$ with $f(n) \geq 0$,
+  there is a corresponding function $f_{\sqrt{n}} : A[\sqrt{n}] → ℝ$ given by
+  $f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n) \sqrt{f(n)}$.
 \end{definition}
 
-\begin{lemma}
-  % TODO: needs toReal(n) ≥ 0; non-square not needed
-  \label{thm:adjoinToRealRingHom}
-  \uses{def:adjoinToReal, thm:adjoinRing}
-  If $A$ is a ring with a non-square $n ∈ A$ and $toReal : A → ℝ$ is a
-  ring homomorphism, then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is a ring
-  homomorphism.
-\end{lemma}
+The definition of a well-behaved map in this context is one that preserves all
+of the operations:
 
-\begin{lemma}
-  % TODO: monotone isn't enough; needs ordered ring hom
+\begin{definition}[Ordered ring homomorphism]
+  \label{def:orderedRingHom}
+  \mathlibok
+  If $A$ and $B$ are linearly ordered rings, an \emph{ordered ring homomorphism} is a function $f : A → B$
+  that preserves the order and the ring operations. Specifically:
+  \begin{itemize}
+    \item $f(0) = 0$
+    \item $f(1) = 1$
+    \item $f(a + b) = f(a) + f(b)$
+    \item $f(ab) = f(a)f(b)$
+    \item if $a \leq b$ then $f(a) \leq f(b)$.
+  \end{itemize}
+\end{definition}
+
+Note that if $A$ and $B$ are fields, then an ordered ring homomorphism also
+preserves inverses because $f(a)f(a^{-1}) = f(aa^{-1}) = 1$ (so $f(a^{-1})$ is
+an inverse for $f(a)$).
+
+\begin{lemma}[$f_{\sqrt{n}}$ is an ordered ring homomorphism]
   \label{thm:adjoinToRealOrderHom}
-  \uses{def:adjoinToReal, thm:adjoinOrderedRing}
-  If $A$ is an ordered ring with a positive non-square $n ∈ A$ and
-  $toReal : A → ℝ$ is monotonic then $AdjoinSqrt.toReal : A[\sqrt{n}] → ℝ$ is
-  also monotonic.
+  \lean{AdjoinSqrt.toRealOrderHom}
+  \leanok
+  \uses{def:adjoinToReal, def:orderedRingHom, thm:adjoinOrderedRing}
+  If $A$ is a linearly ordered field with a positive non-square $n ∈ A$ and $f :
+  A → ℝ$ is an ordered ring homomorphism, then $f_{\sqrt{n}} :
+  A[\sqrt{n}] → ℝ$ is an ordered ring homomorphism.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Most of the requirements are immediate from the definitions. To check the ordering property,
+  we first prove that if $0 \leq a$ then $0 \leq f_{\sqrt{n}}(a)$, from
+  which the main result follows.
 
-\begin{lemma}
-  \label{thm:adjoinToRealOrderedFieldHom}
-  \uses{def:adjoinToReal, thm:adjoinOrderedField, thm:adjoinToRealRingHom, thm:adjoinToRealOrderHom}
-  If $A$ is an ordered field with a positive non-square $n ∈ A$ and $toReal : A
-  → ℝ$ is an ordered field homomorphism then $AdjoinSqrt.toReal : A[\sqrt{n}] →
-  ℝ$ is also an ordered field homomorphism.
-\end{lemma}
+  To check that, we consider the cases where $\norm{a} \geq 0$ and $\norm{a}
+  \leq 0$ separately. In each case, one of the two terms in $f_{\sqrt{n}}(a)$
+  is nonnegative by assumption, and by squaring you can check that the nonnegative
+  one dominates.
+\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A$ to $A[\sqrt{n}]$}
 
-% TODO: "interesting" twice
-These are some interesting results that aren't directly needed to use these
-number representations, but are interesting nonetheless.
+These are some results that aren't directly needed to use these number representations, but are
+interesting nonetheless.
 
 %% A → A[√n]
 
@@ -608,9 +617,8 @@ number representations, but are interesting nonetheless.
 \end{lemma}
 
 \begin{proof}
-  % TODO: \leanok first, as elsewhere
-  Trivial
   \leanok
+  Trivial
 \end{proof}
 
 \begin{lemma}
