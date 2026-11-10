@@ -15,15 +15,6 @@ open CGLean LeanCert.Core
 
 variable {R : Type} {n : R}
 
-/-- `toReal` as a ring homomorphism. -/
-noncomputable def toRealHom [CommRing R] (f : R →+* ℝ) (hn : 0 ≤ f n) :
-    AdjoinSqrt R n →+* ℝ where
-  toFun := toReal f
-  map_zero' := toReal_zero f
-  map_one' := toReal_one f
-  map_add' := toReal_add f
-  map_mul' := toReal_mul f hn
-
 /-- Bracket `a₁ + aₙ√n` from brackets for `a₁`, `aₙ` and `n`. -/
 def realApprox [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRingHom n) :
     RealApprox (AdjoinSqrt R n) where
@@ -48,7 +39,7 @@ instance [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)
     Fact (StrictMono (realApprox e hn).toRingHom) := by
   constructor
   rw [realApprox_toRingHom]
-  exact Monotone.strictMono_of_injective (toReal_monotone _ he.out.monotone)
-    (RingHom.injective _)
+  let g : R →+*o ℝ := { e.toRingHom with monotone' := he.out.monotone }
+  exact Monotone.strictMono_of_injective (toReal_monotone g) (RingHom.injective _)
 
 end AdjoinSqrt
