@@ -35,14 +35,18 @@ jobs:
       - name: Build
         run: lake build
 
-      # No TeX: the blueprint contains no TikZ or included graphics, so plasTeX
-      # renders it unaided. Graphviz is for the dependency graph.
+      # plasTeX renders the text itself; TeX is only needed for the TikZ
+      # pictures, which it compiles with latex and converts with dvisvgm (see
+      # web.tex). A few texlive packages rather than texlive-full. Graphviz is
+      # for the dependency graph.
       # A venv rather than pipx: leanblueprint shells out to `plastex`, which
       # pipx would not put on PATH since it is a dependency's entry point.
       - name: Install blueprint tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y graphviz libgraphviz-dev
+          sudo apt-get install -y --no-install-recommends graphviz libgraphviz-dev \
+            texlive-latex-base texlive-latex-recommended texlive-pictures \
+            dvisvgm ghostscript
           python3 -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install leanblueprint
