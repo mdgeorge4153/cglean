@@ -710,7 +710,6 @@ interesting nonetheless.
 \begin{definition}
   \label{def:intervalCompare}
   \lean{CGLean.compare?}
-  \leanok
   \code{compare? x y} returns the order shared by every member of $x$ and every
   member of $y$ when the intervals are separated, and nothing when they overlap.
 \end{definition}
@@ -719,13 +718,11 @@ interesting nonetheless.
   \label{thm:compareSound}
   \uses{def:intervalCompare}
   \lean{CGLean.compare_of_compare?}
-  \leanok
   If \code{compare?} returns an order, then every member of $x$ compares that
   way with every member of $y$.
 \end{lemma}
 
 \begin{proof}
-  \leanok
   % TODO (prose):
   %  * each case chains the bounds: a ≤ x.hi < y.lo ≤ b, and symmetrically
 \end{proof}
@@ -765,14 +762,12 @@ intervals. We formalize this as follows:
   \label{thm:compareComplete}
   \uses{def:intervalCompare}
   \lean{CGLean.compare?_complete}
-  \leanok
   If the function we use to compare intervals indicates that they are
   incomparable, then we can choose two sets of points in the two intervals that
   would give different comparison results.
 \end{lemma}
 
 \begin{proof}
-  \leanok
   % TODO (prose):
   %  * decline = overlap; max of lower bounds lies in both
   %  * witnesses: that point with itself (eq), an endpoint pair (strict)
