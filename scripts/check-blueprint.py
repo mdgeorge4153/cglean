@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """Check that the blueprint's claims match the library.
 
-Two independent checks:
+leanblueprint uses \\leanok in two places, with different meanings:
 
-  declarations  every name cited by a statement marked \\leanok exists and is
-                free of `sorry`, verified with `#print axioms` rather than by
-                existence alone. Names cited only by \\notready statements are
-                expected to be absent and are skipped.
+  in a statement  the statement is formalised: the declarations it cites with
+                  \\lean{...} exist. Their proofs may still be `sorry`.
+  in a proof      the proof is complete: those declarations are free of
+                  `sorry`, verified with `#print axioms`.
 
-  markers       no statement is marked \\leanok while the proof block that
-                follows it is not, which would render as proved in the
-                dependency graph without being so
+So this checks:
 
-Run from the project root, after `lake build`.
+  stated   every name cited by a \\leanok statement exists
+  proved   every name cited by a statement whose proof is \\leanok, or by a
+           \\leanok definition (which has no proof), does not depend on sorryAx
+  markers  no proof is \\leanok while its statement is not
+
+Names cited only by statements without \\leanok are not checked. Run from the
+project root, after `lake build`.
 """
 import re, subprocess, sys, pathlib
 
@@ -20,76 +24,87 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 TEX = ROOT / "blueprint" / "src" / "content.tex"
 OK = r"\leanok"
 
-
-def check_markers(tex: str) -> list[str]:
-    pat = re.compile(
-        r"\\begin\{(theorem|lemma|corollary|proposition)\}(.*?)\\end\{\1\}"
-        r"(\s*\\begin\{proof\}(.*?)\\end\{proof\})?",
-        re.S,
-    )
-    bad = []
-    for _kind, body, proof, proof_body in pat.findall(tex):
-        if OK not in body:
-            continue
-        label = re.search(r"\\label\{([^}]+)\}", body)
-        name = label.group(1) if label else "(unlabelled)"
-        if not proof:
-            bad.append(f"{name}: statement marked {OK} but has no proof block")
-        elif OK not in proof_body:
-            bad.append(f"{name}: statement marked {OK} but its proof is not")
-    return bad
+ENV = re.compile(
+    r"\\begin\{(definition|theorem|lemma|corollary|proposition)\}(.*?)\\end\{\1\}"
+    r"(\s*\\begin\{proof\}(.*?)\\end\{proof\})?",
+    re.S,
+)
 
 
-def claimed_declarations(tex: str) -> list[str]:
-    """Names cited by statements that claim to be formalised."""
-    pat = re.compile(
-        r"\\begin\{(definition|theorem|lemma|corollary|proposition)\}(.*?)\\end\{\1\}",
-        re.S,
-    )
+def label(body: str) -> str:
+    m = re.search(r"\\label\{([^}]+)\}", body)
+    return m.group(1) if m else "(unlabelled)"
+
+
+def cited(body: str) -> list[str]:
     names = []
-    for _kind, body in pat.findall(tex):
-        if OK not in body:
-            continue
-        for m in re.finditer(r"\\lean\{([^}]+)\}", body):
-            names += [n.strip() for n in m.group(1).split(",") if n.strip()]
+    for m in re.finditer(r"\\lean\{([^}]+)\}", body):
+        names += [n.strip() for n in m.group(1).split(",") if n.strip()]
     return names
 
 
-def check_declarations(names: list[str]) -> list[str]:
-    src = "import CGLean\n" + "".join(f"#print axioms {n}\n" for n in names)
+def scan(tex: str) -> tuple[list[str], set[str], list[str]]:
+    """Names cited by formalised statements, the subset whose proofs are
+    complete, and any marker inconsistencies."""
+    tex = re.sub(r"(?<!\\)%.*", "", tex)  # drop comments
+    stated, proved, bad = [], set(), []
+    for kind, body, proof, proof_body in ENV.findall(tex):
+        statement_ok = OK in body
+        # A definition has no proof: its \leanok means it is complete.
+        proof_ok = kind == "definition" or (bool(proof) and OK in proof_body)
+        if proof and OK in proof_body and not statement_ok:
+            bad.append(f"{label(body)}: proof marked {OK} but its statement is not")
+        if statement_ok:
+            names = cited(body)
+            stated += names
+            if proof_ok:
+                proved.update(names)
+    return list(dict.fromkeys(stated)), proved, bad
+
+
+def check_declarations(stated: list[str], proved: set[str]) -> list[str]:
+    src = "import CGLean\n" + "".join(f"#print axioms {n}\n" for n in stated)
     probe = ROOT / ".lake" / "blueprint-decls.lean"
     probe.parent.mkdir(parents=True, exist_ok=True)
     probe.write_text(src)
-    out = subprocess.run(
+    result = subprocess.run(
         ["lake", "env", "lean", str(probe)], cwd=ROOT,
         capture_output=True, text=True,
-    ).stdout
+    )
+    out = result.stdout
     probe.unlink(missing_ok=True)
+    # Parse whole messages, not lines: Lean wraps long axiom lists.
+    axioms = {
+        m.group(1): m.group(2) or ""
+        for m in re.finditer(
+            r"'([^']+)' (?:depends on axioms: \[(.*?)\]|does not depend on any axioms)",
+            out, re.S,
+        )
+    }
     bad = []
-    for line in out.splitlines():
-        if "Unknown constant" in line or "unknown identifier" in line.lower():
-            m = re.search(r"`([^`]+)`", line)
-            bad.append(f"{m.group(1) if m else line}: no such declaration")
-        elif "sorryAx" in line:
-            m = re.match(r"'([^']+)'", line)
-            bad.append(f"{m.group(1) if m else line}: depends on sorryAx")
+    for name in stated:
+        if name not in axioms:
+            bad.append(f"{name}: no such declaration")
+        elif name in proved and "sorryAx" in axioms[name]:
+            bad.append(f"{name}: marked complete but depends on sorryAx")
+    if bad and len(bad) == len(stated):
+        # Nothing resolved: more likely a broken build than a broken blueprint.
+        bad.append("lean output:\n" + out + result.stderr)
     return bad
 
 
 def main() -> int:
-    tex = TEX.read_text()
-    problems = check_markers(tex)
-    names = claimed_declarations(tex)
-    if not names:
-        problems.append("no \\lean{} references on formalised statements; is the blueprint built?")
+    stated, proved, problems = scan(TEX.read_text())
+    if not stated:
+        problems.append(f"no \\lean{{}} references on {OK} statements")
     else:
-        problems += check_declarations(names)
+        problems += check_declarations(stated, proved)
     if problems:
         print("blueprint does not match the library:\n")
         for p in problems:
             print("  " + p)
         return 1
-    print(f"blueprint ok: {len(names)} declarations, markers consistent")
+    print(f"blueprint ok: {len(stated)} declarations formalised, {len(proved)} of them sorry-free")
     return 0
 
 
