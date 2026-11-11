@@ -37,3 +37,23 @@ than assuming the reader is already fluent in this specialized material.
 Avoid both research-level terseness and re-explaining basic undergraduate
 algebra (groups, subgroups, ring axioms, etc.) that this audience already
 knows.
+
+## Lean style
+
+Follow Mathlib's [naming conventions](https://leanprover-community.github.io/contribute/naming.html)
+and [style guide](https://leanprover-community.github.io/contribute/style.html).
+Prefer Mathlib's classes, bundled homomorphisms and hypotheses (e.g.
+`Fact (¬ IsSquare n)`) over project-specific ones.
+
+## Blueprint conventions
+
+- A blueprint statement states the same hypotheses as its Lean counterpart.
+- Write mathematical notation (`$f(a)$`), not Lean names or dot notation;
+  Lean names belong in `\lean{}` and `\code{}`.
+- Results taken from Mathlib appear as ordinary `definition`/`lemma` blocks
+  with `\lean{}` naming the Mathlib declarations and marked `\mathlibok`, so
+  they link to Mathlib's docs and the dependency graph colours their
+  dependents correctly.
+- `\leanok` is the author's sign-off, not a build status: add it only once the
+  author has reviewed (or written) the Lean and it matches the blueprint text.
+  A green node means the author can move on.
