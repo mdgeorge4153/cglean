@@ -51,8 +51,9 @@ Prefer Mathlib's classes, bundled homomorphisms and hypotheses (e.g.
 - Write mathematical notation (`$f(a)$`), not Lean names or dot notation;
   Lean names belong in `\lean{}` and `\code{}`.
 - Results taken from Mathlib appear as ordinary `definition`/`lemma` blocks
-  marked `\mathlibok`, so the dependency graph colours their dependents
-  correctly.
+  with `\lean{}` naming the Mathlib declarations and marked `\mathlibok`, so
+  they link to Mathlib's docs and the dependency graph colours their
+  dependents correctly.
 - `\leanok` is the author's sign-off, not a build status: add it only once the
   author has reviewed (or written) the Lean and it matches the blueprint text.
   A green node means the author can move on.
