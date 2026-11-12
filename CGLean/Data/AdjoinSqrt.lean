@@ -62,7 +62,12 @@ section Ops
 variable [Add R] [Mul R] [Sub R] [Neg R]
 
 /-- `conj (a₁ + aₙ √n)` is `a₁ - aₙ√n` -/
-@[simps, expose] def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
+def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
+
+omit [Add R] [Mul R] [Sub R] in
+@[simp] lemma conj_a₁ (x : AdjoinSqrt R n) : x.conj.a₁ = x.a₁ := by simp [conj]
+omit [Add R] [Mul R] [Sub R] in
+@[simp] lemma conj_aₙ (x : AdjoinSqrt R n) : x.conj.aₙ = -x.aₙ := by simp [conj]
 
 /-- `norm (a₁ + aₙ √n)` is `a₁² - naₙ²` -/
 def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
@@ -75,8 +80,11 @@ end Ops
 @[simp] def root [Zero R] [One R] (n : R) : AdjoinSqrt R n := ⟨0, 1⟩
 
 /-- `a₁ + aₙ√n ≥ 0` if either `a₁ ≥ 0` and `a₁` dominates, or `aₙ ≥ 0` and `aₙ` dominates -/
-@[expose] def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
+def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
   (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)
+
+lemma isNonneg_iff_def [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) :
+    IsNonneg x ↔ (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0) := Iff.rfl
 
 -- TODO: efficient comparison. Reinstate `cmpZero`, prove
 -- `cmpZero x = .lt ↔ ¬ IsNonneg x` and `cmpZero x = .eq ↔ x = 0`, and override
@@ -350,7 +358,8 @@ def nonnegCone : RingCone (AdjoinSqrt R n) where
 instance : HasMemOrNegMem (nonnegCone (R := R) (n := n)) where
   mem_or_neg_mem := nonneg_or_neg_nonneg
 
-instance (x : AdjoinSqrt R n) : Decidable (IsNonneg x) := by unfold IsNonneg; infer_instance
+instance (x : AdjoinSqrt R n) : Decidable (IsNonneg x) :=
+  decidable_of_iff _ (isNonneg_iff_def x).symm
 
 instance : DecidablePred (· ∈ nonnegCone (R := R) (n := n)) := fun x =>
   inferInstanceAs (Decidable (IsNonneg x))
@@ -379,20 +388,23 @@ variable {R : Type} {n : R}
 variable {F : Type*} [FunLike F R ℝ] (f : F)
 
 /-- The natural embedding from `AdjoinSqrt R n` to `ℝ` (with positive `√n`). -/
-@[simp, expose] noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
+@[simp] noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
 
 section Hom
 
 variable [CommRing R] [RingHomClass F R ℝ]
 
 /-- `toReal` bundled as a ring hom -/
-@[simps, expose] noncomputable def toRealHom (hn : 0 ≤ f n) : AdjoinSqrt R n →+* ℝ where
+noncomputable def toRealHom (hn : 0 ≤ f n) : AdjoinSqrt R n →+* ℝ where
   toFun := toReal f
   map_zero' := by simp
   map_one' := by simp
   map_add' := by intros; simp; ring
   map_mul' := by
     intros x y; simp; linear_combination -(f x.aₙ * f y.aₙ) * (Real.mul_self_sqrt hn)
+
+@[simp] lemma toRealHom_apply (hn : 0 ≤ f n) (x : AdjoinSqrt R n) :
+    toRealHom f hn x = toReal f x := by simp [toRealHom]
 
 end Hom
 
