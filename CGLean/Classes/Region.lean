@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Data.Set.Defs
 
-@[expose] public section
+public section
 
 
 inductive Location where

@@ -4,7 +4,7 @@ public import Mathlib.Data.List.Monad
 public import CGLean.Classes.Region
 public import CGLean.Geometry.Point2D
 
-@[expose] public section
+public section
 
 
 variable (k : Type) [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]

@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Algebra.Ring.Defs
 
-@[expose] public section
+public section
 
 
 /--

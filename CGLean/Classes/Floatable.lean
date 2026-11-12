@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 
 class Floatable (α : Type) where
