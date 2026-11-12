@@ -18,7 +18,11 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest (26.04): there, a cold docs build fails spawning git
+    # with ENOMEM, apparently leanprover/doc-gen4#434 (blocking waits in
+    # docInfo pile up worker threads). Swap did not help; 24.04 built it in
+    # Sept. 2026. Revisit once #434 is fixed or docs skip Mathlib (#396).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
