@@ -1,4 +1,4 @@
-import Mathlib.Data.Prod.Lex
+import Mathlib.Order.Prod.Lex.Basic
 import Mathlib.Algebra.Ring.Prod
 import Mathlib.Algebra.Order.Ring.Defs
 -- `Lex` is a type synonym and inherits no instances of its own; this supplies
