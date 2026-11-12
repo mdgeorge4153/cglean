@@ -1,10 +1,15 @@
-import ProofWidgets.Data.Svg
-import ProofWidgets.Component.HtmlDisplay
-import Mathlib.Algebra.Order.Ring.Rat
-import CGLean.Render.Region
-import CGLean.Render.Utils
+module
 
-import CGLean.Geometry.Arrangement
+public meta import ProofWidgets.Data.Svg
+public meta import ProofWidgets.Component.HtmlDisplay
+public meta import Mathlib.Algebra.Order.Ring.Rat
+public meta import CGLean.Render.Region
+public meta import CGLean.Render.Utils
+
+public meta import CGLean.Geometry.Arrangement
+
+public meta section
+
 
 open ProofWidgets Svg
 

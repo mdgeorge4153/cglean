@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 
 class Floatable (α : Type) where
   toFloat : α → Float

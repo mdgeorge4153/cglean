@@ -1,9 +1,14 @@
-import Mathlib.Order.Prod.Lex.Basic
-import Mathlib.Algebra.Ring.Prod
-import Mathlib.Algebra.Order.Ring.Defs
+module
+
+public import Mathlib.Order.Prod.Lex.Basic
+public import Mathlib.Algebra.Ring.Prod
+public import Mathlib.Algebra.Order.Ring.Defs
 -- `Lex` is a type synonym and inherits no instances of its own; this supplies
 -- the algebraic structure that gives `Point` its `+`.
-import Mathlib.Algebra.Order.Group.Synonym
+public import Mathlib.Algebra.Order.Group.Synonym
+
+@[expose] public section
+
 
 variable (k : Type)
 variable [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]

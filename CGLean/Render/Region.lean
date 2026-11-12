@@ -1,8 +1,13 @@
-import ProofWidgets.Data.Svg
-import ProofWidgets.Component.HtmlDisplay
-import CGLean.Classes.Floatable
-import CGLean.Classes.Region
-import CGLean.Geometry.Point2D
+module
+
+public meta import ProofWidgets.Data.Svg
+public meta import ProofWidgets.Component.HtmlDisplay
+public meta import CGLean.Classes.Floatable
+public meta import CGLean.Classes.Region
+public meta import CGLean.Geometry.Point2D
+
+public meta section
+
 
 open ProofWidgets Svg
 

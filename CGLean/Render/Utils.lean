@@ -1,5 +1,10 @@
-import ProofWidgets.Data.Svg
-import CGLean.Classes.Floatable
+module
+
+public meta import ProofWidgets.Data.Svg
+public meta import CGLean.Classes.Floatable
+
+public meta section
+
 open ProofWidgets Svg
 
 variable {frame : Frame}
