@@ -80,11 +80,8 @@ end Ops
 @[simp] def root [Zero R] [One R] (n : R) : AdjoinSqrt R n := ⟨0, 1⟩
 
 /-- `a₁ + aₙ√n ≥ 0` if either `a₁ ≥ 0` and `a₁` dominates, or `aₙ ≥ 0` and `aₙ` dominates -/
-def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
+@[expose] def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
   (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0)
-
-lemma isNonneg_iff_def [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) :
-    IsNonneg x ↔ (0 ≤ x.a₁ ∧ 0 ≤ norm x) ∨ (0 ≤ x.aₙ ∧ norm x ≤ 0) := Iff.rfl
 
 -- TODO: efficient comparison. Reinstate `cmpZero`, prove
 -- `cmpZero x = .lt ↔ ¬ IsNonneg x` and `cmpZero x = .eq ↔ x = 0`, and override
@@ -358,8 +355,7 @@ def nonnegCone : RingCone (AdjoinSqrt R n) where
 instance : HasMemOrNegMem (nonnegCone (R := R) (n := n)) where
   mem_or_neg_mem := nonneg_or_neg_nonneg
 
-instance (x : AdjoinSqrt R n) : Decidable (IsNonneg x) :=
-  decidable_of_iff _ (isNonneg_iff_def x).symm
+instance (x : AdjoinSqrt R n) : Decidable (IsNonneg x) := by unfold IsNonneg; infer_instance
 
 instance : DecidablePred (· ∈ nonnegCone (R := R) (n := n)) := fun x =>
   inferInstanceAs (Decidable (IsNonneg x))
