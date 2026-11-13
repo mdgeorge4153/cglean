@@ -62,12 +62,7 @@ section Ops
 variable [Add R] [Mul R] [Sub R] [Neg R]
 
 /-- `conj (a₁ + aₙ √n)` is `a₁ - aₙ√n` -/
-def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
-
-omit [Add R] [Mul R] [Sub R] in
-@[simp] lemma conj_a₁ (x : AdjoinSqrt R n) : x.conj.a₁ = x.a₁ := by simp [conj]
-omit [Add R] [Mul R] [Sub R] in
-@[simp] lemma conj_aₙ (x : AdjoinSqrt R n) : x.conj.aₙ = -x.aₙ := by simp [conj]
+@[simps, expose] def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
 /-- `norm (a₁ + aₙ √n)` is `a₁² - naₙ²` -/
 def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
@@ -391,7 +386,7 @@ section Hom
 variable [CommRing R] [RingHomClass F R ℝ]
 
 /-- `toReal` bundled as a ring hom -/
-noncomputable def toRealHom (hn : 0 ≤ f n) : AdjoinSqrt R n →+* ℝ where
+@[simps, expose] noncomputable def toRealHom (hn : 0 ≤ f n) : AdjoinSqrt R n →+* ℝ where
   toFun := toReal f
   map_zero' := by simp
   map_one' := by simp
@@ -399,8 +394,6 @@ noncomputable def toRealHom (hn : 0 ≤ f n) : AdjoinSqrt R n →+* ℝ where
   map_mul' := by
     intros x y; simp; linear_combination -(f x.aₙ * f y.aₙ) * (Real.mul_self_sqrt hn)
 
-@[simp] lemma toRealHom_apply (hn : 0 ≤ f n) (x : AdjoinSqrt R n) :
-    toRealHom f hn x = toReal f x := by simp [toRealHom]
 
 end Hom
 
