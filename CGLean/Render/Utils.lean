@@ -3,6 +3,7 @@ module
 public meta import ProofWidgets.Data.Svg
 public meta import CGLean.Classes.Floatable
 
+-- TODO: review which declarations here should actually be public
 public meta section
 
 open ProofWidgets Svg

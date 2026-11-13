@@ -7,6 +7,7 @@ public import Mathlib.Algebra.Order.Ring.Defs
 -- the algebraic structure that gives `Point` its `+`.
 public import Mathlib.Algebra.Order.Group.Synonym
 
+-- TODO: review which declarations here should actually be public
 public section
 
 

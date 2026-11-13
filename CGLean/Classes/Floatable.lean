@@ -1,5 +1,6 @@
 module
 
+-- TODO: review which declarations here should actually be public
 public section
 
 

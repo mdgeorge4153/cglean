@@ -13,6 +13,7 @@ public import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.Order.Ring.Cone
 public import CGLean.Classes.RingOps
 
+-- TODO: review which declarations here should actually be public
 public section
 
 
@@ -73,6 +74,15 @@ end Ops
 
 /-- The element `√n` itself. -/
 @[simp] def root [Zero R] [One R] (n : R) : AdjoinSqrt R n := ⟨0, 1⟩
+
+section ToReal
+
+variable {F : Type*} [FunLike F R ℝ] (f : F)
+
+/-- The natural embedding from `AdjoinSqrt R n` to `ℝ` (with positive `√n`). -/
+@[simp] noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
+
+end ToReal
 
 /-- `a₁ + aₙ√n ≥ 0` if either `a₁ ≥ 0` and `a₁` dominates, or `aₙ ≥ 0` and `aₙ` dominates -/
 @[expose] def IsNonneg [LE R] [Mul R] [Zero R] [Add R] [Sub R] (x : AdjoinSqrt R n) : Prop :=
@@ -369,17 +379,11 @@ lemma nonneg_iff (x : AdjoinSqrt R n) : 0 ≤ x ↔ IsNonneg x := by
 
 end OrderField
 
-end AdjoinSqrt
+/-! ## The real value of an element of `A[√n]` -/
 
-/-! # The real value of an element of `A[√n]` -/
+section RealEmbedding
 
-namespace AdjoinSqrt
-
-variable {R : Type} {n : R}
 variable {F : Type*} [FunLike F R ℝ] (f : F)
-
-/-- The natural embedding from `AdjoinSqrt R n` to `ℝ` (with positive `√n`). -/
-@[simp] noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
 
 section Hom
 
@@ -432,5 +436,7 @@ noncomputable def toRealOrderHom : AdjoinSqrt R n →+*o ℝ :=
   { toRealHom f (map_n_nonneg f) with monotone' := toReal_monotone f }
 
 end OrderHom
+
+end RealEmbedding
 
 end AdjoinSqrt

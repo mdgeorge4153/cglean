@@ -9,6 +9,3 @@ public import CGLean.Geometry.Arrangement
 public import CGLean.Render.Region
 public import CGLean.Render.Utils
 public import CGLean.Playground
-
-@[expose] public section
-

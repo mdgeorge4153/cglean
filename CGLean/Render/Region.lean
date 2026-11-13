@@ -6,6 +6,7 @@ public meta import CGLean.Classes.Floatable
 public meta import CGLean.Classes.Region
 public meta import CGLean.Geometry.Point2D
 
+-- TODO: review which declarations here should actually be public
 public meta section
 
 

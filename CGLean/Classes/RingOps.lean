@@ -2,6 +2,7 @@ module
 
 public import Mathlib.Algebra.Ring.Defs
 
+-- TODO: review which declarations here should actually be public
 public section
 
 

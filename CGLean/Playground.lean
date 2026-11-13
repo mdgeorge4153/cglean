@@ -8,6 +8,7 @@ public meta import CGLean.Render.Utils
 
 public meta import CGLean.Geometry.Arrangement
 
+-- TODO: review which declarations here should actually be public
 public meta section
 
 

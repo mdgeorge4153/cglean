@@ -4,6 +4,7 @@ public import Mathlib.Data.List.Monad
 public import CGLean.Classes.Region
 public import CGLean.Geometry.Point2D
 
+-- TODO: review which declarations here should actually be public
 public section
 
 
