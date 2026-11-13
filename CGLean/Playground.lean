@@ -1,10 +1,15 @@
-import ProofWidgets.Data.Svg
-import ProofWidgets.Component.HtmlDisplay
-import Mathlib.Algebra.Order.Ring.Rat
-import CGLean.Render.Region
-import CGLean.Render.Utils
+module
 
-import CGLean.Geometry.Arrangement
+public meta import ProofWidgets.Data.Svg
+public meta import ProofWidgets.Component.HtmlDisplay
+public meta import Mathlib.Algebra.Order.Ring.Rat
+public meta import CGLean.Render.Region
+public meta import CGLean.Render.Utils
+
+public meta import CGLean.Geometry.Arrangement
+
+meta section
+
 
 open ProofWidgets Svg
 
@@ -27,7 +32,7 @@ def square : Arrangement ℚ := {
 
 def t : Point ℚ := (3/4,3/4)
 
-private def frame : Frame where
+def frame : Frame where
   xmin   := -1
   ymin   := -1
   xSize  := 4

@@ -1,19 +1,22 @@
+module
 
-class Floatable (α : Type) where
+
+
+public class Floatable (α : Type) where
   toFloat : α → Float
 
-instance: Floatable Float where
+public instance: Floatable Float where
   toFloat := id
 
-instance: Floatable Nat where
+public instance: Floatable Nat where
   toFloat := Nat.toFloat
 
-instance: Floatable Int where
+public instance: Floatable Int where
   toFloat := fun
     | Int.ofNat n => Floatable.toFloat n
     | Int.negSucc n => -1 -Floatable.toFloat n
 
-instance: Floatable Rat where
+public instance: Floatable Rat where
   toFloat r := Floatable.toFloat r.num / Floatable.toFloat r.den
 
 

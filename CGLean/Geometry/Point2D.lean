@@ -1,9 +1,13 @@
-import Mathlib.Order.Prod.Lex.Basic
-import Mathlib.Algebra.Ring.Prod
-import Mathlib.Algebra.Order.Ring.Defs
+module
+
+public import Mathlib.Order.Prod.Lex.Basic
+public import Mathlib.Algebra.Ring.Prod
+public import Mathlib.Algebra.Order.Ring.Defs
 -- `Lex` is a type synonym and inherits no instances of its own; this supplies
 -- the algebraic structure that gives `Point` its `+`.
-import Mathlib.Algebra.Order.Group.Synonym
+public import Mathlib.Algebra.Order.Group.Synonym
+
+
 
 variable (k : Type)
 variable [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
@@ -16,13 +20,13 @@ variable [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 -- represents the point (x+εy, y). Then if y₁ < y₂, the point represented by
 -- (x,y₁) is actually a little to the left of the point represented by (x,y₂).
 -- This is exactly what we get by using the lexicographic ordering
-abbrev Point := k ×ₗ k
+public abbrev Point := k ×ₗ k
 
-abbrev Segment := Point k × Point k
+public abbrev Segment := Point k × Point k
 
-abbrev Point.x (p : Point k) := p.fst
-abbrev Point.y (p : Point k) := p.snd
+public abbrev Point.x (p : Point k) := p.fst
+public abbrev Point.y (p : Point k) := p.snd
 
 -- TODO: notation typeclass for this:
-def dotProduct (p q : Point k) : k := p.x * q.x + p.y * q.y
+public def dotProduct (p q : Point k) : k := p.x * q.x + p.y * q.y
 infixl:72 " ⬝ " => dotProduct _
