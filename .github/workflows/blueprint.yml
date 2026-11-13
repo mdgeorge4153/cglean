@@ -104,9 +104,7 @@ jobs:
 
   deploy:
     needs: build
-    # TEMPORARY (remove before merging #22): also allow a manual dispatch from
-    # api-docs, to test-deploy the site.
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/api-docs')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
