@@ -60,9 +60,9 @@ jobs:
             .lake/packages/MD4Lean
             .lake/packages/BibtexQuery
             .lake/packages/UnicodeBasic
-          key: DocData-${{ hashFiles('lake-manifest.json', 'docbuild/lake-manifest.json') }}
+          key: DocData2-${{ hashFiles('lake-manifest.json', 'docbuild/lake-manifest.json') }}
           restore-keys: |
-            DocData-
+            DocData2-
 
       - name: Build documentation
         run: lake build CGLean:docs
