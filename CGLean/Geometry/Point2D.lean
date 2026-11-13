@@ -7,8 +7,6 @@ public import Mathlib.Algebra.Order.Ring.Defs
 -- the algebraic structure that gives `Point` its `+`.
 public import Mathlib.Algebra.Order.Group.Synonym
 
--- TODO: review which declarations here should actually be public
-public section
 
 
 variable (k : Type)
@@ -22,13 +20,13 @@ variable [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 -- represents the point (x+εy, y). Then if y₁ < y₂, the point represented by
 -- (x,y₁) is actually a little to the left of the point represented by (x,y₂).
 -- This is exactly what we get by using the lexicographic ordering
-abbrev Point := k ×ₗ k
+public abbrev Point := k ×ₗ k
 
-abbrev Segment := Point k × Point k
+public abbrev Segment := Point k × Point k
 
-abbrev Point.x (p : Point k) := p.fst
-abbrev Point.y (p : Point k) := p.snd
+public abbrev Point.x (p : Point k) := p.fst
+public abbrev Point.y (p : Point k) := p.snd
 
 -- TODO: notation typeclass for this:
-def dotProduct (p q : Point k) : k := p.x * q.x + p.y * q.y
+public def dotProduct (p q : Point k) : k := p.x * q.x + p.y * q.y
 infixl:72 " ⬝ " => dotProduct _

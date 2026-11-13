@@ -8,8 +8,7 @@ public meta import CGLean.Render.Utils
 
 public meta import CGLean.Geometry.Arrangement
 
--- TODO: review which declarations here should actually be public
-public meta section
+meta section
 
 
 open ProofWidgets Svg
@@ -33,7 +32,7 @@ def square : Arrangement ℚ := {
 
 def t : Point ℚ := (3/4,3/4)
 
-private def frame : Frame where
+def frame : Frame where
   xmin   := -1
   ymin   := -1
   xSize  := 4

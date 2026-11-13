@@ -4,13 +4,11 @@ public import Mathlib.Data.List.Monad
 public import CGLean.Classes.Region
 public import CGLean.Geometry.Point2D
 
--- TODO: review which declarations here should actually be public
-public section
 
 
 variable (k : Type) [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
 
-structure Edge : Type where
+public structure Edge : Type where
   target   : Point k
   left_in  : Bool -- is the right side of the line "inside" the region?
   right_in : Bool -- is the left side of the edge "inside" the region?
@@ -26,26 +24,26 @@ a region r is valid if
  3. the edges at each source are sorted (by the compare_edges_around order)
  4. the edges and vertices are all interior-disjoint
 -/
-structure Arrangement : Type where
+public structure Arrangement : Type where
   edges : List (Point k × List (Edge k))
   -- TODO: invariants
 
-def Arrangement.segments (r : Arrangement k) : List (Point k × Point k) :=
+public def Arrangement.segments (r : Arrangement k) : List (Point k × Point k) :=
   do let (source, edges) ← r.edges
      let edge ← edges
      pure (source, edge.target)
 
-def Arrangement.vertices (r : Arrangement k) : List (Point k) :=
+public def Arrangement.vertices (r : Arrangement k) : List (Point k) :=
   List.map Prod.fst r.edges
 
-instance: HAdd (Arrangement k) (Point k) (Arrangement k) where
+public instance: HAdd (Arrangement k) (Point k) (Arrangement k) where
   hAdd r offset := {
     edges := do
       let (source, edges) ← r.edges
       pure (source + offset, List.map (fun e => {target := e.target + offset, left_in := e.left_in, right_in := e.right_in}) edges)
   }
 
-instance : Region (Arrangement k) (Point k) where
+public instance : Region (Arrangement k) (Point k) where
   union := sorry
   inter := sorry
   simplify := sorry

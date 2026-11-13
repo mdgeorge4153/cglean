@@ -2,11 +2,9 @@ module
 
 public import Mathlib.Data.Set.Defs
 
--- TODO: review which declarations here should actually be public
-public section
 
 
-inductive Location where
+public inductive Location where
   | inside
   | boundary
   | outside
@@ -18,7 +16,7 @@ bounded by line segments.  Regions generalize polygons: they may have multiple
 disconnected components, they may have holes, and they may have 0- or
 1-dimensional features (isolated points or line segments)
 -/
-class Region (ρ : Type) (π : outParam Type)
+public class Region (ρ : Type) (π : outParam Type)
   extends Union ρ, Inter ρ
   where
 
@@ -47,11 +45,11 @@ class Region (ρ : Type) (π : outParam Type)
 
 variable {ρ π : Type}
 
-def Region.interior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .inside}
-def Region.exterior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .outside}
-def Region.boundary [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .boundary}
+public def Region.interior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .inside}
+public def Region.exterior [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .outside}
+public def Region.boundary [Region ρ π] (r : ρ) : Set π := {x | Region.location r x = .boundary}
 
-def union_spec (loc₁ loc₂ : Location) : Location := match (loc₁, loc₂) with
+public def union_spec (loc₁ loc₂ : Location) : Location := match (loc₁, loc₂) with
   | (.inside, _)   | (_, .inside)   => .inside
   | (.boundary, _) | (_, .boundary) => .boundary
   | _ => .outside
@@ -60,7 +58,7 @@ example : union_spec .outside .boundary = .boundary := by rfl
 example : union_spec .outside .outside  = .outside  := by rfl
 example : union_spec .inside  .boundary = .inside   := by rfl
 
-def inter_spec (loc₁ loc₂ : Location) : Location := match (loc₁, loc₂) with
+public def inter_spec (loc₁ loc₂ : Location) : Location := match (loc₁, loc₂) with
   | (.outside, _) | (_, .outside) => .outside
   | (.boundary, _) | (_, .boundary) => .boundary
   | _ => .inside
@@ -68,7 +66,7 @@ def inter_spec (loc₁ loc₂ : Location) : Location := match (loc₁, loc₂) w
 example : inter_spec .inside .boundary = .boundary := by rfl
 example : inter_spec .inside .inside   = .inside   := by rfl
 
-class LawfulRegion (ρ : Type) (π : outParam Type) extends Region ρ π where
+public class LawfulRegion (ρ : Type) (π : outParam Type) extends Region ρ π where
 
   union_lawful : ∀ (p : π) (r₁ r₂ : ρ),
     location (r₁ ∪ r₂) p = union_spec (location r₁ p) (location r₂ p)
