@@ -1,0 +1,22 @@
+# doc-gen4 pulls in dependencies that the library itself does not need, so it
+# lives in a nested package rather than in the root lakefile. `packagesDir`
+# points at the parent's package directory so both share one Mathlib checkout.
+name = "docbuild"
+version = "0.1.0"
+reservoir = false
+packagesDir = "../.lake/packages"
+
+# doc-gen4 tracks the compiler's internals, so this must build against the
+# toolchain in lean-toolchain. This commit is leanprover/doc-gen4#396
+# (interproject linking), built on v4.35.0-rc3: with DOCGEN_LOCAL_MODULE_ROOTS
+# set, only our own modules are documented and links into Mathlib and the Lean
+# core go to their hosted documentation. Replace it with a release tag once
+# #396 is merged and tagged.
+[[require]]
+name = "doc-gen4"
+git = "https://github.com/kim-em/doc-gen4"
+rev = "9a591946b68fbb4cec5355d0c7a8187a0984c6ba"
+
+[[require]]
+name = "cglean"
+path = "../"
