@@ -18,11 +18,7 @@ concurrency:
 
 jobs:
   build:
-    # Not ubuntu-latest (26.04): there, a cold docs build of Mathlib fails
-    # spawning git with ENOMEM, apparently leanprover/doc-gen4#434. Now that
-    # the docs skip Mathlib (#396) this may no longer matter; try ubuntu-latest
-    # once the new docs build is known to be good.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -108,7 +104,9 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main'
+    # TEMPORARY (remove before merging #22): also allow a manual dispatch from
+    # api-docs, to test-deploy the site.
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/api-docs')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
