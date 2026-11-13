@@ -18,10 +18,10 @@ concurrency:
 
 jobs:
   build:
-    # Not ubuntu-latest (26.04): there, a cold docs build fails spawning git
-    # with ENOMEM, apparently leanprover/doc-gen4#434 (blocking waits in
-    # docInfo pile up worker threads). Swap did not help; 24.04 built it in
-    # Sept. 2026. Revisit once #434 is fixed or docs skip Mathlib (#396).
+    # Not ubuntu-latest (26.04): there, a cold docs build of Mathlib fails
+    # spawning git with ENOMEM, apparently leanprover/doc-gen4#434. Now that
+    # the docs skip Mathlib (#396) this may no longer matter; try ubuntu-latest
+    # once the new docs build is known to be good.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -40,16 +40,16 @@ jobs:
         run: lake build
 
       # doc-gen4 records every declaration it sees in a SQLite database and
-      # only then renders HTML from it. Ingesting Mathlib and the Lean core
-      # takes over half an hour, so the whole build directory is cached and
-      # Lake replays whatever the current sources still agree with, leaving
-      # only CGLean's own modules to re-ingest.
+      # only then renders HTML from it. DOCGEN_LOCAL_MODULE_ROOTS restricts that
+      # to CGLean's own modules (leanprover/doc-gen4#396): Mathlib and the Lean
+      # core are neither ingested nor rendered, and links into them point at
+      # Mathlib's hosted documentation.
       #
-      # doc-gen4 and the packages only it uses are cached alongside, because
-      # every entry in the database records the hash of the doc-gen4 executable
-      # among its inputs and that executable does not come out byte-identical
-      # from one build to the next. Rebuilding it invalidates everything, so it
-      # has to be restored rather than rebuilt for any of the rest to be reused.
+      # The build directory is cached anyway, along with doc-gen4 and the
+      # packages only it uses: every entry in the database records the hash of
+      # the doc-gen4 executable among its inputs, and that executable does not
+      # come out byte-identical from one build to the next, so it has to be
+      # restored rather than rebuilt for any cached entry to be reused.
       - name: Cache the generated documentation
         uses: actions/cache@v4
         with:
@@ -67,6 +67,9 @@ jobs:
       - name: Build documentation
         run: lake build CGLean:docs
         working-directory: docbuild
+        env:
+          DOCGEN_LOCAL_MODULE_ROOTS: CGLean
+          DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
 
       # plasTeX renders the text itself; TeX is only needed for the TikZ
       # pictures, which it compiles with latex and converts with dvisvgm (see
