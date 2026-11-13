@@ -45,6 +45,11 @@ and [style guide](https://leanprover-community.github.io/contribute/style.html).
 Prefer Mathlib's classes, bundled homomorphisms and hypotheses (e.g.
 `Fact (¬ IsSquare n)`) over project-specific ones.
 
+CI fails on any `lake build` warning other than `declaration uses sorry`, so
+fix deprecations and linter warnings rather than leaving them. `sorry` is fine
+while sketching; `scripts/check-blueprint.py` reports which blueprint
+declarations still depend on it.
+
 ## Blueprint conventions
 
 - A blueprint statement states the same hypotheses as its Lean counterpart.

@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # elan reads lean-toolchain, so the version lives in one place.
       - name: Install elan
@@ -32,8 +32,17 @@ jobs:
       - name: Fetch Mathlib build cache
         run: lake exe cache get
 
+      # Any warning fails the build, except `declaration uses sorry`: those are
+      # placeholders while sketching, and the blueprint check below reports
+      # which of the blueprint's declarations still depend on them.
       - name: Build
-        run: lake build
+        run: |
+          set -o pipefail
+          lake build 2>&1 | tee build.log
+          if grep '^warning:' build.log | grep -v 'declaration uses `sorry`'; then
+            echo "::error::lake build produced warnings other than sorry (listed above)"
+            exit 1
+          fi
 
       # doc-gen4 records every declaration it sees in a SQLite database and
       # only then renders HTML from it. DOCGEN_LOCAL_MODULE_ROOTS restricts that
@@ -47,7 +56,7 @@ jobs:
       # come out byte-identical from one build to the next, so it has to be
       # restored rather than rebuilt for any cached entry to be reused.
       - name: Cache the generated documentation
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             docbuild/.lake
@@ -98,7 +107,7 @@ jobs:
           cp -r blueprint/web/. _site/
           cp -r docbuild/.lake/build/doc _site/docs
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -111,4 +120,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
