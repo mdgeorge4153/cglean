@@ -34,12 +34,16 @@ jobs:
 
       # Any warning fails the build, except `declaration uses sorry`: those are
       # placeholders while sketching, and the blueprint check below reports
-      # which of the blueprint's declarations still depend on them.
+      # which of the blueprint's declarations still depend on them. Warnings
+      # from LeanCert's own files are not ours to fix: it predates the module
+      # system (alerad/leancert#131), so Lake warns about each of its Mathlib
+      # imports.
       - name: Build
         run: |
           set -o pipefail
           lake build 2>&1 | tee build.log
-          if grep '^warning:' build.log | grep -v 'declaration uses `sorry`'; then
+          if grep '^warning:' build.log | grep -v 'declaration uses `sorry`' \
+              | grep -v '^warning: LeanCert/'; then
             echo "::error::lake build produced warnings other than sorry (listed above)"
             exit 1
           fi
