@@ -84,7 +84,7 @@ theorem compare?_complete {x y : IntervalDyadic} (h : compare? x y = none) :
   -- not both degenerate, so one side has strict slack
   have hslack : (y.lo.toRat : ℝ) < (x.hi.toRat : ℝ) ∨ (x.lo.toRat : ℝ) < (y.hi.toRat : ℝ) := by
     by_contra hc
-    push_neg at hc
+    push Not at hc
     exact h3 (by
       simp only [Bool.and_eq_true]
       constructor
