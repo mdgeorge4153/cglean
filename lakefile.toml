@@ -13,5 +13,19 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.35.0"
 
+# Dyadic interval arithmetic with containment proofs. Pins the same Mathlib
+# revision as above; `LeanCert.Core.IntervalDyadic` does not reach the modules
+# carrying that library's sanctioned `sorry`s.
+[[require]]
+name = "LeanCert"
+scope = "alerad"
+rev = "main"
+
 [[lean_lib]]
 name = "CGLean"
+# Files importing LeanCert stay outside the module system, since a `module` cannot
+# import LeanCert's non-module files. `CGLean.lean` can't import them either, so
+# they are extra roots, which both builds them and puts them in the API docs.
+# Once alerad/leancert#131 lands, make them modules, import them from
+# `CGLean.lean`, and drop this line.
+roots = ["CGLean", "CGLean.Data.Interval"]
