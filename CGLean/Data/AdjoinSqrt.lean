@@ -406,7 +406,7 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
 
 omit [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] in
-lemma map_n_nonneg : 0 ≤ f n := by
+public lemma map_n_nonneg : 0 ≤ f n := by
   simpa using OrderHomClass.monotone f pos.out.le
 
 omit [Fact (¬ IsSquare n)] in
@@ -424,7 +424,7 @@ lemma toReal_nonneg {a : AdjoinSqrt R n} (ha : IsNonneg a) :
     <;> nlinarith [hsq (f a.aₙ), mul_nonneg h1 (Real.sqrt_nonneg (f n))]
 
 /-- `toReal` is monotone -/
-lemma toReal_monotone : Monotone (toRealHom (n := n) f (map_n_nonneg f)) := by
+public lemma toReal_monotone : Monotone (toRealHom (n := n) f (map_n_nonneg f)) := by
   intro a b hab
   have h := toReal_nonneg f ((nonneg_iff _).mp (sub_nonneg.mpr hab))
   rwa [map_sub, sub_nonneg] at h

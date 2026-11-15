@@ -7,7 +7,7 @@ import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Order.Ring.InjSurj
 import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Data.Erased
-import Mathlib.Data.Real.Basic
+import Mathlib.Basic.Real.Basic
 import CGLean.Data.Interval
 import CGLean.Classes.RingOps
 

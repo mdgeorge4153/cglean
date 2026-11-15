@@ -26,10 +26,12 @@ name = "CGLean"
 # Files importing LeanCert stay outside the module system, since a `module` cannot
 # import LeanCert's non-module files. `CGLean.lean` can't import them either, so
 # they are extra roots, which both builds them and puts them in the API docs.
+# `allowNonModules` silences Lake's warning about them importing Mathlib.
 # Once alerad/leancert#131 lands, make them modules, import them from
-# `CGLean.lean`, and drop this line.
+# `CGLean.lean`, and drop both settings.
 roots = ["CGLean", "CGLean.Data.Interval", "CGLean.Data.FilteredEmbedding",
   "CGLean.Data.AdjoinSqrt.Filtered", "CGLean.Data.NumberType"]
+allowNonModules = true
 
 # Benchmark: exact vs filtered arithmetic in ℚ[√2][√3]. Not a default target.
 [[lean_exe]]
