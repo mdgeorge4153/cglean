@@ -126,19 +126,13 @@ instance : Mul (FilteredEmbedding α) where
 instance : SMul ℕ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbedding α) * x⟩
 instance : SMul ℤ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbedding α) * x⟩
 
-/-- `x ^ n` by repeated multiplication. -/
-def npow : ℕ → FilteredEmbedding α → FilteredEmbedding α
-  | 0, _ => 1
-  | n + 1, x => npow n x * x
+/-- `x ^ n`: the value by `α`'s own power, the interval by `pow`. -/
+instance : Pow (FilteredEmbedding α) ℕ where
+  pow x n := ⟨Thunk.mk fun _ => x.value.get ^ n, pow x.range n, by
+    show e.toRingHom (x.value.get ^ n) ∈ _
+    rw [map_pow]; exact mem_pow x.mem n⟩
 
-instance : Pow (FilteredEmbedding α) ℕ := ⟨fun x n => npow n x⟩
-
-theorem value_pow (x : FilteredEmbedding α) (n : ℕ) : (x ^ n).value.get = x.value.get ^ n := by
-  induction n with
-  | zero => show ((1 : ℤ) : α) = _; simp
-  | succ n ih =>
-    show (npow n x).value.get * x.value.get = _
-    rw [show (npow n x).value.get = (x ^ n).value.get from rfl, ih, pow_succ]
+theorem value_pow (x : FilteredEmbedding α) (n : ℕ) : (x ^ n).value.get = x.value.get ^ n := rfl
 
 end Ring
 

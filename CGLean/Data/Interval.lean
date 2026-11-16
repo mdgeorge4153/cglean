@@ -47,7 +47,13 @@ def ofInt (i : ℤ) : IntervalDyadic := IntervalDyadic.singleton (LeanCert.Core.
 def ofRat (q : ℚ) : IntervalDyadic :=
   IntervalDyadic.ofIntervalRat (IntervalRat.singleton q) ratPrec
 
-/-! ### Reciprocals and square roots -/
+/-! ### Powers, reciprocals and square roots -/
+
+/-- An interval containing the `n`th power of every member of `I`, by repeated
+multiplication. -/
+def pow (I : IntervalDyadic) : ℕ → IntervalDyadic
+  | 0 => ofInt 1
+  | n + 1 => trim ((pow I n).mul I)
 
 /-- The reciprocal of `I`, or `none` when `I` contains zero.
 
@@ -98,6 +104,10 @@ theorem mem_ofInt (i : ℤ) : (i : ℝ) ∈ ofInt i := by
 
 theorem mem_ofRat (q : ℚ) : (q : ℝ) ∈ ofRat q :=
   IntervalDyadic.mem_ofIntervalRat (IntervalRat.mem_singleton q) ratPrec (by simp [ratPrec])
+
+theorem mem_pow {x : ℝ} {I : IntervalDyadic} (hx : x ∈ I) : ∀ n, x ^ n ∈ pow I n
+  | 0 => by simpa [pow] using mem_ofInt 1
+  | n + 1 => by rw [pow_succ]; exact mem_trim (IntervalDyadic.mem_mul (mem_pow hx n) hx)
 
 theorem mem_inv? {x : ℝ} {I J : IntervalDyadic} (hx : x ∈ I) (h : inv? I = some J) :
     x⁻¹ ∈ J := by
