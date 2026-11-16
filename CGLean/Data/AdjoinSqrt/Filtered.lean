@@ -15,10 +15,18 @@ open CGLean LeanCert.Core
 
 variable {R : Type} {n : R}
 
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [Fact (0 < n)]
+
+/-- `e`'s embedding, with its monotonicity bundled, as `toRealHom` expects. -/
+noncomputable def baseOrderHom (e : RealApprox R) : R →+*o ℝ :=
+  { e.toRingHom with monotone' := e.strictMono'.monotone }
+
 /-- Bracket `a₁ + aₙ√n` from brackets for `a₁`, `aₙ` and `n`. -/
-def realApprox [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRingHom n) :
-    RealApprox (AdjoinSqrt R n) where
-  hom := Erased.mk (toRealHom e.toRingHom hn)
+instance realApprox [e : RealApprox R] : RealApprox (AdjoinSqrt R n) where
+  hom := Erased.mk (toRealHom (baseOrderHom e) (map_n_nonneg _))
+  strictMono := by
+    rw [Erased.out_mk]
+    exact Monotone.strictMono_of_injective (toReal_monotone _) (RingHom.injective _)
   -- `√n` is bracketed once, not on every call
   approx := let s := sqrt (e.approx n)
     fun x => trim ((e.approx x.a₁).add (trim ((e.approx x.aₙ).mul s)))
@@ -26,20 +34,5 @@ def realApprox [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRingHom n) :
     rw [Erased.out_mk]
     exact mem_trim (IntervalDyadic.mem_add (e.mem_approx' _)
       (mem_trim (IntervalDyadic.mem_mul (e.mem_approx' _) (mem_sqrt (e.mem_approx' _)))))
-
-theorem realApprox_toRingHom [CommRing R] (e : RealApprox R) (hn : 0 ≤ e.toRingHom n) :
-    (realApprox e hn).toRingHom = toRealHom e.toRingHom hn :=
-  Erased.out_mk _
-
-/-- The embedding is strictly monotone for the order on `A[√n]`, given that the
-one on `A` is. -/
-instance [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [Fact (0 < n)]
-    (e : RealApprox R) (hn : 0 ≤ e.toRingHom n)
-    [he : Fact (StrictMono e.toRingHom)] :
-    Fact (StrictMono (realApprox e hn).toRingHom) := by
-  constructor
-  rw [realApprox_toRingHom]
-  let g : R →+*o ℝ := { e.toRingHom with monotone' := he.out.monotone }
-  exact Monotone.strictMono_of_injective (toReal_monotone g) (RingHom.injective _)
 
 end AdjoinSqrt

@@ -50,26 +50,12 @@ instance : Fact (¬ IsSquare (3 : K)) where
 
 instance : Fact ((0 : K) < 3) := ⟨by norm_num⟩
 
-/-! ## The embeddings -/
-
-theorem two_nonneg : 0 ≤ RealApprox.rat.toRingHom (2 : ℚ) := by
-  rw [RealApprox.toRingHom, RealApprox.rat, Erased.out_mk]; norm_num
-
-/-- `ℚ[√2]`, bracketed. -/
-abbrev approxK : RealApprox K := realApprox RealApprox.rat two_nonneg
-
-theorem three_nonneg : 0 ≤ approxK.toRingHom (3 : K) := by
-  rw [map_ofNat]; norm_num
-
 abbrev L := AdjoinSqrt K 3
-
-/-- `ℚ[√2][√3]`, bracketed. -/
-abbrev approxL : RealApprox L := realApprox approxK three_nonneg
 
 /-! ## The number type -/
 
 /-- `ℚ[√2][√3]` with filtered arithmetic. -/
-abbrev Filtered := FilteredReal approxL
+abbrev Filtered := FilteredReal L
 
 instance : Field Filtered := inferInstance
 instance : LinearOrder Filtered := inferInstance
