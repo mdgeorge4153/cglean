@@ -47,15 +47,7 @@ open LeanCert.Core
 /-! ## Bracketing elements of `α` -/
 
 /-- A ring homomorphism into `ℝ`, together with an interval containing the image
-of each element.
-
-The homomorphism is what lets an interval for `x + y` be built from intervals for
-`x` and `y`. `approx` supplies an interval for a value that was not built that
-way: a constant, or a reciprocal whose argument's interval contains zero.
-
-The homomorphism is `Erased`: it lands in `ℝ`, so it cannot be computed, and it
-is needed only in proofs. Held directly, it would make every `RealApprox`, and
-so every computation with `FilteredReal`, noncomputable. -/
+of each element. -/
 structure RealApprox (α : Type) [Ring α] where
   hom : Erased (α →+* ℝ)
   approx : α → IntervalDyadic
@@ -69,15 +61,6 @@ noncomputable def RealApprox.toRingHom [Ring α] (e : RealApprox α) : α →+* 
 theorem RealApprox.mem_approx' [Ring α] (e : RealApprox α) (a : α) :
     e.toRingHom a ∈ e.approx a :=
   e.mem_approx a
-
-/-- The rationals, bracketed exactly when dyadic and to `ratPrec` otherwise. -/
-def RealApprox.rat : RealApprox ℚ where
-  hom := Erased.mk (Rat.castHom ℝ)
-  approx := ofRat
-  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
-
-instance : Fact (StrictMono RealApprox.rat.toRingHom) :=
-  ⟨by rw [RealApprox.toRingHom, RealApprox.rat, Erased.out_mk]; exact Rat.cast_strictMono⟩
 
 /-- A value of `α`, not yet computed, with an interval containing its image. -/
 structure FilteredEmbedding [Ring α] (e : RealApprox α) where

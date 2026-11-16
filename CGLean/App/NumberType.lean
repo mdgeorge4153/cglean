@@ -1,5 +1,6 @@
 import Mathlib.Data.Rat.Sqrt
 import CGLean.Data.AdjoinSqrt.Filtered
+import CGLean.Data.FilteredEmbedding.Rat
 
 /-!
 # The number type `FilteredReal ℚ[√2][√3]`

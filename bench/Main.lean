@@ -1,4 +1,4 @@
-import CGLean.Data.NumberType
+import CGLean.App.NumberType
 import CGLean.Classes.Floatable
 
 /-!
