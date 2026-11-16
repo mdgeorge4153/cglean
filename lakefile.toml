@@ -28,7 +28,8 @@ name = "CGLean"
 # they are extra roots, which both builds them and puts them in the API docs.
 # `allowNonModules` silences Lake's warning about them importing Mathlib.
 # Once alerad/leancert#131 lands, make them modules, import them from
-# `CGLean.lean`, and drop both settings.
+# `CGLean.lean`, move `RealApprox` into `CGLean/Classes/`, and drop both
+# settings.
 roots = ["CGLean", "CGLean.Data.Interval", "CGLean.Data.FilteredEmbedding",
   "CGLean.Data.FilteredEmbedding.Rat", "CGLean.Data.AdjoinSqrt.Filtered",
   "CGLean.App.NumberType"]

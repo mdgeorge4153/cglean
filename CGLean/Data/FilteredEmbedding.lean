@@ -46,6 +46,9 @@ open LeanCert.Core
 
 /-! ## Bracketing elements of `α` -/
 
+-- TODO: move `RealApprox` into `CGLean/Classes/` once LeanCert adopts the module
+-- system (alerad/leancert#131); it mentions `IntervalDyadic`, so until then it
+-- can't live in a module.
 /-- An approximation strategy for `α`: an order-preserving ring homomorphism into
 `ℝ`, together with an interval containing the image of each element.
 
