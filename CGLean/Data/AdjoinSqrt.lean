@@ -78,7 +78,7 @@ section ToReal
 variable {F : Type*} [FunLike F R ℝ] (f : F)
 
 /-- The natural embedding from `AdjoinSqrt R n` to `ℝ` (with positive `√n`). -/
-@[simp] public noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
+@[simp, expose] public noncomputable def toReal (x : AdjoinSqrt R n) : ℝ := f x.a₁ + f x.aₙ * Real.sqrt (f n)
 
 end ToReal
 

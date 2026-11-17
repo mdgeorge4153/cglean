@@ -1,4 +1,5 @@
 import LeanCert.Core.IntervalDyadic
+import CGLean.Classes.RealApprox
 
 /-!
 # Intervals for filtering
@@ -12,6 +13,8 @@ rounded at the absolute precision `ratPrec`.
 `compare? x y` reports the order of two intervals when they are separated, and
 `none` when they overlap. That is the decision a filtered representation makes
 before falling back on exact arithmetic.
+
+Together these make `IntervalDyadic` a `RealApprox`, with square roots.
 -/
 
 namespace CGLean
@@ -188,5 +191,32 @@ theorem compare?_complete {x y : IntervalDyadic} (h : compare? x y = none) :
   . simp [compare_lt_iff_lt] at *; linarith
   . simp at *; apply h3 <;> linarith
   . simp [compare_gt_iff_gt] at *; linarith
+
+/-! ## Approximating reals by intervals -/
+
+instance : RealApprox IntervalDyadic where
+  toMembership := inferInstance
+  add I J := trim (I.add J)
+  neg := IntervalDyadic.neg
+  sub I J := trim (I.sub J)
+  mul I J := trim (I.mul J)
+  pow := pow
+  ofInt := ofInt
+  ofRat := ofRat
+  inv? := inv?
+  compare? := compare?
+  mem_ofInt := mem_ofInt
+  mem_ofRat := mem_ofRat
+  mem_add hx hy := mem_trim (IntervalDyadic.mem_add hx hy)
+  mem_neg := IntervalDyadic.mem_neg
+  mem_sub hx hy := mem_trim (IntervalDyadic.mem_sub hx hy)
+  mem_mul hx hy := mem_trim (IntervalDyadic.mem_mul hx hy)
+  mem_pow := mem_pow
+  mem_inv? := mem_inv?
+  compare_of_compare? := compare_of_compare?
+
+instance : RealApproxSqrt IntervalDyadic where
+  sqrt := sqrt
+  mem_sqrt := mem_sqrt
 
 end CGLean

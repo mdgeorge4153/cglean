@@ -3,34 +3,31 @@ Copyright (c) 2024 Michael D. George. All rights reserved.
 TODO: choose a license
 Author: Michael D. George.
 -/
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Algebra.Order.Ring.InjSurj
-import Mathlib.Data.Rat.Cast.Lemmas
-import Mathlib.Data.Erased
-import Mathlib.Basic.Real.Basic
-import CGLean.Data.Interval
-import CGLean.Classes.RingOps
+module
+
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.Algebra.Order.Ring.InjSurj
+public import Mathlib.Data.Rat.Cast.Lemmas
+public import CGLean.Classes.ApproxEmbedding
+public import CGLean.Classes.RingOps
 
 /-!
 # Filtered real numbers
 
 `FilteredReal α` is intended to be a drop-in replacement for a type `α` of exact
-numbers, given an order-preserving ring homomorphism `α →+* ℝ` and a way to
-bracket its values (bundled together as an instance of `RealApprox α`). Each value
-carries a dyadic interval containing its image in `ℝ`.
+numbers, given an approximation strategy `ApproxEmbedding α A`: an order-preserving ring
+homomorphism `α →+* ℝ`, and a way to approximate its values by elements of a type
+`A` of approximations (`RealApprox A`). Each value carries an approximation of its
+image in `ℝ`.
 
 Arithmetic on `FilteredReal α` is evaluated lazily on `α` and eagerly on the
-intervals. Comparisons consult the intervals first, and evaluate the `α` values
-only when the intervals overlap.
+approximations. Comparisons consult the approximations first, and evaluate the
+`α` values only when the approximations don't decide.
 
-Two values are equal when their `α` values are, whatever their intervals: the
-interval of `(x + y) + z` need not be that of `x + (y + z)`. So `FilteredReal α`
+Two values are equal when their `α` values are, whatever their approximations:
+the approximation of `(x + y) + z` need not be that of `x + (y + z)`. So `FilteredReal α`
 is a quotient of `FilteredEmbedding α`, and its algebraic and order structure is
 pulled back along the injection `FilteredReal.get` into `α`.
-
-The intervals are LeanCert's `IntervalDyadic`, which uses software arithmetic on
-dyadic rationals rather than hardware floating point. This is cheaper than exact
-arithmetic in nested `A[√n]` but slower than floats would be.
 
 TODO: The hope is that we are only comparing numbers that are far away from each
 other, but comparing equal points for equality is also likely to be a common
@@ -40,45 +37,19 @@ equality optimizations (or even some kind of union-find structure) to see if
 this can be improved.
 -/
 
+@[expose] public section
+
 namespace CGLean
 
-open LeanCert.Core
+open RealApprox
 
-/-! ## Bracketing elements of `α` -/
+variable {α A : Type} [RealApprox A]
 
--- TODO: move `RealApprox` into `CGLean/Classes/` once LeanCert adopts the module
--- system (alerad/leancert#131); it mentions `IntervalDyadic`, so until then it
--- can't live in a module.
-/-- An approximation strategy for `α`: an order-preserving ring homomorphism into
-`ℝ`, together with an interval containing the image of each element.
-
-The homomorphism is determined by the order when `α` is archimedean, but the
-intervals are a choice: the instance is the default strategy, and another can be
-passed explicitly, as in `FilteredReal α (e := other)`. -/
-class RealApprox (α : Type) [Ring α] [Preorder α] where
-  hom : Erased (α →+* ℝ)
-  strictMono : StrictMono hom.out
-  approx : α → IntervalDyadic
-  mem_approx : ∀ a, hom.out a ∈ approx a
-
-variable {α : Type}
-
-/-- The embedding into `ℝ`. -/
-noncomputable def RealApprox.toRingHom [Ring α] [Preorder α] (e : RealApprox α) : α →+* ℝ :=
-  e.hom.out
-
-theorem RealApprox.mem_approx' [Ring α] [Preorder α] (e : RealApprox α) (a : α) :
-    e.toRingHom a ∈ e.approx a :=
-  e.mem_approx a
-
-theorem RealApprox.strictMono' [Ring α] [Preorder α] (e : RealApprox α) :
-    StrictMono e.toRingHom :=
-  e.strictMono
-
-/-- A value of `α`, not yet computed, with an interval containing its image. -/
-structure FilteredEmbedding (α : Type) [Ring α] [Preorder α] [e : RealApprox α] where
+/-- A value of `α`, not yet computed, with an approximation of its image. -/
+structure FilteredEmbedding (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
+    [e : ApproxEmbedding α A] where
   value : Thunk α
-  range : IntervalDyadic
+  range : A
   mem : e.toRingHom value.get ∈ range
 
 namespace FilteredEmbedding
@@ -87,51 +58,51 @@ namespace FilteredEmbedding
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : RealApprox α]
+variable [CommRing α] [Preorder α] [e : ApproxEmbedding α A]
 
-/-- An already computed value, bracketed by `e.approx`. -/
+/-- An already computed value, approximated by `e.approx`. -/
 def pure (a : α) : FilteredEmbedding α :=
   ⟨Thunk.pure a, e.approx a, e.mem_approx a⟩
 
 instance : IntCast (FilteredEmbedding α) where
-  intCast i := ⟨Thunk.pure i, ofInt i, by
+  intCast i := ⟨Thunk.pure i, RealApprox.ofInt i, by
     show e.toRingHom (i : α) ∈ _
     rw [map_intCast]; exact mem_ofInt i⟩
 
 instance : NatCast (FilteredEmbedding α) where
-  natCast n := ⟨Thunk.pure n, ofInt n, by
+  natCast n := ⟨Thunk.pure n, RealApprox.ofInt n, by
     show e.toRingHom (n : α) ∈ _
-    rw [map_natCast]; exact_mod_cast mem_ofInt n⟩
+    rw [map_natCast]; exact_mod_cast mem_ofInt (A := A) n⟩
 
 instance : Zero (FilteredEmbedding α) := ⟨((0 : ℤ) : FilteredEmbedding α)⟩
 instance : One (FilteredEmbedding α) := ⟨((1 : ℤ) : FilteredEmbedding α)⟩
 
 instance : Add (FilteredEmbedding α) where
-  add x y := ⟨Thunk.mk fun _ => x.value.get + y.value.get, trim (x.range.add y.range), by
+  add x y := ⟨Thunk.mk fun _ => x.value.get + y.value.get, x.range + y.range, by
     show e.toRingHom (x.value.get + y.value.get) ∈ _
-    rw [map_add]; exact mem_trim (IntervalDyadic.mem_add x.mem y.mem)⟩
+    rw [map_add]; exact mem_add x.mem y.mem⟩
 
 instance : Neg (FilteredEmbedding α) where
-  neg x := ⟨Thunk.mk fun _ => -x.value.get, x.range.neg, by
+  neg x := ⟨Thunk.mk fun _ => -x.value.get, -x.range, by
     show e.toRingHom (-x.value.get) ∈ _
-    rw [map_neg]; exact IntervalDyadic.mem_neg x.mem⟩
+    rw [map_neg]; exact mem_neg x.mem⟩
 
 instance : Sub (FilteredEmbedding α) where
-  sub x y := ⟨Thunk.mk fun _ => x.value.get - y.value.get, trim (x.range.sub y.range), by
+  sub x y := ⟨Thunk.mk fun _ => x.value.get - y.value.get, x.range - y.range, by
     show e.toRingHom (x.value.get - y.value.get) ∈ _
-    rw [map_sub]; exact mem_trim (IntervalDyadic.mem_sub x.mem y.mem)⟩
+    rw [map_sub]; exact mem_sub x.mem y.mem⟩
 
 instance : Mul (FilteredEmbedding α) where
-  mul x y := ⟨Thunk.mk fun _ => x.value.get * y.value.get, trim (x.range.mul y.range), by
+  mul x y := ⟨Thunk.mk fun _ => x.value.get * y.value.get, x.range * y.range, by
     show e.toRingHom (x.value.get * y.value.get) ∈ _
-    rw [map_mul]; exact mem_trim (IntervalDyadic.mem_mul x.mem y.mem)⟩
+    rw [map_mul]; exact mem_mul x.mem y.mem⟩
 
 instance : SMul ℕ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbedding α) * x⟩
 instance : SMul ℤ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbedding α) * x⟩
 
-/-- `x ^ n`: the value by `α`'s own power, the interval by `pow`. -/
+/-- `x ^ n`: the value by `α`'s own power, the approximation by `A`'s. -/
 instance : Pow (FilteredEmbedding α) ℕ where
-  pow x n := ⟨Thunk.mk fun _ => x.value.get ^ n, pow x.range n, by
+  pow x n := ⟨Thunk.mk fun _ => x.value.get ^ n, x.range ^ n, by
     show e.toRingHom (x.value.get ^ n) ∈ _
     rw [map_pow]; exact mem_pow x.mem n⟩
 
@@ -141,7 +112,7 @@ end Ring
 
 /-! ### Values are equivalent when their `α` values are equal -/
 
-instance setoid [Ring α] [Preorder α] [RealApprox α] : Setoid (FilteredEmbedding α) where
+instance setoid [Ring α] [Preorder α] [ApproxEmbedding α A] : Setoid (FilteredEmbedding α) where
   r x y := x.value.get = y.value.get
   iseqv := ⟨fun _ => rfl, Eq.symm, Eq.trans⟩
 
@@ -149,10 +120,10 @@ instance setoid [Ring α] [Preorder α] [RealApprox α] : Setoid (FilteredEmbedd
 
 section Order
 
-variable [Ring α] [LinearOrder α] [e : RealApprox α]
+variable [Ring α] [LinearOrder α] [e : ApproxEmbedding α A]
 
-/-- Compare two values by their intervals, falling back on `α` only when the
-intervals overlap. -/
+/-- Compare two values by their approximations, falling back on `α` only when
+the approximations don't decide. -/
 def cmp (x y : FilteredEmbedding α) : Ordering :=
   match compare? x.range y.range with
   | some o => o
@@ -174,10 +145,10 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : RealApprox α]
+variable [Field α] [Preorder α] [e : ApproxEmbedding α A]
 
-/-- The reciprocal. When the interval contains zero it has no interval
-reciprocal, so the value is computed here and bracketed afresh by `e.approx`. -/
+/-- The reciprocal. When the approximation has no reciprocal (it may contain
+zero), the value is computed here and approximated afresh by `e.approx`. -/
 def inv (x : FilteredEmbedding α) : FilteredEmbedding α :=
   let v : Thunk α := Thunk.mk fun _ => x.value.get⁻¹
   match h : inv? x.range with
@@ -190,7 +161,7 @@ theorem value_inv (x : FilteredEmbedding α) : (inv x).value.get = x.value.get�
   unfold inv; split <;> rfl
 
 instance : RatCast (FilteredEmbedding α) where
-  ratCast q := ⟨Thunk.pure q, ofRat q, by
+  ratCast q := ⟨Thunk.pure q, RealApprox.ofRat q, by
     show e.toRingHom (q : α) ∈ _
     rw [map_ratCast]; exact mem_ofRat q⟩
 
@@ -200,15 +171,17 @@ end FilteredEmbedding
 
 /-! ## The quotient -/
 
-/-- Values of `α` with intervals, identified when their `α` values are equal. -/
-def FilteredReal (α : Type) [Ring α] [Preorder α] [e : RealApprox α] : Type :=
+/-- Values of `α` with approximations, identified when their `α` values are
+equal. -/
+def FilteredReal (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
+    [e : ApproxEmbedding α A] : Type :=
   Quotient (FilteredEmbedding.setoid (α := α))
 
 namespace FilteredReal
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : RealApprox α]
+variable [CommRing α] [Preorder α] [e : ApproxEmbedding α A]
 
 /-- The exact value. -/
 def get : FilteredReal α → α := Quotient.lift (fun x => x.value.get) (fun _ _ h => h)
@@ -291,7 +264,7 @@ end Ring
 
 section Order
 
-variable [CommRing α] [LinearOrder α] [e : RealApprox α]
+variable [CommRing α] [LinearOrder α] [e : ApproxEmbedding α A]
 
 instance : Ord (FilteredReal α) where
   compare := Quotient.lift₂ FilteredEmbedding.cmp fun _ _ _ _ h₁ h₂ => by
@@ -345,7 +318,7 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : RealApprox α]
+variable [Field α] [Preorder α] [e : ApproxEmbedding α A]
 
 instance instInv : Inv (FilteredReal α) where
   inv := Quotient.map FilteredEmbedding.inv fun a b h => by

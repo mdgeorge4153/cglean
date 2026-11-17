@@ -1,12 +1,14 @@
 import Mathlib.Data.Rat.Sqrt
 import CGLean.Data.AdjoinSqrt.Filtered
 import CGLean.Data.FilteredEmbedding.Rat
+import CGLean.Data.Interval
 
 /-!
 # The number type `FilteredReal ℚ[√2][√3]`
 
 The instances that make `ℚ[√2][√3]` a linearly ordered field, and the filtered
-version of it: that `2` and `3` are positive non-squares in `ℚ` and `ℚ[√2]`.
+version of it: that `2` and `3` are positive non-squares in `ℚ` and `ℚ[√2]`, and
+that values are approximated by dyadic intervals.
 -/
 
 namespace CGLean.NumberType
@@ -14,6 +16,9 @@ namespace CGLean.NumberType
 open AdjoinSqrt
 
 /-! ## `ℚ` -/
+
+/-- Approximate by dyadic intervals; the tower above inherits this. -/
+instance : ApproxEmbedding ℚ LeanCert.Core.IntervalDyadic := .rat _
 
 /-- Whether `q` is a square in `ℚ` is decided by `Rat.sqrt`. -/
 theorem nonsquare_of_sqrt {q : ℚ} (h : Rat.sqrt q * Rat.sqrt q ≠ q) : ∀ x : ℚ, x * x ≠ q :=

@@ -1,18 +1,26 @@
-import CGLean.Data.FilteredEmbedding
+module
+
+public import Mathlib.Data.Rat.Cast.Order
+public import CGLean.Classes.ApproxEmbedding
 
 /-!
 # Filtering `ℚ`
 
-The `RealApprox` for the rationals, the base of every tower of square roots.
+An approximation strategy for the rationals, the base of every tower of square
+roots. It isn't an instance, since it works for any type of approximations: the
+application picks one.
 -/
+
+@[expose] public section
 
 namespace CGLean
 
-/-- The rationals, bracketed exactly when dyadic and to `ratPrec` otherwise. -/
-instance RealApprox.rat : RealApprox ℚ where
+/-- The rationals, approximated by `RealApprox.ofRat`. -/
+@[instance_reducible]
+def ApproxEmbedding.rat (A : Type) [RealApprox A] : ApproxEmbedding ℚ A where
   hom := Erased.mk (Rat.castHom ℝ)
   strictMono := by rw [Erased.out_mk]; exact Rat.cast_strictMono
-  approx := ofRat
-  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
+  approx := RealApprox.ofRat
+  mem_approx q := by rw [Erased.out_mk]; exact RealApprox.mem_ofRat q
 
 end CGLean
