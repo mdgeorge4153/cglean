@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Data.Erased
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Analysis.Real.Sqrt
 public import CGLean.Classes.RealApprox
 
 /-!
@@ -58,5 +58,11 @@ theorem mem_approx' (e : ApproxStrategy α A) (a : α) : e.toRingHom a ∈ e.app
 theorem strictMono' (e : ApproxStrategy α A) : StrictMono e.toRingHom := e.strictMono
 
 end ApproxStrategy
+
+/-- An approximation of `√n`, for approximating `α[√n]`. -/
+class ApproxSqrt {α A : Type} [Ring α] [Preorder α] [RealApprox A] [e : ApproxStrategy α A]
+    (n : α) where
+  sqrt : A
+  mem_sqrt : Real.sqrt (e.toRingHom n) ∈ sqrt
 
 end CGLean

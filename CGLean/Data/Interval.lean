@@ -14,8 +14,9 @@ rounded at the absolute precision `ratPrec`.
 `none` when they overlap. That is the decision a filtered representation makes
 before falling back on exact arithmetic.
 
-Together these make `IntervalDyadic` a `RealApprox`, with square roots, and
-`ofRat` gives an approximation strategy for `ℚ`.
+Together these make `IntervalDyadic` a `RealApprox`; `ofRat` gives an
+approximation strategy for `ℚ`, and `sqrt` approximates the square root of
+anything an interval strategy approximates.
 
 TODO: although this implementation already provides a lot of speedup, it's not
 tuned to be as fast as possible. The arithmetic operations leave lean's
@@ -218,9 +219,11 @@ instance : RealApprox IntervalDyadic where
   mem_inv? := mem_inv?
   compare_of_compare? := compare_of_compare?
 
-instance : RealApproxSqrt IntervalDyadic where
-  sqrt := sqrt
-  mem_sqrt := mem_sqrt
+/-- `√n`, from the approximation of `n`. -/
+instance {α : Type} [Ring α] [Preorder α] [e : ApproxStrategy α IntervalDyadic] (n : α) :
+    ApproxSqrt n where
+  sqrt := sqrt (e.approx n)
+  mem_sqrt := mem_sqrt (e.mem_approx' n)
 
 /-- The rationals, approximated by `ofRat`: the base of every tower of square
 roots. It isn't an instance, so that the application picks it. -/

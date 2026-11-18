@@ -18,7 +18,7 @@ namespace AdjoinSqrt
 
 open CGLean
 
-variable {R : Type} {n : R} {A : Type} [RealApprox A] [RealApproxSqrt A]
+variable {R : Type} {n : R} {A : Type} [RealApprox A]
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [Fact (0 < n)]
 
@@ -26,18 +26,19 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)
 noncomputable def baseOrderHom (e : ApproxStrategy R A) : R →+*o ℝ :=
   { e.toRingHom with monotone' := e.strictMono'.monotone }
 
-/-- Approximate `a₁ + aₙ√n` from approximations of `a₁`, `aₙ` and `n`. -/
-instance approxStrategy [e : ApproxStrategy R A] : ApproxStrategy (AdjoinSqrt R n) A where
+/-- Approximate `a₁ + aₙ√n` from approximations of `a₁`, `aₙ` and `√n`. -/
+instance approxStrategy [e : ApproxStrategy R A] [sq : ApproxSqrt n] :
+    ApproxStrategy (AdjoinSqrt R n) A where
   hom := Erased.mk (toRealHom (baseOrderHom e) (map_n_nonneg _))
   strictMono := by
     rw [Erased.out_mk]
     exact Monotone.strictMono_of_injective (toReal_monotone _) (RingHom.injective _)
   -- `√n` is approximated once, not on every call
-  approx := let s := RealApproxSqrt.sqrt (e.approx n)
+  approx := let s := sq.sqrt
     fun x => e.approx x.a₁ + e.approx x.aₙ * s
   mem_approx x := by
     rw [Erased.out_mk]
     exact RealApprox.mem_add (e.mem_approx' _)
-      (RealApprox.mem_mul (e.mem_approx' _) (RealApproxSqrt.mem_sqrt (e.mem_approx' _)))
+      (RealApprox.mem_mul (e.mem_approx' _) sq.mem_sqrt)
 
 end AdjoinSqrt

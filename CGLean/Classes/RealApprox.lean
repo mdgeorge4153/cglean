@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Basic.Real.Basic
 
 /-!
 # Approximations of real numbers
@@ -11,8 +11,7 @@ operations on `A` are sound, so they map approximations of the inputs to an
 approximation of the output.
 
 Nothing requires these sets to be intervals, although intervals are the instance
-used in practice (`CGLean.Data.Interval`). Square roots are a separate class,
-`RealApproxSqrt`, since only towers of square roots need them.
+used in practice (`CGLean.Data.Interval`).
 -/
 
 @[expose] public section
@@ -36,11 +35,5 @@ class RealApprox (A : Type) extends Membership ℝ A, Add A, Neg A, Sub A, Mul A
   mem_inv? {x : ℝ} {X Y : A} : x ∈ X → inv? X = some Y → x⁻¹ ∈ Y
   compare_of_compare? {X Y : A} {o : Ordering} :
     compare? X Y = some o → ∀ x ∈ X, ∀ y ∈ Y, compare x y = o
-
-/-- Square roots of approximations. -/
-class RealApproxSqrt (A : Type) [RealApprox A] where
-  /-- An approximation of the square root of every member of `X`. -/
-  sqrt : A → A
-  mem_sqrt {x : ℝ} {X : A} : x ∈ X → Real.sqrt x ∈ sqrt X
 
 end CGLean
