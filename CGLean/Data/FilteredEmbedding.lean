@@ -47,10 +47,10 @@ variable {α A : Type} [RealApprox A]
 
 /-- A value of `α`, not yet computed, with an approximation of its image. -/
 structure FilteredEmbedding (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
-    [e : ApproxStrategy α A] where
+    [strategy : ApproxStrategy α A] where
   value : Thunk α
   range : A
-  mem : e.toRingHom value.get ∈ range
+  mem : strategy.toRingHom value.get ∈ range
 
 namespace FilteredEmbedding
 
@@ -58,20 +58,20 @@ namespace FilteredEmbedding
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : ApproxStrategy α A]
+variable [CommRing α] [Preorder α] [strategy : ApproxStrategy α A]
 
-/-- An already computed value, approximated by `e.approx`. -/
+/-- An already computed value, approximated by `strategy.approx`. -/
 def pure (a : α) : FilteredEmbedding α :=
-  ⟨Thunk.pure a, e.approx a, e.mem_approx a⟩
+  ⟨Thunk.pure a, strategy.approx a, strategy.mem_approx a⟩
 
 instance : IntCast (FilteredEmbedding α) where
   intCast i := ⟨Thunk.pure i, RealApprox.ofInt i, by
-    show e.toRingHom (i : α) ∈ _
+    show strategy.toRingHom (i : α) ∈ _
     rw [map_intCast]; exact mem_ofInt i⟩
 
 instance : NatCast (FilteredEmbedding α) where
   natCast n := ⟨Thunk.pure n, RealApprox.ofInt n, by
-    show e.toRingHom (n : α) ∈ _
+    show strategy.toRingHom (n : α) ∈ _
     rw [map_natCast]; exact_mod_cast mem_ofInt (A := A) n⟩
 
 instance : Zero (FilteredEmbedding α) := ⟨((0 : ℤ) : FilteredEmbedding α)⟩
@@ -79,22 +79,22 @@ instance : One (FilteredEmbedding α) := ⟨((1 : ℤ) : FilteredEmbedding α)�
 
 instance : Add (FilteredEmbedding α) where
   add x y := ⟨Thunk.mk fun _ => x.value.get + y.value.get, x.range + y.range, by
-    show e.toRingHom (x.value.get + y.value.get) ∈ _
+    show strategy.toRingHom (x.value.get + y.value.get) ∈ _
     rw [map_add]; exact mem_add x.mem y.mem⟩
 
 instance : Neg (FilteredEmbedding α) where
   neg x := ⟨Thunk.mk fun _ => -x.value.get, -x.range, by
-    show e.toRingHom (-x.value.get) ∈ _
+    show strategy.toRingHom (-x.value.get) ∈ _
     rw [map_neg]; exact mem_neg x.mem⟩
 
 instance : Sub (FilteredEmbedding α) where
   sub x y := ⟨Thunk.mk fun _ => x.value.get - y.value.get, x.range - y.range, by
-    show e.toRingHom (x.value.get - y.value.get) ∈ _
+    show strategy.toRingHom (x.value.get - y.value.get) ∈ _
     rw [map_sub]; exact mem_sub x.mem y.mem⟩
 
 instance : Mul (FilteredEmbedding α) where
   mul x y := ⟨Thunk.mk fun _ => x.value.get * y.value.get, x.range * y.range, by
-    show e.toRingHom (x.value.get * y.value.get) ∈ _
+    show strategy.toRingHom (x.value.get * y.value.get) ∈ _
     rw [map_mul]; exact mem_mul x.mem y.mem⟩
 
 instance : SMul ℕ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbedding α) * x⟩
@@ -103,7 +103,7 @@ instance : SMul ℤ (FilteredEmbedding α) := ⟨fun n x => (n : FilteredEmbeddi
 /-- `x ^ n`: the value by `α`'s own power, the approximation by `A`'s. -/
 instance : Pow (FilteredEmbedding α) ℕ where
   pow x n := ⟨Thunk.mk fun _ => x.value.get ^ n, x.range ^ n, by
-    show e.toRingHom (x.value.get ^ n) ∈ _
+    show strategy.toRingHom (x.value.get ^ n) ∈ _
     rw [map_pow]; exact mem_pow x.mem n⟩
 
 theorem value_pow (x : FilteredEmbedding α) (n : ℕ) : (x ^ n).value.get = x.value.get ^ n := rfl
@@ -120,7 +120,7 @@ instance setoid [Ring α] [Preorder α] [ApproxStrategy α A] : Setoid (Filtered
 
 section Order
 
-variable [Ring α] [LinearOrder α] [e : ApproxStrategy α A]
+variable [Ring α] [LinearOrder α] [strategy : ApproxStrategy α A]
 
 /-- Compare two values by their approximations, falling back on `α` only when
 the approximations don't decide. -/
@@ -136,7 +136,7 @@ theorem cmp_eq (x y : FilteredEmbedding α) :
   split
   · next o h =>
     rw [← compare_of_compare? h _ x.mem _ y.mem, ← cmp_eq_compare, ← cmp_eq_compare,
-      e.strictMono'.cmp_map_eq]
+      strategy.strictMono'.cmp_map_eq]
   · rfl
 
 end Order
@@ -145,24 +145,24 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : ApproxStrategy α A]
+variable [Field α] [Preorder α] [strategy : ApproxStrategy α A]
 
 /-- The reciprocal. When the approximation has no reciprocal (it may contain
-zero), the value is computed here and approximated afresh by `e.approx`. -/
+zero), the value is computed here and approximated afresh by `strategy.approx`. -/
 def inv (x : FilteredEmbedding α) : FilteredEmbedding α :=
   let v : Thunk α := Thunk.mk fun _ => x.value.get⁻¹
   match h : inv? x.range with
   | some J => ⟨v, J, by
-      show e.toRingHom (x.value.get⁻¹) ∈ J
+      show strategy.toRingHom (x.value.get⁻¹) ∈ J
       rw [map_inv₀]; exact mem_inv? x.mem h⟩
-  | none => ⟨v, e.approx v.get, e.mem_approx _⟩
+  | none => ⟨v, strategy.approx v.get, strategy.mem_approx _⟩
 
 theorem value_inv (x : FilteredEmbedding α) : (inv x).value.get = x.value.get⁻¹ := by
   unfold inv; split <;> rfl
 
 instance : RatCast (FilteredEmbedding α) where
   ratCast q := ⟨Thunk.pure q, RealApprox.ofRat q, by
-    show e.toRingHom (q : α) ∈ _
+    show strategy.toRingHom (q : α) ∈ _
     rw [map_ratCast]; exact mem_ofRat q⟩
 
 end Field
@@ -174,14 +174,14 @@ end FilteredEmbedding
 /-- Values of `α` with approximations, identified when their `α` values are
 equal. -/
 def FilteredReal (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
-    [e : ApproxStrategy α A] : Type :=
+    [strategy : ApproxStrategy α A] : Type :=
   Quotient (FilteredEmbedding.setoid (α := α))
 
 namespace FilteredReal
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : ApproxStrategy α A]
+variable [CommRing α] [Preorder α] [strategy : ApproxStrategy α A]
 
 /-- The exact value. -/
 def get : FilteredReal α → α := Quotient.lift (fun x => x.value.get) (fun _ _ h => h)
@@ -264,7 +264,7 @@ end Ring
 
 section Order
 
-variable [CommRing α] [LinearOrder α] [e : ApproxStrategy α A]
+variable [CommRing α] [LinearOrder α] [strategy : ApproxStrategy α A]
 
 instance : Ord (FilteredReal α) where
   compare := Quotient.lift₂ FilteredEmbedding.cmp fun _ _ _ _ h₁ h₂ => by
@@ -318,7 +318,7 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : ApproxStrategy α A]
+variable [Field α] [Preorder α] [strategy : ApproxStrategy α A]
 
 instance instInv : Inv (FilteredReal α) where
   inv := Quotient.map FilteredEmbedding.inv fun a b h => by
