@@ -609,8 +609,8 @@ $a$ could potentially represent many real numbers.
 
   Similarly, the approximation should have a partial comparison operation, but
   we may not be able to determine the order between two approximations if they
-  overlap. However, we do require that if $a_1 \leq a_2$ then for all $x_1 ∈
-  a_1$ and $x_2 ∈ a_2$, that $x_1 \leq x_2$.
+  overlap. However, we do require that if $a_1 < a_2$ then for all $x_1 ∈
+  a_1$ and $x_2 ∈ a_2$, that $x_1 < x_2$, and similarly for $=$ and $>$.
 \end{definition}
 Notably, we \emph{don't} require the ring properties for approximation types; in
 fact we don't really need a notion of equality.
@@ -757,11 +757,11 @@ field.
 \end{definition}
 
 \begin{lemma}[$f_{\sqrt{n}}$ is a valid approximation strategy]
-  \label{thm:adjoinToRealOrderHom}
+  \label{thm:adjoinApproxValid}
   \uses{def:adjoinApprox, thm:adjoinOrderedRing}
   \lean{AdjoinSqrt.toRealOrderHom, AdjoinSqrt.toReal_monotone, AdjoinSqrt.approxStrategy}
   If $A$ is a linearly ordered field with a positive non-square $n ∈ A$, then
-  $i_{\sqrt{n}}$ is an order embedding and $f_{\sqrt{n}}$ is a valid
+  $i_{\sqrt{n}}$ is an embedding and $f_{\sqrt{n}}$ is a valid
   approximation strategy.
 \end{lemma}
 
@@ -787,13 +787,13 @@ field.
   \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 \begin{proof}
-  \uses{thm:adjoinOrderedField, thm:adjoinToRealOrderHom, thm:filteredField, thm:filteredOrdered}
+  \uses{thm:adjoinOrderedField, thm:adjoinApproxValid, thm:filteredField, thm:filteredOrdered}
   $ℚ$ is clearly a linearly ordered field. The fact that $2$ is a positive
   non-square in $ℚ$ is well-known, and it can be used to prove that $3$ is also
   a positive non-square in $ℚ[\sqrt{2}]$ (the proof by contradiction is easy).
   Therefore $ℚ[\sqrt{2}][\sqrt{3}]$ is a linearly ordered field.
 
-  Applying Lemma~\ref{thm:adjoinToRealOrderHom} twice, starting from the
+  Applying Lemma~\ref{thm:adjoinApproxValid} twice, starting from the
   rationals approximated by dyadic intervals, gives an approximation strategy
   for $ℚ[\sqrt{2}][\sqrt{3}]$. Plugging this into the construction of
   \code{Filtered} gives a linearly ordered field structure on
