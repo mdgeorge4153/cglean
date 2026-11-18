@@ -102,26 +102,18 @@ a_6\sqrt{6}$ as $(a_1 + a_2\sqrt{2}) + (a_3 + a_6\sqrt{2})\sqrt{3}$, and then
 represent them using $ℚ[\sqrt{2}][\sqrt{3}]$.
 
 The second implementation is intended to improve performance by using
-floating-point approximations wherever possible, and only falling back on the
-exact computations when the floating-point arithmetic is not precise enough. We
-define \code{FilteredReal $α$} which wraps deferred values of $α$
-inside a floating-point interval.
+fast approximations wherever possible, and only falling back on the
+exact computations when the approximations are not precise enough. We define
+\code{Filtered $A$} which stores both an unevaluated exact expression for a
+value and a fast approximation of the value; it keeps the approximations up to
+date and only does the slower computation when the approximations aren't
+sufficient to determine the result of a comparison.
 
-We can summarize the example from this section in the following corollary:
-\begin{corollary}
-  \label{thm:numberType}
-  \uses{def:adjoin, def:filtered, thm:adjoinToRealOrderHom}
-  \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldFiltered, CGLean.NumberType.instLinearOrderFiltered}
-  \code{FilteredReal $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
-\end{corollary}
-\begin{proof}
-  \uses{thm:adjoinOrderedField, thm:filteredOrderedField, thm:adjoinToRealOrderHom}
-  Follows from the results below.
-  % TODO (prose):
-  %  * 2 not a square in Q, 3 not a square in Q[√2]; both positive
-  %  * Q's sign order agrees with Mathlib's, so Q → R is strictly monotone
-  %  * the three cited results, applied twice up the tower
-\end{proof}
+In both implementations, we prove that if the underlying type $A$ is a linearly
+ordered field, then the constructed type \code{AdjoinSqrt $A$ $n$} or
+\code{Filtered $A$} is also a linearly ordered field.
+Section~\ref{sec:numberType} contains the little details necessary to prove that
+\code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 
 The definition of a linearly ordered field can be broken down into parts, and
 these parts are important stepping stones on the path to proving that a number
@@ -534,74 +526,6 @@ Putting this all together gives the main result of this section:
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Converting from $A[\sqrt{n}]$ to $ℝ$}
-
-In order to use $A[\sqrt{n}]$ with \code{FilteredReal}, we need to have a way of
-converting values in $A[\sqrt{n}]$ to real numbers, and this conversion has to preserve
-the operations defined on $A[\sqrt{n}]$.
-
-% TODO (prose): bracketing A[√n] (AdjoinSqrt.realApprox)
-%  * interval for a₁ + aₙ√n from intervals for a₁, aₙ, n
-%  * needs a tight interval square root; LeanCert's is [0, max hi 1]
-%  * sqrt bounds from Nat.sqrt of endpoints scaled by 4^k
-
-%% A[√n] → ℝ
-
-\begin{definition}[Conversion to $ℝ$]
-  \label{def:adjoinToReal}
-  \lean{AdjoinSqrt.toReal}
-  \leanok
-  \uses{def:adjoin}
-  Given a function $f : A → ℝ$ and $n ∈ A$ with $f(n) \geq 0$,
-  there is a corresponding function $f_{\sqrt{n}} : A[\sqrt{n}] → ℝ$ given by
-  $f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n) \sqrt{f(n)}$.
-\end{definition}
-
-The definition of a well-behaved map in this context is one that preserves all
-of the operations:
-
-\begin{definition}[Ordered ring homomorphism]
-  \label{def:orderedRingHom}
-  \lean{OrderRingHom}
-  \mathlibok
-  If $A$ and $B$ are linearly ordered rings, an \emph{ordered ring homomorphism} is a function $f : A → B$
-  that preserves the order and the ring operations. Specifically:
-  \begin{itemize}
-    \item $f(0) = 0$
-    \item $f(1) = 1$
-    \item $f(a + b) = f(a) + f(b)$
-    \item $f(ab) = f(a)f(b)$
-    \item if $a \leq b$ then $f(a) \leq f(b)$.
-  \end{itemize}
-\end{definition}
-
-Note that if $A$ and $B$ are fields, then an ordered ring homomorphism also
-preserves inverses because $f(a)f(a^{-1}) = f(aa^{-1}) = 1$ (so $f(a^{-1})$ is
-an inverse for $f(a)$).
-
-\begin{lemma}[$f_{\sqrt{n}}$ is an ordered ring homomorphism]
-  \label{thm:adjoinToRealOrderHom}
-  \lean{AdjoinSqrt.toRealOrderHom}
-  \leanok
-  \uses{def:adjoinToReal, def:orderedRingHom, thm:adjoinOrderedRing}
-  If $A$ is a linearly ordered field with a positive non-square $n ∈ A$ and $f :
-  A → ℝ$ is an ordered ring homomorphism, then $f_{\sqrt{n}} :
-  A[\sqrt{n}] → ℝ$ is an ordered ring homomorphism.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  Most of the requirements are immediate from the definitions. To check the ordering property,
-  we first prove that if $0 \leq a$ then $0 \leq f_{\sqrt{n}}(a)$, from
-  which the main result follows.
-
-  To check that, we consider the cases where $\norm{a} \geq 0$ and $\norm{a}
-  \leq 0$ separately. In each case, one of the two terms in $f_{\sqrt{n}}(a)$
-  is nonnegative by assumption, and by squaring you can check that the nonnegative
-  one dominates.
-\end{proof}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Converting from $A$ to $A[\sqrt{n}]$}
 
 These are some results that aren't directly needed to use these number representations, but are
@@ -639,186 +563,224 @@ interesting nonetheless.
   $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
 \end{lemma}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Avoiding computation using signs}
-
 % TODO: talk about sign-based formulation and how it avoids the addition and
 % multiplication in the cone computation. Link it to the implementation, cite
 % lemma that two definitions are equivalent.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Interval arithmetic}
+\section{Approximate arithmetic}
+Rational numbers are exact, but they can be quite expensive to compute with
+because the size of the numerator and denominator can grow unboundedly. You can
+reduce the storage needed by always reducing common factors between the
+numerator and denominator, but then you need to perform a gcd operation on every
+arithmetic operation.
 
-\begin{definition}[Filtered real]
+There are fast approximate ways to represent numbers, such as floating point
+numbers or dyadic rationals (numbers of the form $a/2^k$ with integers $a$ and
+$k$). By keeping the size of the number representations bounded, we store and
+compute with these numbers efficiently, but we give up precision.
+
+The \code{Filtered} type defined in this section takes the best of both
+worlds. We store a computation that evaluates to the exact value, but we keep it
+unevaluated. We also store a fast approximation of that value that we update on
+every operation. We only fall back to the exact computation if the approximation
+isn't sufficient to compare two values.
+
+To define our \code{Filtered} type, we first need to formalize what we need
+from an approximation strategy. First, we need an approximation type that
+supports fast versions of the operations we care about. The intuition behind the
+definition is that the approximations are fuzzy, so that an approximate value
+$a$ could potentially represent many real numbers.
+\begin{definition}[Approximation type]
+  \label{def:realApprox}
+  \lean{CGLean.RealApprox}
+  An approximation type $A$ is a type whose values represent subsets of the real
+  numbers, and that supports the ring operations. The ring operations must be
+  compatible with the operations on the approximated real numbers (e.g. if $x_1 ∈
+  a_1$ and $x_2 ∈ a_2$ then $x_1 + x_2 ∈ a_1 + a_2$, and similarly for
+  multiplication and subtraction).
+
+  An inverse operation should also be defined, but it may not be possible to
+  represent the inverse of an approximate value, especially if that value could
+  represent 0. For example, there is no interval that contains the inverses of
+  all possible numbers between $-1$ and $1$. We do require that if the inverse
+  exists, then it is compatible with the inverse on the real numbers in the same
+  way that we require for the ring operations.
+
+  Similarly, the approximation should have a partial comparison operation, but
+  we may not be able to determine the order between two approximations if they
+  overlap. However, we do require that if $a_1 \leq a_2$ then for all $x_1 ∈
+  a_1$ and $x_2 ∈ a_2$, that $x_1 \leq x_2$.
+\end{definition}
+Notably, we \emph{don't} require the ring properties for approximation types; in
+fact we don't really need a notion of equality.
+
+We have implemented the approximation type using intervals whose endpoints are
+dyadic rationals (numbers of the form $a \cdot 2^k$ for integers $a$ and $k$),
+and whose operations round the endpoints to a fixed precision. The
+\code{Filtered} type is generic though, so you can also implement an
+approximation type using floating-point arithmetic, fixed-point arithmetic
+stored in machine words, or a variety of other formats.
+
+Once you have a fast approximation type, you also need a strategy $f : α → A$
+for approximating exact values in $α$ by approximate values in $A$. In order to
+be useful, $f$ must be compatible with the embeddings of $α$ and $A$ into $ℝ$:
+
+\begin{definition}[Valid approximation strategy]
+  \label{def:approxStrategy}
+  \uses{def:realApprox}
+  \lean{CGLean.ApproxStrategy}
+  An approximation strategy for a linearly ordered ring $α$ is an embedding $i :
+  α → ℝ$ (i.e. a function $i$ that preserves the linearly ordered ring
+  operations), an approximation type $A$, and a function $f : α → A$ such that
+  for all $x ∈ α$, $i(x) ∈ f(x)$. We typically just refer to $f$, since $i$ is
+  unique and usually clear from context.
+\end{definition}
+
+Given a valid approximation strategy, we can now define the \code{Filtered}
+type:
+
+\begin{definition}[Filtered number representation]
   \label{def:filtered}
-  \lean{CGLean.FilteredReal, CGLean.FilteredEmbedding, CGLean.RealApprox}
-  % TODO (prose): statement is out of date
-  %  * parameter is now RealApprox: ring hom f plus approx : α → interval
-  %  * intervals are dyadic, not floating-point
-  Given a function $f : α → ℝ$, a \code{FilteredReal f} value consists of
-  an unevaluated value of type $α$ and a closed floating-point interval that
-  contains $f α$. We consider two values in \code{FilteredReal f} to be
-  equal if the wrapped $α$ values are equal; the intervals are just an
-  approximation.
+  \uses{def:approxStrategy}
+  \lean{CGLean.Filtered, CGLean.Filtered.Pre}
+  Given an approximation strategy $f : α → A$, a \code{Filtered $α$ $f$}
+  value consists of an unevaluated value $x$ of type $α$ and an approximation $a
+  ∈ A$ with $i(x) ∈ a$. We consider two values in \code{Filtered $α$ $f$} to be
+  equal if the wrapped $α$ values are equal.
 \end{definition}
 
 \begin{definition}[Ring operations]
   \label{def:filteredRingOps}
   \uses{def:filtered}
-  \lean{CGLean.FilteredReal.instRingOps}
-  We define the usual ring operations on \code{FilteredReal} values by storing
+  \lean{CGLean.Filtered.instRingOps}
+  We define the usual ring operations on \code{Filtered} values by storing
   thunks that perform the corresponding operation on the underlying $α$ value.
-  We also immediately compute a new interval using the corresponding operations
-  on the endpoints of the intervals, taking care to round in the correct
-  direction.
+  We also immediately compute a new approximation using the corresponding operations
+  on $A$.
 
-  In order for this definition to work, $f$ must be a ring homomorphism. This is
-  because the $FilteredReal$ type requires a proof that the exact $α$ value lies
-  inside the floating-point interval. Therefore to define addition, for example,
-  we need to prove that the sum of the $α$ values lies inside the sum of the
-  intervals, which we can only do if $f$ preserves sums.
+  For this definition to make sense, we need to ensure that the uncomputed
+  exact values and the immediately computed approximate values match up (e.g.
+  that $i(x_1 + x_2) ∈ a_1 + a_2$). This follows because $i$ is an order
+  embedding, so that $i(x_1 + x_2) = i(x_1) + i(x_2)$, and because $A$'s
+  operations are compatible with the real number operations, so that $i(x_1) +
+  i(x_2) ∈ a_1 + a_2$. The same reasoning applies for the other operations.
 \end{definition}
 
 \begin{lemma}
   \label{thm:filteredRing}
-  \lean{CGLean.FilteredReal.instCommRing}
+  \lean{CGLean.Filtered.instCommRing}
   \uses{def:filteredRingOps}
-  If $A$ is a ring and $f : A → ℝ$ is a ring homomorphism then \code{FilteredReal f}
-  is a ring.
+  If $α$ is a commutative ring, then \code{Filtered $α$ $f$} is a commutative
+  ring.
 \end{lemma}
 
 \begin{proof}
-  % TODO (prose):
-  %  * axioms hold in A; pull back along the injection get (def:filteredToA)
+  Since there's a 1-1 correspondence between elements of $α$ and elements of
+  \code{Filtered $α$ $f$} that preserves all of the operations, this follows
+  immediately from the corresponding property for $α$.
 \end{proof}
 
-\begin{definition}[Division]
+\begin{definition}[Filtered inverse]
   \label{def:filteredInv}
-  \lean{CGLean.FilteredReal.instInv}
   \uses{def:filtered}
-  If $A$ is a field, and $f$ is a field homomorphism, we can also define
-  division in the same way.
-\end{definition}
-
-% TODO (prose): the filter's escape hatch (division and overflow together).
-%  * implemented: interval reciprocal if zero excluded, else evaluate and
-%    re-approximate with RealApprox.approx
-%  * interval containing zero has no interval reciprocal
-%  * options: no-information value, or intervals excluding zero (LeanCert:
-%    IntervalRatNonzero, rational intervals only)
-%  * prefer the subtype: forces evaluation at the point of division
-%  * needs approximating elements of A, not just f : A → ℝ
-%  * rounding belongs in the number layer (directed rounding), not the interval
-%  * directedness only, not correct rounding; IEEE suffices
-%  * Float: opaque; define toReal + relative-error axiom, Flocq-style
-%  * NaN: condition specs on finite output; else no information
-%  * no-information case needed exactly when numbers can overflow; not dyadics
-%  * Mathlib's FP.Float: separate model, unconnected to hardware Float
-%  * interface sketch: RoundedField (addUp/addDown/mulUp/..., toReal,
-%    directed-error axioms); intervals generic over it
-%  * representability, not NaN-freedom: decidable "denotes a real"; axioms
-%    conditioned on operands and result
-%  * dyadics unrounded: mantissa doubles per mul; round inside addUp etc.
-%    at a fixed precision (LeanCert's roundOut: precision per call)
-%  * no exact dyadic division (1/3); divUp/divDown must round
-%  * precision vs LEAN_MAX_SMALL_INT (~31 bits on 64-bit, not 63); 31x31
-%    products leave the fast path, so mul rounds immediately; unmeasured
-%  * reuse: dyadic side → LeanCert?; Float axioms not Mathlib (trust
-%    extension; cf. Flocq separate from Coq stdlib)
-
-\begin{lemma}
-  \label{thm:filteredOrderedField}
-  \lean{CGLean.FilteredReal.instField, CGLean.FilteredReal.instLinearOrder, CGLean.FilteredReal.instIsStrictOrderedRing}
-  \uses{thm:filteredRing, def:filteredInv, def:intervalCompare}
-  % TODO (prose): statement
-  %  * A linearly ordered field, f strictly monotone: FilteredReal f is one too
-  %  * comparisons decided by intervals, falling back on A when they overlap
-\end{lemma}
-
-\begin{proof}
-  % TODO (prose):
-  %  * field and order pulled back along get
-  %  * filtered compare agrees with A's: compare_of_compare? plus strict monotonicity
-\end{proof}
-
-\subsection{Comparing intervals}
-
-% TODO (prose):
-%  * the comparison the wrapper relies on
-%  * separated intervals fix the order of all members; overlapping fix nothing
-
-\begin{definition}
-  \label{def:intervalCompare}
-  \lean{CGLean.compare?}
-  \code{compare? x y} returns the order shared by every member of $x$ and every
-  member of $y$ when the intervals are separated, and nothing when they overlap.
+  \lean{CGLean.Filtered.Pre.inv}
+  If $α$ has an inverse operation, we define an inverse on \code{Filtered $α$
+  $f$} by taking an inverse of the approximate value if it has an inverse, and
+  otherwise computing the exact inverse in $α$ and reapproximating it.
 \end{definition}
 
 \begin{lemma}
-  \label{thm:compareSound}
-  \uses{def:intervalCompare}
-  \lean{CGLean.compare_of_compare?}
-  If \code{compare?} returns an order, then every member of $x$ compares that
-  way with every member of $y$.
+  \label{thm:filteredField}
+  \lean{CGLean.Filtered.instField}
+  \uses{def:filteredInv, thm:filteredRing}
+  If $α$ is a field, then \code{Filtered $α$ $f$} is a field.
 \end{lemma}
 
 \begin{proof}
-  % TODO (prose):
-  %  * each case chains the bounds: a ≤ x.hi < y.lo ≤ b, and symmetrically
+  \uses{thm:filteredRing}
+  Follows immediately.
 \end{proof}
 
-% TODO (prose):
-%  * soundness is what correctness needs
-%  * completeness (thm:compareComplete) is what makes filtering worthwhile
-
-\subsection{Converting between $A$ and \code{FilteredReal (f : A → $ℝ$)}}
-
-The whole point of \code{FilteredReal} is that it encapsulates values of
-$A$.
-
-\begin{definition}
-  \label{def:filteredToA}
+\begin{definition}[Filtered comparison]
+  \label{def:filteredCompare}
   \uses{def:filtered}
-  \lean{CGLean.FilteredReal.get, CGLean.FilteredReal.get_injective}
-  There is a nice injection $i$ from \code{FilteredReal (f : A → $ℝ$)} to
-  $A$, and $f \circ i = toReal$.
+  \lean{CGLean.Filtered.Pre.cmp, CGLean.Filtered.Pre.cmp_eq, CGLean.Filtered.compare_get}
+  We define the ordering on \code{Filtered $α$ $f$} using the approximate
+  comparison and only fall back to the ordering on $α$ if the approximation is
+  inconclusive.
+
+  The requirement that the approximation strategy is valid and that the
+  approximation type's comparison function is compatible with the comparison on
+  the real numbers means that regardless of whether we take the fast or the slow
+  path, we still get the same answer as we would have in $α$.
 \end{definition}
 
-\begin{theorem}
-  \label{def:filteredEquivalent}
-  \uses{def:filteredToA, thm:filteredOrderedField}
-  \lean{CGLean.FilteredReal.get_add, CGLean.FilteredReal.get_mul, CGLean.FilteredReal.get_neg, CGLean.FilteredReal.get_inv, CGLean.FilteredReal.compare_get}
-  $i$ preserves all of the linearly ordered field operations.
-\end{theorem}
-
-\begin{proof}
-  % TODO (prose):
-  %  * by construction: the structure on FilteredReal is defined through i
-\end{proof}
-
-\subsection{FilteredReal avoids computation}
-
-There's no way to prove in lean that the underlying $A$ values are not computed
-unless strictly necessary, but we can at least prove that the interval
-comparison only fails if the comparison can't be determined just from the
-intervals. We formalize this as follows:
-
-\begin{lemma}[Completeness of interval comparison]
-  \label{thm:compareComplete}
-  \uses{def:intervalCompare}
-  \lean{CGLean.compare?_complete}
-  If the function we use to compare intervals indicates that they are
-  incomparable, then we can choose two sets of points in the two intervals that
-  would give different comparison results.
+\begin{lemma}
+  \label{thm:filteredOrdered}
+  \lean{CGLean.Filtered.instLinearOrder, CGLean.Filtered.instIsStrictOrderedRing}
+  \uses{thm:filteredRing}
+  If $α$ is a linearly ordered commutative ring, then so is \code{Filtered $α$
+  $f$}, and its comparison agrees with that of $α$.
 \end{lemma}
 
 \begin{proof}
-  % TODO (prose):
-  %  * decline = overlap; max of lower bounds lies in both
-  %  * witnesses: that point with itself (eq), an endpoint pair (strict)
+  \uses{thm:filteredRing, def:filteredCompare}
+  Follows immediately from the fact the comparison matches that on $α$.
 \end{proof}
 
-% TODO: mention benchmark results
+\subsection{Dyadic interval approximation strategy}
+% TODO: describe rounding in a bit more detail
+% TODO: comparison completeness
+% TODO: inverse completeness
+% TODO: sqrt implementation
+% TODO: performance stats
+
+\section{Putting the pieces together}
+\label{sec:numberType}
+
+With the definitions and properties of \code{AdjoinSqrt} and \code{Filtered}
+above, we can put all of the pieces together to form the example number type
+described at the beginning of the chapter and conclude that it is an ordered
+field.
+
+\begin{definition}[Approximation for $A[\sqrt{n}]$]
+  \label{def:adjoinApprox}
+  % TODO: \uses and \lean
+  Given an approximation strategy $f : α → A$, and an element $\hat{n} ∈ A$ with
+  $\sqrt{n} ∈ a_n$, we define an approximation strategy $f_{\sqrt{n}} :
+  α[\sqrt{n}] → A$ by by $f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) +
+  f_(a_n)\hat{n}$.
+  % TODO: maybe this needs to be more explicit about the embeddings, is it too
+  % confusing as-is?
+\end{definition}
+
+\begin{lemma}
+  % TODO: lean stuff
+  $f_{\sqrt{n}}$ is a valid approximation strategy.
+\end{lemma}
+
+\begin{corollary}[Example number type]
+  \label{thm:numberType}
+  \uses{def:adjoin, def:filtered}
+  \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldNum, CGLean.NumberType.instLinearOrderNum}
+  \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
+\end{corollary}
+\begin{proof}
+  \uses{thm:adjoinOrderedField, thm:adjoinToRealOrderHom, thm:filteredField, thm:filteredOrdered}
+  $ℚ$ is clearly a linearly ordered field. The fact that $2$ is a positive
+  non-square in $ℚ$ is well-known, and it can be used to prove that $3$ is also
+  a positive non-square in $ℚ[\sqrt{2}]$ (the proof by contradiction is easy).
+  Therefore $ℚ[\sqrt{2}][\sqrt{3}]$ is a linearly ordered field.
+
+  It is also easy to get an approximation strategy for $A[\sqrt{n}]$ given a
+  strategy for $A$ and an interval that wraps $\sqrt{n}$: to approximate $a_1 +
+  a_n\sqrt{n}$, just multiply and add the approximations for $a_1$, $a_n$, and
+  $\sqrt{n}$; the validity of the approximation follows directly from the
+  validity of the approximation for $A$. Plugging this into the construction of
+  \code{Filtered} gives a linearly ordered field structure on
+  \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} as required.
+\end{proof}
 
 \chapter{Applications}
 
