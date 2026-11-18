@@ -1,6 +1,5 @@
 import Mathlib.Data.Rat.Sqrt
 import CGLean.Data.AdjoinSqrt.Filtered
-import CGLean.Data.FilteredEmbedding.Rat
 import CGLean.Data.Interval
 
 /-!
@@ -18,7 +17,7 @@ open AdjoinSqrt
 /-! ## `ℚ` -/
 
 /-- Approximate by dyadic intervals; the tower above inherits this. -/
-instance : ApproxStrategy ℚ LeanCert.Core.IntervalDyadic := .rat _
+instance : ApproxStrategy ℚ LeanCert.Core.IntervalDyadic := .ratInterval
 
 /-- Whether `q` is a square in `ℚ` is decided by `Rat.sqrt`. -/
 theorem nonsquare_of_sqrt {q : ℚ} (h : Rat.sqrt q * Rat.sqrt q ≠ q) : ∀ x : ℚ, x * x ≠ q :=

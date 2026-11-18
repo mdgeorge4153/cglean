@@ -22,18 +22,12 @@ namespace CGLean
 /-- `A` approximates real numbers: each element stands for a set of reals, and
 the operations are sound. -/
 class RealApprox (A : Type) extends Membership ℝ A, Add A, Neg A, Sub A, Mul A, Pow A ℕ where
-  /-- An approximation of the integer `i`. -/
-  ofInt : ℤ → A
-  /-- An approximation of the rational `q`. -/
-  ofRat : ℚ → A
   /-- An approximation of the reciprocal of every member of `X`, or `none`
   (for instance when `X` may contain zero). -/
   inv? : A → Option A
   /-- The common order of every member of `X` with every member of `Y`, or
   `none` when the approximations don't determine it. -/
   compare? : A → A → Option Ordering
-  mem_ofInt (i : ℤ) : (i : ℝ) ∈ ofInt i
-  mem_ofRat (q : ℚ) : (q : ℝ) ∈ ofRat q
   mem_add {x y : ℝ} {X Y : A} : x ∈ X → y ∈ Y → x + y ∈ X + Y
   mem_neg {x : ℝ} {X : A} : x ∈ X → -x ∈ -X
   mem_sub {x y : ℝ} {X Y : A} : x ∈ X → y ∈ Y → x - y ∈ X - Y

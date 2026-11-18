@@ -1,5 +1,5 @@
 import LeanCert.Core.IntervalDyadic
-import CGLean.Classes.RealApprox
+import CGLean.Classes.ApproxStrategy
 
 /-!
 # Intervals for filtering
@@ -14,7 +14,8 @@ rounded at the absolute precision `ratPrec`.
 `none` when they overlap. That is the decision a filtered representation makes
 before falling back on exact arithmetic.
 
-Together these make `IntervalDyadic` a `RealApprox`, with square roots.
+Together these make `IntervalDyadic` a `RealApprox`, with square roots, and
+`ofRat` gives an approximation strategy for `ℚ`.
 -/
 
 namespace CGLean
@@ -201,12 +202,8 @@ instance : RealApprox IntervalDyadic where
   sub I J := trim (I.sub J)
   mul I J := trim (I.mul J)
   pow := pow
-  ofInt := ofInt
-  ofRat := ofRat
   inv? := inv?
   compare? := compare?
-  mem_ofInt := mem_ofInt
-  mem_ofRat := mem_ofRat
   mem_add hx hy := mem_trim (IntervalDyadic.mem_add hx hy)
   mem_neg := IntervalDyadic.mem_neg
   mem_sub hx hy := mem_trim (IntervalDyadic.mem_sub hx hy)
@@ -218,5 +215,14 @@ instance : RealApprox IntervalDyadic where
 instance : RealApproxSqrt IntervalDyadic where
   sqrt := sqrt
   mem_sqrt := mem_sqrt
+
+/-- The rationals, approximated by `ofRat`: the base of every tower of square
+roots. It isn't an instance, so that the application picks it. -/
+@[instance_reducible]
+def ApproxStrategy.ratInterval : ApproxStrategy ℚ IntervalDyadic where
+  hom := Erased.mk (Rat.castHom ℝ)
+  strictMono := by rw [Erased.out_mk]; exact Rat.cast_strictMono
+  approx := ofRat
+  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
 
 end CGLean

@@ -64,15 +64,10 @@ variable [CommRing α] [Preorder α] [strategy : ApproxStrategy α A]
 def pure (a : α) : FilteredEmbedding α :=
   ⟨Thunk.pure a, strategy.approx a, strategy.mem_approx a⟩
 
-instance : IntCast (FilteredEmbedding α) where
-  intCast i := ⟨Thunk.pure i, RealApprox.ofInt i, by
-    show strategy.toRingHom (i : α) ∈ _
-    rw [map_intCast]; exact mem_ofInt i⟩
+/-! Constants are computed in `α` and approximated by the strategy. -/
 
-instance : NatCast (FilteredEmbedding α) where
-  natCast n := ⟨Thunk.pure n, RealApprox.ofInt n, by
-    show strategy.toRingHom (n : α) ∈ _
-    rw [map_natCast]; exact_mod_cast mem_ofInt (A := A) n⟩
+instance : IntCast (FilteredEmbedding α) := ⟨fun i => pure i⟩
+instance : NatCast (FilteredEmbedding α) := ⟨fun n => pure n⟩
 
 instance : Zero (FilteredEmbedding α) := ⟨((0 : ℤ) : FilteredEmbedding α)⟩
 instance : One (FilteredEmbedding α) := ⟨((1 : ℤ) : FilteredEmbedding α)⟩
@@ -160,10 +155,7 @@ def inv (x : FilteredEmbedding α) : FilteredEmbedding α :=
 theorem value_inv (x : FilteredEmbedding α) : (inv x).value.get = x.value.get⁻¹ := by
   unfold inv; split <;> rfl
 
-instance : RatCast (FilteredEmbedding α) where
-  ratCast q := ⟨Thunk.pure q, RealApprox.ofRat q, by
-    show strategy.toRingHom (q : α) ∈ _
-    rw [map_ratCast]; exact mem_ofRat q⟩
+instance : RatCast (FilteredEmbedding α) := ⟨fun q => pure q⟩
 
 end Field
 
