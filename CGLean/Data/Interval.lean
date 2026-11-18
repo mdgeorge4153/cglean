@@ -16,6 +16,12 @@ before falling back on exact arithmetic.
 
 Together these make `IntervalDyadic` a `RealApprox`, with square roots, and
 `ofRat` gives an approximation strategy for `ℚ`.
+
+TODO: although this implementation already provides a lot of speedup, it's not
+tuned to be as fast as possible. The arithmetic operations leave lean's
+integer-arithmetic fast path. It would probably be faster to use an Int64 type
+for approximation and ensure we stay in the fast integer bounds, or even better
+to axiomatize floating point arithmetic and use that.
 -/
 
 namespace CGLean

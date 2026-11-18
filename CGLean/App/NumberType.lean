@@ -3,7 +3,7 @@ import CGLean.Data.AdjoinSqrt.Filtered
 import CGLean.Data.Interval
 
 /-!
-# The number type `FilteredReal ℚ[√2][√3]`
+# The number type `Filtered ℚ[√2][√3]`
 
 The instances that make `ℚ[√2][√3]` a linearly ordered field, and the filtered
 version of it: that `2` and `3` are positive non-squares in `ℚ` and `ℚ[√2]`, and
@@ -59,12 +59,12 @@ abbrev L := AdjoinSqrt K 3
 /-! ## The number type -/
 
 /-- `ℚ[√2][√3]` with filtered arithmetic. -/
-abbrev Filtered := FilteredReal L
+abbrev Num := Filtered L
 
-instance : Field Filtered := inferInstance
-instance : LinearOrder Filtered := inferInstance
+instance : Field Num := inferInstance
+instance : LinearOrder Num := inferInstance
 
-/-- `FilteredReal ℚ[√2][√3]` is a linearly ordered field. -/
-theorem isStrictOrderedRing : IsStrictOrderedRing Filtered := inferInstance
+/-- `Filtered ℚ[√2][√3]` is a linearly ordered field. -/
+theorem isStrictOrderedRing : IsStrictOrderedRing Num := inferInstance
 
 end CGLean.NumberType

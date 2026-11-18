@@ -2,7 +2,7 @@ module
 
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import CGLean.Data.AdjoinSqrt
-public import CGLean.Data.FilteredEmbedding
+public import CGLean.Data.Filtered
 
 /-!
 # Filtering `A[√n]`

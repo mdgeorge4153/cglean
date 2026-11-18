@@ -18,7 +18,7 @@ subring of real numbers. However, even though the embedding of `α` is unique,
 there may be many corresponding approximations. For example, intervals could be
 rounded to different precisions, or represented by balls around a midpoint
 instead of endpoints. An `instance` defines a default approximation for a type,
-but it can be overridden with a different strategy (e.g. `FilteredReal α
+but it can be overridden with a different strategy (e.g. `Filtered α
 (strategy := other)`).
 -/
 

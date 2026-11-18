@@ -15,7 +15,7 @@ build takes several minutes.
 
 open CGLean CGLean.NumberType
 
-abbrev F := Filtered
+abbrev F := Num
 instance : Inhabited L := ⟨0⟩
 instance : Inhabited F := ⟨0⟩
 
@@ -115,7 +115,7 @@ def main (args : List String) : IO Unit := do
   let n := (args.head? >>= String.toNat?).getD 2000
   let seed := (args.tail.head? >>= String.toNat?).getD 42
   let pts := randPts 300 seed
-  let toF (p : L × L) : F × F := (FilteredReal.ofValue p.1, FilteredReal.ofValue p.2)
+  let toF (p : L × L) : F × F := (Filtered.ofValue p.1, Filtered.ofValue p.2)
   let fpts := pts.map toF
   let chk := fpts.foldl (fun acc (x, _) => acc + (rangeOf x).lo.mantissa.natAbs % 2) 0
   IO.println s!"(forced {chk})"
