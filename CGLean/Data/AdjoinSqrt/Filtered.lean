@@ -23,11 +23,11 @@ variable {R : Type} {n : R} {A : Type} [RealApprox A] [RealApproxSqrt A]
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Fact (¬ IsSquare n)] [Fact (0 < n)]
 
 /-- `e`'s embedding, with its monotonicity bundled, as `toRealHom` expects. -/
-noncomputable def baseOrderHom (e : ApproxEmbedding R A) : R →+*o ℝ :=
+noncomputable def baseOrderHom (e : ApproxStrategy R A) : R →+*o ℝ :=
   { e.toRingHom with monotone' := e.strictMono'.monotone }
 
 /-- Approximate `a₁ + aₙ√n` from approximations of `a₁`, `aₙ` and `n`. -/
-instance approxEmbedding [e : ApproxEmbedding R A] : ApproxEmbedding (AdjoinSqrt R n) A where
+instance approxStrategy [e : ApproxStrategy R A] : ApproxStrategy (AdjoinSqrt R n) A where
   hom := Erased.mk (toRealHom (baseOrderHom e) (map_n_nonneg _))
   strictMono := by
     rw [Erased.out_mk]

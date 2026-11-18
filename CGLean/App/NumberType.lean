@@ -18,7 +18,7 @@ open AdjoinSqrt
 /-! ## `ℚ` -/
 
 /-- Approximate by dyadic intervals; the tower above inherits this. -/
-instance : ApproxEmbedding ℚ LeanCert.Core.IntervalDyadic := .rat _
+instance : ApproxStrategy ℚ LeanCert.Core.IntervalDyadic := .rat _
 
 /-- Whether `q` is a square in `ℚ` is decided by `Rat.sqrt`. -/
 theorem nonsquare_of_sqrt {q : ℚ} (h : Rat.sqrt q * Rat.sqrt q ≠ q) : ∀ x : ℚ, x * x ≠ q :=

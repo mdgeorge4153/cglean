@@ -8,14 +8,14 @@ module
 public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.Order.Ring.InjSurj
 public import Mathlib.Data.Rat.Cast.Lemmas
-public import CGLean.Classes.ApproxEmbedding
+public import CGLean.Classes.ApproxStrategy
 public import CGLean.Classes.RingOps
 
 /-!
 # Filtered real numbers
 
 `FilteredReal α` is intended to be a drop-in replacement for a type `α` of exact
-numbers, given an approximation strategy `ApproxEmbedding α A`: an order-preserving ring
+numbers, given an approximation strategy `ApproxStrategy α A`: an order-preserving ring
 homomorphism `α →+* ℝ`, and a way to approximate its values by elements of a type
 `A` of approximations (`RealApprox A`). Each value carries an approximation of its
 image in `ℝ`.
@@ -47,7 +47,7 @@ variable {α A : Type} [RealApprox A]
 
 /-- A value of `α`, not yet computed, with an approximation of its image. -/
 structure FilteredEmbedding (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
-    [e : ApproxEmbedding α A] where
+    [e : ApproxStrategy α A] where
   value : Thunk α
   range : A
   mem : e.toRingHom value.get ∈ range
@@ -58,7 +58,7 @@ namespace FilteredEmbedding
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : ApproxEmbedding α A]
+variable [CommRing α] [Preorder α] [e : ApproxStrategy α A]
 
 /-- An already computed value, approximated by `e.approx`. -/
 def pure (a : α) : FilteredEmbedding α :=
@@ -112,7 +112,7 @@ end Ring
 
 /-! ### Values are equivalent when their `α` values are equal -/
 
-instance setoid [Ring α] [Preorder α] [ApproxEmbedding α A] : Setoid (FilteredEmbedding α) where
+instance setoid [Ring α] [Preorder α] [ApproxStrategy α A] : Setoid (FilteredEmbedding α) where
   r x y := x.value.get = y.value.get
   iseqv := ⟨fun _ => rfl, Eq.symm, Eq.trans⟩
 
@@ -120,7 +120,7 @@ instance setoid [Ring α] [Preorder α] [ApproxEmbedding α A] : Setoid (Filtere
 
 section Order
 
-variable [Ring α] [LinearOrder α] [e : ApproxEmbedding α A]
+variable [Ring α] [LinearOrder α] [e : ApproxStrategy α A]
 
 /-- Compare two values by their approximations, falling back on `α` only when
 the approximations don't decide. -/
@@ -145,7 +145,7 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : ApproxEmbedding α A]
+variable [Field α] [Preorder α] [e : ApproxStrategy α A]
 
 /-- The reciprocal. When the approximation has no reciprocal (it may contain
 zero), the value is computed here and approximated afresh by `e.approx`. -/
@@ -174,14 +174,14 @@ end FilteredEmbedding
 /-- Values of `α` with approximations, identified when their `α` values are
 equal. -/
 def FilteredReal (α : Type) [Ring α] [Preorder α] {A : Type} [RealApprox A]
-    [e : ApproxEmbedding α A] : Type :=
+    [e : ApproxStrategy α A] : Type :=
   Quotient (FilteredEmbedding.setoid (α := α))
 
 namespace FilteredReal
 
 section Ring
 
-variable [CommRing α] [Preorder α] [e : ApproxEmbedding α A]
+variable [CommRing α] [Preorder α] [e : ApproxStrategy α A]
 
 /-- The exact value. -/
 def get : FilteredReal α → α := Quotient.lift (fun x => x.value.get) (fun _ _ h => h)
@@ -264,7 +264,7 @@ end Ring
 
 section Order
 
-variable [CommRing α] [LinearOrder α] [e : ApproxEmbedding α A]
+variable [CommRing α] [LinearOrder α] [e : ApproxStrategy α A]
 
 instance : Ord (FilteredReal α) where
   compare := Quotient.lift₂ FilteredEmbedding.cmp fun _ _ _ _ h₁ h₂ => by
@@ -318,7 +318,7 @@ end Order
 
 section Field
 
-variable [Field α] [Preorder α] [e : ApproxEmbedding α A]
+variable [Field α] [Preorder α] [e : ApproxStrategy α A]
 
 instance instInv : Inv (FilteredReal α) where
   inv := Quotient.map FilteredEmbedding.inv fun a b h => by

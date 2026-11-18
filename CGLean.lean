@@ -1,6 +1,6 @@
 module
 
-public import CGLean.Classes.ApproxEmbedding
+public import CGLean.Classes.ApproxStrategy
 public import CGLean.Classes.Floatable
 public import CGLean.Classes.RealApprox
 public import CGLean.Classes.Region

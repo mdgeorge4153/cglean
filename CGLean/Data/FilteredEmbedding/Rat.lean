@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Data.Rat.Cast.Order
-public import CGLean.Classes.ApproxEmbedding
+public import CGLean.Classes.ApproxStrategy
 
 /-!
 # Filtering `ℚ`
@@ -17,7 +17,7 @@ namespace CGLean
 
 /-- The rationals, approximated by `RealApprox.ofRat`. -/
 @[instance_reducible]
-def ApproxEmbedding.rat (A : Type) [RealApprox A] : ApproxEmbedding ℚ A where
+def ApproxStrategy.rat (A : Type) [RealApprox A] : ApproxStrategy ℚ A where
   hom := Erased.mk (Rat.castHom ℝ)
   strictMono := by rw [Erased.out_mk]; exact Rat.cast_strictMono
   approx := RealApprox.ofRat

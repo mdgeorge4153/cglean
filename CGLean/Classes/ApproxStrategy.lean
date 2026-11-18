@@ -8,7 +8,7 @@ public import CGLean.Classes.RealApprox
 /-!
 # Approximating the elements of an ordered ring
 
-An instance of `ApproxEmbedding α A` is an approximation strategy for `α`: an
+An instance of `ApproxStrategy α A` is an approximation strategy for `α`: an
 order-preserving ring homomorphism `α →+* ℝ`, together with an approximation in
 `A` of the image of each element. It is what `FilteredReal α` is built from.
 -/
@@ -25,24 +25,24 @@ approximations are a choice: the instance is the default strategy, and another
 can be passed explicitly, as in `FilteredReal α (e := other)`.
 
 The homomorphism is `Erased`: it lands in `ℝ` and is used only in proofs. -/
-class ApproxEmbedding (α : Type) [Ring α] [Preorder α] (A : outParam Type) [RealApprox A] where
+class ApproxStrategy (α : Type) [Ring α] [Preorder α] (A : outParam Type) [RealApprox A] where
   hom : Erased (α →+* ℝ)
   strictMono : StrictMono hom.out
   approx : α → A
   mem_approx : ∀ a, hom.out a ∈ approx a
 
-namespace ApproxEmbedding
+namespace ApproxStrategy
 
 variable {α A : Type} [Ring α] [Preorder α] [RealApprox A]
 
 /-- The embedding into `ℝ`. -/
-noncomputable def toRingHom (e : ApproxEmbedding α A) : α →+* ℝ := e.hom.out
+noncomputable def toRingHom (e : ApproxStrategy α A) : α →+* ℝ := e.hom.out
 
-theorem mem_approx' (e : ApproxEmbedding α A) (a : α) : e.toRingHom a ∈ e.approx a :=
+theorem mem_approx' (e : ApproxStrategy α A) (a : α) : e.toRingHom a ∈ e.approx a :=
   e.mem_approx a
 
-theorem strictMono' (e : ApproxEmbedding α A) : StrictMono e.toRingHom := e.strictMono
+theorem strictMono' (e : ApproxStrategy α A) : StrictMono e.toRingHom := e.strictMono
 
-end ApproxEmbedding
+end ApproxStrategy
 
 end CGLean
