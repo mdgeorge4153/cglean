@@ -594,7 +594,7 @@ $a$ could potentially represent many real numbers.
 \begin{definition}[Approximation type]
   \label{def:realApprox}
   \lean{CGLean.RealApprox}
-  An approximation type $A$ is a type whose values represent subsets of the real
+  An approximation type $α$ is a type whose values represent subsets of the real
   numbers, and that supports the ring operations. The ring operations must be
   compatible with the operations on the approximated real numbers (e.g. if $x_1 ∈
   a_1$ and $x_2 ∈ a_2$ then $x_1 + x_2 ∈ a_1 + a_2$, and similarly for
@@ -622,18 +622,18 @@ and whose operations round the endpoints to a fixed precision. The
 approximation type using floating-point arithmetic, fixed-point arithmetic
 stored in machine words, or a variety of other formats.
 
-Once you have a fast approximation type, you also need a strategy $f : α → A$
-for approximating exact values in $α$ by approximate values in $A$. In order to
-be useful, $f$ must be compatible with the embeddings of $α$ and $A$ into $ℝ$:
+Once you have a fast approximation type, you also need a strategy $f : A → α$
+for approximating exact values in $A$ by approximate values in $α$. In order to
+be useful, $f$ must be compatible with the embeddings of $A$ and $α$ into $ℝ$:
 
 \begin{definition}[Valid approximation strategy]
   \label{def:approxStrategy}
   \uses{def:realApprox}
   \lean{CGLean.ApproxStrategy}
-  An approximation strategy for a linearly ordered ring $α$ is an embedding $i :
-  α → ℝ$ (i.e. a function $i$ that preserves the linearly ordered ring
-  operations), an approximation type $A$, and a function $f : α → A$ such that
-  for all $x ∈ α$, $i(x) ∈ f(x)$. We typically just refer to $f$, since $i$ is
+  An approximation strategy for a linearly ordered ring $A$ is an embedding $i :
+  A → ℝ$ (i.e. a function $i$ that preserves the linearly ordered ring
+  operations), an approximation type $α$, and a function $f : A → α$ such that
+  for all $x ∈ A$, $i(x) ∈ f(x)$. We typically just refer to $f$, since $i$ is
   unique and usually clear from context.
 \end{definition}
 
@@ -644,10 +644,10 @@ type:
   \label{def:filtered}
   \uses{def:approxStrategy}
   \lean{CGLean.Filtered, CGLean.Filtered.Pre}
-  Given an approximation strategy $f : α → A$, a \code{Filtered $α$ $f$}
-  value consists of an unevaluated value $x$ of type $α$ and an approximation $a
-  ∈ A$ with $i(x) ∈ a$. We consider two values in \code{Filtered $α$ $f$} to be
-  equal if the wrapped $α$ values are equal.
+  Given an approximation strategy $f : A → α$, a \code{Filtered $A$ $f$}
+  value consists of an unevaluated value $x$ of type $A$ and an approximation $a
+  ∈ α$ with $i(x) ∈ a$. We consider two values in \code{Filtered $A$ $f$} to be
+  equal if the wrapped $A$ values are equal.
 \end{definition}
 
 \begin{definition}[Ring operations]
@@ -655,14 +655,14 @@ type:
   \uses{def:filtered}
   \lean{CGLean.Filtered.instRingOps}
   We define the usual ring operations on \code{Filtered} values by storing
-  thunks that perform the corresponding operation on the underlying $α$ value.
+  thunks that perform the corresponding operation on the underlying $A$ value.
   We also immediately compute a new approximation using the corresponding operations
-  on $A$.
+  on $α$.
 
   For this definition to make sense, we need to ensure that the uncomputed
   exact values and the immediately computed approximate values match up (e.g.
   that $i(x_1 + x_2) ∈ a_1 + a_2$). This follows because $i$ is an order
-  embedding, so that $i(x_1 + x_2) = i(x_1) + i(x_2)$, and because $A$'s
+  embedding, so that $i(x_1 + x_2) = i(x_1) + i(x_2)$, and because $α$'s
   operations are compatible with the real number operations, so that $i(x_1) +
   i(x_2) ∈ a_1 + a_2$. The same reasoning applies for the other operations.
 \end{definition}
@@ -671,30 +671,30 @@ type:
   \label{thm:filteredRing}
   \lean{CGLean.Filtered.instCommRing}
   \uses{def:filteredRingOps}
-  If $α$ is a commutative ring, then \code{Filtered $α$ $f$} is a commutative
+  If $A$ is a commutative ring, then \code{Filtered $A$ $f$} is a commutative
   ring.
 \end{lemma}
 
 \begin{proof}
-  Since there's a 1-1 correspondence between elements of $α$ and elements of
-  \code{Filtered $α$ $f$} that preserves all of the operations, this follows
-  immediately from the corresponding property for $α$.
+  Since there's a 1-1 correspondence between elements of $A$ and elements of
+  \code{Filtered $A$ $f$} that preserves all of the operations, this follows
+  immediately from the corresponding property for $A$.
 \end{proof}
 
 \begin{definition}[Filtered inverse]
   \label{def:filteredInv}
   \uses{def:filtered}
   \lean{CGLean.Filtered.Pre.inv}
-  If $α$ has an inverse operation, we define an inverse on \code{Filtered $α$
+  If $A$ has an inverse operation, we define an inverse on \code{Filtered $A$
   $f$} by taking an inverse of the approximate value if it has an inverse, and
-  otherwise computing the exact inverse in $α$ and reapproximating it.
+  otherwise computing the exact inverse in $A$ and reapproximating it.
 \end{definition}
 
 \begin{lemma}
   \label{thm:filteredField}
   \lean{CGLean.Filtered.instField}
   \uses{def:filteredInv, thm:filteredRing}
-  If $α$ is a field, then \code{Filtered $α$ $f$} is a field.
+  If $A$ is a field, then \code{Filtered $A$ $f$} is a field.
 \end{lemma}
 
 \begin{proof}
@@ -706,27 +706,27 @@ type:
   \label{def:filteredCompare}
   \uses{def:filtered}
   \lean{CGLean.Filtered.Pre.cmp, CGLean.Filtered.Pre.cmp_eq, CGLean.Filtered.compare_get}
-  We define the ordering on \code{Filtered $α$ $f$} using the approximate
-  comparison and only fall back to the ordering on $α$ if the approximation is
+  We define the ordering on \code{Filtered $A$ $f$} using the approximate
+  comparison and only fall back to the ordering on $A$ if the approximation is
   inconclusive.
 
   The requirement that the approximation strategy is valid and that the
   approximation type's comparison function is compatible with the comparison on
   the real numbers means that regardless of whether we take the fast or the slow
-  path, we still get the same answer as we would have in $α$.
+  path, we still get the same answer as we would have in $A$.
 \end{definition}
 
 \begin{lemma}
   \label{thm:filteredOrdered}
   \lean{CGLean.Filtered.instLinearOrder, CGLean.Filtered.instIsStrictOrderedRing}
   \uses{thm:filteredRing}
-  If $α$ is a linearly ordered commutative ring, then so is \code{Filtered $α$
-  $f$}, and its comparison agrees with that of $α$.
+  If $A$ is a linearly ordered commutative ring, then so is \code{Filtered $A$
+  $f$}, and its comparison agrees with that of $A$.
 \end{lemma}
 
 \begin{proof}
   \uses{thm:filteredRing, def:filteredCompare}
-  Follows immediately from the fact the comparison matches that on $α$.
+  Follows immediately from the fact the comparison matches that on $A$.
 \end{proof}
 
 \subsection{Dyadic interval approximation strategy}
@@ -744,14 +744,14 @@ above, we can put all of the pieces together to form the example number type
 described at the beginning of the chapter and conclude that it is an ordered
 field.
 
-\begin{definition}[Approximation for $α[\sqrt{n}]$]
+\begin{definition}[Approximation for $A[\sqrt{n}]$]
   \label{def:adjoinApprox}
   \uses{def:adjoin, def:approxStrategy}
   \lean{AdjoinSqrt.toReal, CGLean.ApproxSqrt, AdjoinSqrt.approxStrategy}
-  Given an approximation strategy $f : α → A$ with embedding $i : α → ℝ$, an
-  element $n ∈ α$ with $i(n) \geq 0$, and an element $\hat{s} ∈ A$ with
+  Given an approximation strategy $f : A → α$ with embedding $i : A → ℝ$, an
+  element $n ∈ A$ with $i(n) \geq 0$, and an element $\hat{s} ∈ α$ with
   $\sqrt{i(n)} ∈ \hat{s}$, we define an approximation strategy for
-  $α[\sqrt{n}]$ with embedding
+  $A[\sqrt{n}]$ with embedding
   $i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := i(a_1) + i(a_n)\sqrt{i(n)}$ and
   approximation $f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n)\hat{s}$.
 \end{definition}
@@ -760,7 +760,7 @@ field.
   \label{thm:adjoinToRealOrderHom}
   \uses{def:adjoinApprox, thm:adjoinOrderedRing}
   \lean{AdjoinSqrt.toRealOrderHom, AdjoinSqrt.toReal_monotone, AdjoinSqrt.approxStrategy}
-  If $α$ is a linearly ordered field with a positive non-square $n ∈ α$, then
+  If $A$ is a linearly ordered field with a positive non-square $n ∈ A$, then
   $i_{\sqrt{n}}$ is an order embedding and $f_{\sqrt{n}}$ is a valid
   approximation strategy.
 \end{lemma}

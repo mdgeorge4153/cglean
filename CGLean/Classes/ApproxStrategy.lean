@@ -8,17 +8,17 @@ public import CGLean.Classes.RealApprox
 /-!
 # Approximating the elements of an ordered subring of real numbers
 
-An instance of `ApproxStrategy α A` is a strategy for approximating the exact but
-slow number representation `α` by a fast but imprecise representation `A`. It
-requires that the comparison and ring operations on `α`, `A`, and `ℝ` are
+An instance of `ApproxStrategy A α` is a strategy for approximating the exact but
+slow number representation `A` by a fast but imprecise representation `α`. It
+requires that the comparison and ring operations on `A`, `α`, and `ℝ` are
 compatible.
 
-Since there is only one order embedding from `α` to `ℝ`, we think of `α` as a
-subring of real numbers. However, even though the embedding of `α` is unique,
+Since there is only one order embedding from `A` to `ℝ`, we think of `A` as a
+subring of real numbers. However, even though the embedding of `A` is unique,
 there may be many corresponding approximations. For example, intervals could be
 rounded to different precisions, or represented by balls around a midpoint
 instead of endpoints. An `instance` defines a default approximation for a type,
-but it can be overridden with a different strategy (e.g. `Filtered α
+but it can be overridden with a different strategy (e.g. `Filtered A
 (strategy := other)`).
 -/
 
@@ -26,43 +26,43 @@ but it can be overridden with a different strategy (e.g. `Filtered α
 
 namespace CGLean
 
-/-- An approximation strategy for `α`: an order embedding into
-`ℝ`, together with an approximation in `A` of the image of each element.
+/-- An approximation strategy for `A`: an order embedding into
+`ℝ`, together with an approximation in `α` of the image of each element.
 
-The comparison and ring operations on `α`, `A`, and `ℝ` must be compatible:
- - `hom : α → ℝ` must be an order embedding so that `α` and `ℝ`
+The comparison and ring operations on `A`, `α`, and `ℝ` must be compatible:
+ - `hom : A → ℝ` must be an order embedding so that `A` and `ℝ`
    operations are compatible
- - `A` must be a `RealApprox`, which means the operations on `A` and `ℝ` are
+ - `α` must be a `RealApprox`, which means the operations on `α` and `ℝ` are
    compatible
- - `approx` must map an element of `α` to an approximation in `A` that actually
+ - `approx` must map an element of `A` to an approximation in `α` that actually
    contains it
 
 The homomorphism is `Erased`: it lands in `ℝ` and is used only in proofs.
 -/
-class ApproxStrategy (α : Type) [Ring α] [Preorder α] (A : outParam Type) [RealApprox A] where
-  hom : Erased (α →+* ℝ)
+class ApproxStrategy (A : Type) [Ring A] [Preorder A] (α : outParam Type) [RealApprox α] where
+  hom : Erased (A →+* ℝ)
   strictMono : StrictMono hom.out
-  approx : α → A
+  approx : A → α
   mem_approx : ∀ a, hom.out a ∈ approx a
 
 namespace ApproxStrategy
 
-variable {α A : Type} [Ring α] [Preorder α] [RealApprox A]
+variable {A α : Type} [Ring A] [Preorder A] [RealApprox α]
 
 /-- The embedding into `ℝ`. -/
-noncomputable def toRingHom (e : ApproxStrategy α A) : α →+* ℝ := e.hom.out
+noncomputable def toRingHom (e : ApproxStrategy A α) : A →+* ℝ := e.hom.out
 
-theorem mem_approx' (e : ApproxStrategy α A) (a : α) : e.toRingHom a ∈ e.approx a :=
+theorem mem_approx' (e : ApproxStrategy A α) (a : A) : e.toRingHom a ∈ e.approx a :=
   e.mem_approx a
 
-theorem strictMono' (e : ApproxStrategy α A) : StrictMono e.toRingHom := e.strictMono
+theorem strictMono' (e : ApproxStrategy A α) : StrictMono e.toRingHom := e.strictMono
 
 end ApproxStrategy
 
-/-- An approximation of `√n`, for approximating `α[√n]`. -/
-class ApproxSqrt {α A : Type} [Ring α] [Preorder α] [RealApprox A] [e : ApproxStrategy α A]
-    (n : α) where
-  sqrt : A
+/-- An approximation of `√n`, for approximating `A[√n]`. -/
+class ApproxSqrt {A α : Type} [Ring A] [Preorder A] [RealApprox α] [e : ApproxStrategy A α]
+    (n : A) where
+  sqrt : α
   mem_sqrt : Real.sqrt (e.toRingHom n) ∈ sqrt
 
 end CGLean

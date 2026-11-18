@@ -220,7 +220,7 @@ instance : RealApprox IntervalDyadic where
   compare_of_compare? := compare_of_compare?
 
 /-- `√n`, from the approximation of `n`. -/
-instance {α : Type} [Ring α] [Preorder α] [e : ApproxStrategy α IntervalDyadic] (n : α) :
+instance {A : Type} [Ring A] [Preorder A] [e : ApproxStrategy A IntervalDyadic] (n : A) :
     ApproxSqrt n where
   sqrt := sqrt (e.approx n)
   mem_sqrt := mem_sqrt (e.mem_approx' n)
