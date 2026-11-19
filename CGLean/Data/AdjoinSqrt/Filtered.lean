@@ -33,9 +33,7 @@ instance approxStrategy [e : ApproxStrategy R α] [sq : ApproxSqrt n] :
   strictMono := by
     rw [Erased.out_mk]
     exact Monotone.strictMono_of_injective (toReal_monotone _) (RingHom.injective _)
-  -- `√n` is approximated once, not on every call
-  approx := let s := sq.sqrt
-    fun x => e.approx x.a₁ + e.approx x.aₙ * s
+  approx x := e.approx x.a₁ + e.approx x.aₙ * sq.sqrt
   mem_approx x := by
     rw [Erased.out_mk]
     exact RealApprox.mem_add (e.mem_approx' _)

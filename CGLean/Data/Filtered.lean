@@ -187,7 +187,7 @@ theorem get_injective : Function.Injective (get (A := A)) := by
 /-- An already computed value. -/
 def ofValue (a : A) : Filtered A := ⟦Filtered.Pre.pure a⟧
 
-@[simp] theorem get_ofValue (a : A) : get (ofValue a : Filtered A) = a := rfl
+@[simp] theorem get_ofValue (a : A) : (ofValue a : Filtered A).get = a := rfl
 
 instance : IntCast (Filtered A) := ⟨fun i => ⟦i⟧⟩
 instance : NatCast (Filtered A) := ⟨fun n => ⟦n⟧⟩
@@ -218,30 +218,30 @@ instance : Pow (Filtered A) ℕ where
     show (a ^ n).value.get = (b ^ n).value.get
     rw [Filtered.Pre.value_pow, Filtered.Pre.value_pow, show _ = _ from h]) x
 
-@[simp] theorem get_intCast (i : ℤ) : get (i : Filtered A) = i := rfl
-@[simp] theorem get_natCast (n : ℕ) : get (n : Filtered A) = n := rfl
-@[simp] theorem get_zero : get (0 : Filtered A) = 0 := Int.cast_zero
-@[simp] theorem get_one : get (1 : Filtered A) = 1 := Int.cast_one
+@[simp] theorem get_intCast (i : ℤ) : (i : Filtered A).get = i := rfl
+@[simp] theorem get_natCast (n : ℕ) : (n : Filtered A).get = n := rfl
+@[simp] theorem get_zero : (0 : Filtered A).get = 0 := Int.cast_zero
+@[simp] theorem get_one : (1 : Filtered A).get = 1 := Int.cast_one
 
-@[simp] theorem get_add (x y : Filtered A) : get (x + y) = get x + get y := by
+@[simp] theorem get_add (x y : Filtered A) : (x + y).get = x.get + y.get := by
   induction x using Quotient.ind; induction y using Quotient.ind; rfl
 
-@[simp] theorem get_neg (x : Filtered A) : get (-x) = -get x := by
+@[simp] theorem get_neg (x : Filtered A) : (-x).get = -x.get := by
   induction x using Quotient.ind; rfl
 
-@[simp] theorem get_sub (x y : Filtered A) : get (x - y) = get x - get y := by
+@[simp] theorem get_sub (x y : Filtered A) : (x - y).get = x.get - y.get := by
   induction x using Quotient.ind; induction y using Quotient.ind; rfl
 
-@[simp] theorem get_mul (x y : Filtered A) : get (x * y) = get x * get y := by
+@[simp] theorem get_mul (x y : Filtered A) : (x * y).get = x.get * y.get := by
   induction x using Quotient.ind; induction y using Quotient.ind; rfl
 
-@[simp] theorem get_nsmul (n : ℕ) (x : Filtered A) : get (n • x) = n • get x := by
+@[simp] theorem get_nsmul (n : ℕ) (x : Filtered A) : (n • x).get = n • x.get := by
   rw [nsmul_eq_mul, ← get_natCast]; exact get_mul _ _
 
-@[simp] theorem get_zsmul (n : ℤ) (x : Filtered A) : get (n • x) = n • get x := by
+@[simp] theorem get_zsmul (n : ℤ) (x : Filtered A) : (n • x).get = n • x.get := by
   rw [zsmul_eq_mul, ← get_intCast]; exact get_mul _ _
 
-@[simp] theorem get_pow (x : Filtered A) (n : ℕ) : get (x ^ n) = get x ^ n := by
+@[simp] theorem get_pow (x : Filtered A) (n : ℕ) : (x ^ n).get = x.get ^ n := by
   induction x using Quotient.ind; exact Filtered.Pre.value_pow _ n
 
 instance instRingOps : RingOps (Filtered A) where
@@ -263,14 +263,24 @@ instance : Ord (Filtered A) where
     rw [Filtered.Pre.cmp_eq, Filtered.Pre.cmp_eq, show _ = _ from h₁,
       show _ = _ from h₂]
 
-theorem compare_get (x y : Filtered A) : compare (get x) (get y) = compare x y := by
+theorem compare_get (x y : Filtered A) : compare x.get y.get = compare x y := by
   induction x using Quotient.ind; induction y using Quotient.ind
   exact (Filtered.Pre.cmp_eq _ _).symm
 
-instance : LE (Filtered A) := ⟨fun x y => get x ≤ get y⟩
-instance : LT (Filtered A) := ⟨fun x y => get x < get y⟩
+/-! The order instances split specification from implementation:
 
-/-! These decide by `compare`, so by the intervals when they suffice. -/
+* `LE` and `LT` are propositions, defined through `get`, so that the order is
+  `A`'s, transferred along `get_injective`.
+* `Ord` computes with `Filtered.Pre.cmp`, which tries `compare?` on the
+  approximations and falls back on `A`; `compare_get` says it agrees with `A`.
+* `DecidableLE`, `DecidableLT` and `DecidableEq` decide those propositions by
+  `compare`, so by the approximations when they suffice.
+* `instLinearOrder` bundles these, with `compare_get` as the proof that its
+  `compare` field agrees with `≤`.
+-/
+
+instance : LE (Filtered A) := ⟨fun x y => x.get ≤ y.get⟩
+instance : LT (Filtered A) := ⟨fun x y => x.get < y.get⟩
 
 instance : DecidableLE (Filtered A) := fun x y =>
   decidable_of_iff (compare x y ≠ .gt) (by
@@ -286,14 +296,14 @@ instance : DecidableEq (Filtered A) := fun x y =>
 instance : Max (Filtered A) := ⟨fun x y => if x ≤ y then y else x⟩
 instance : Min (Filtered A) := ⟨fun x y => if x ≤ y then x else y⟩
 
-theorem get_max (x y : Filtered A) : get (x ⊔ y) = get x ⊔ get y := by
-  show get (if x ≤ y then y else x) = _
+theorem get_max (x y : Filtered A) : (x ⊔ y).get = x.get ⊔ y.get := by
+  show (if x ≤ y then y else x).get = _
   split_ifs with h
   · exact (max_eq_right h).symm
   · exact (max_eq_left (le_of_not_ge h)).symm
 
-theorem get_min (x y : Filtered A) : get (x ⊓ y) = get x ⊓ get y := by
-  show get (if x ≤ y then x else y) = _
+theorem get_min (x y : Filtered A) : (x ⊓ y).get = x.get ⊓ y.get := by
+  show (if x ≤ y then x else y).get = _
   split_ifs with h
   · exact (min_eq_left h).symm
   · exact (min_eq_right (le_of_not_ge h)).symm
@@ -328,27 +338,27 @@ instance : Pow (Filtered A) ℤ where
     | .ofNat n => x ^ n
     | .negSucc n => (x ^ (n + 1))⁻¹
 
-@[simp] theorem get_inv (x : Filtered A) : get x⁻¹ = (get x)⁻¹ := by
+@[simp] theorem get_inv (x : Filtered A) : (x⁻¹).get = x.get⁻¹ := by
   induction x using Quotient.ind; exact Filtered.Pre.value_inv _
 
-@[simp] theorem get_div (x y : Filtered A) : get (x / y) = get x / get y := by
-  show get (x * y⁻¹) = _; rw [get_mul, get_inv, div_eq_mul_inv]
+@[simp] theorem get_div (x y : Filtered A) : (x / y).get = x.get / y.get := by
+  show (x * y⁻¹).get = _; rw [get_mul, get_inv, div_eq_mul_inv]
 
-@[simp] theorem get_ratCast (q : ℚ) : get (q : Filtered A) = q := rfl
+@[simp] theorem get_ratCast (q : ℚ) : (q : Filtered A).get = q := rfl
 
-@[simp] theorem get_nnratCast (q : ℚ≥0) : get (q : Filtered A) = q := by
+@[simp] theorem get_nnratCast (q : ℚ≥0) : (q : Filtered A).get = q := by
   show ((q : ℚ) : A) = _; exact Rat.cast_nnratCast q
 
-@[simp] theorem get_qsmul (q : ℚ) (x : Filtered A) : get (q • x) = q • get x := by
-  show get ((q : Filtered A) * x) = _; rw [get_mul, get_ratCast, Rat.smul_def]
+@[simp] theorem get_qsmul (q : ℚ) (x : Filtered A) : (q • x).get = q • x.get := by
+  show ((q : Filtered A) * x).get = _; rw [get_mul, get_ratCast, Rat.smul_def]
 
-@[simp] theorem get_nnqsmul (q : ℚ≥0) (x : Filtered A) : get (q • x) = q • get x := by
-  show get ((q : Filtered A) * x) = _; rw [get_mul, get_nnratCast, NNRat.smul_def]
+@[simp] theorem get_nnqsmul (q : ℚ≥0) (x : Filtered A) : (q • x).get = q • x.get := by
+  show ((q : Filtered A) * x).get = _; rw [get_mul, get_nnratCast, NNRat.smul_def]
 
-@[simp] theorem get_zpow (x : Filtered A) (n : ℤ) : get (x ^ n) = get x ^ n := by
+@[simp] theorem get_zpow (x : Filtered A) (n : ℤ) : (x ^ n).get = x.get ^ n := by
   cases n with
-  | ofNat n => show get (x ^ n) = _; rw [get_pow, Int.ofNat_eq_natCast, zpow_natCast]
-  | negSucc n => show get ((x ^ (n + 1))⁻¹) = _; rw [get_inv, get_pow, zpow_negSucc]
+  | ofNat n => show (x ^ n).get = _; rw [get_pow, Int.ofNat_eq_natCast, zpow_natCast]
+  | negSucc n => show ((x ^ (n + 1))⁻¹).get = _; rw [get_inv, get_pow, zpow_negSucc]
 
 instance instField : Field (Filtered A) :=
   get_injective.field get get_zero get_one get_add get_mul get_neg get_sub get_inv get_div
