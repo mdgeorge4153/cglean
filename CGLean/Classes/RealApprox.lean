@@ -36,4 +36,13 @@ class RealApprox (α : Type) extends Membership ℝ α, Add α, Neg α, Sub α, 
   compare_of_compare? {X Y : α} {o : Ordering} :
     compare? X Y = some o → ∀ x ∈ X, ∀ y ∈ Y, compare x y = o
 
+/-- The partial operations of `α` are complete: `inv?` fails only when `X`
+contains zero, and `compare?` only when the members of `X` and `Y` don't all
+compare the same way. (Complete as a decision procedure, not in the sense of
+`CompleteSpace` or a complete lattice.) -/
+class RealApprox.IsComplete (α : Type) [RealApprox α] : Prop where
+  zero_mem_of_inv?_eq_none {X : α} : RealApprox.inv? X = none → (0 : ℝ) ∈ X
+  exists_ne_of_compare?_eq_none {X Y : α} : RealApprox.compare? X Y = none →
+    ∃ x₁ ∈ X, ∃ y₁ ∈ Y, ∃ x₂ ∈ X, ∃ y₂ ∈ Y, compare x₁ y₁ ≠ compare x₂ y₂
+
 end CGLean

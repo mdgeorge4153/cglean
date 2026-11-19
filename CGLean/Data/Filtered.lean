@@ -244,7 +244,7 @@ instance : Pow (Filtered A) ℕ where
 @[simp] theorem get_pow (x : Filtered A) (n : ℕ) : (x ^ n).get = x.get ^ n := by
   induction x using Quotient.ind; exact Filtered.Pre.value_pow _ n
 
-instance instRingOps : RingOps (Filtered A) where
+instance instRingOps : RingOps (Filtered A) := {}
 
 instance instCommRing : CommRing (Filtered A) :=
   get_injective.commRing get get_zero get_one get_add get_mul get_neg get_sub get_nsmul

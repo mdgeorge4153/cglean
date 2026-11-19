@@ -134,6 +134,13 @@ theorem mem_inv? {x : ℝ} {I J : IntervalDyadic} (hx : x ∈ I) (h : inv? I = s
   exact mem_trim (IntervalDyadic.mem_ofIntervalRat
     (IntervalRat.mem_invNonzero (I := ⟨_, hz⟩) hxR hx0) ratPrec (by simp [ratPrec]))
 
+/-- `inv?` fails only on intervals containing zero. -/
+theorem zero_mem_of_inv?_eq_none {I : IntervalDyadic} (h : inv? I = none) : (0 : ℝ) ∈ I := by
+  unfold inv? at h
+  split_ifs at h with hz
+  obtain ⟨hlo, hhi⟩ := hz
+  exact IntervalDyadic.mem_toIntervalRat.mpr ⟨by exact_mod_cast hlo, by exact_mod_cast hhi⟩
+
 theorem mem_sqrt {x : ℝ} {I : IntervalDyadic} (hx : x ∈ I) : Real.sqrt x ∈ sqrt I :=
   mem_trim (IntervalDyadic.mem_sqrt' hx ratPrec)
 
@@ -218,6 +225,10 @@ instance : RealApprox IntervalDyadic where
   mem_pow := mem_pow
   mem_inv? := mem_inv?
   compare_of_compare? := compare_of_compare?
+
+instance : RealApprox.IsComplete IntervalDyadic where
+  zero_mem_of_inv?_eq_none := zero_mem_of_inv?_eq_none
+  exists_ne_of_compare?_eq_none := compare?_complete
 
 /-- `√n`, from the approximation of `n`. -/
 instance {A : Type} [Ring A] [Preorder A] [e : ApproxStrategy A IntervalDyadic] (n : A) :
