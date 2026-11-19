@@ -594,6 +594,7 @@ $a$ could potentially represent many real numbers.
 \begin{definition}[Approximation type]
   \label{def:realApprox}
   \lean{CGLean.RealApprox}
+  \leanok
   An approximation type $α$ is a type whose values represent subsets of the real
   numbers, and that supports the ring operations. The ring operations must be
   compatible with the operations on the approximated real numbers (e.g. if $x_1 ∈
@@ -630,6 +631,7 @@ be useful, $f$ must be compatible with the embeddings of $A$ and $α$ into $ℝ$
   \label{def:approxStrategy}
   \uses{def:realApprox}
   \lean{CGLean.ApproxStrategy}
+  \leanok
   An approximation strategy for a linearly ordered ring $A$ is an embedding $i :
   A → ℝ$ (i.e. a function $i$ that preserves the linearly ordered ring
   operations), an approximation type $α$, and a function $f : A → α$ such that
@@ -643,7 +645,8 @@ type:
 \begin{definition}[Filtered number representation]
   \label{def:filtered}
   \uses{def:approxStrategy}
-  \lean{CGLean.Filtered, CGLean.Filtered.Pre}
+  \lean{CGLean.Filtered, CGLean.Filtered.Pre, CGLean.Filtered.get}
+  \leanok
   Given an approximation strategy $f : A → α$, a \code{Filtered $A$ $f$}
   value consists of an unevaluated value $x$ of type $A$ and an approximation $a
   ∈ α$ with $i(x) ∈ a$. We consider two values in \code{Filtered $A$ $f$} to be
@@ -654,6 +657,7 @@ type:
   \label{def:filteredRingOps}
   \uses{def:filtered}
   \lean{CGLean.Filtered.instRingOps}
+  \leanok
   We define the usual ring operations on \code{Filtered} values by storing
   thunks that perform the corresponding operation on the underlying $A$ value.
   We also immediately compute a new approximation using the corresponding operations
@@ -671,11 +675,13 @@ type:
   \label{thm:filteredRing}
   \lean{CGLean.Filtered.instCommRing}
   \uses{def:filteredRingOps}
+  \leanok
   If $A$ is a commutative ring, then \code{Filtered $A$ $f$} is a commutative
   ring.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Since there's a 1-1 correspondence between elements of $A$ and elements of
   \code{Filtered $A$ $f$} that preserves all of the operations, this follows
   immediately from the corresponding property for $A$.
@@ -684,7 +690,8 @@ type:
 \begin{definition}[Filtered inverse]
   \label{def:filteredInv}
   \uses{def:filtered}
-  \lean{CGLean.Filtered.Pre.inv}
+  \lean{CGLean.Filtered.Pre.inv, CGLean.Filtered.instInv}
+  \leanok
   If $A$ has an inverse operation, we define an inverse on \code{Filtered $A$
   $f$} by taking an inverse of the approximate value if it has an inverse, and
   otherwise computing the exact inverse in $A$ and reapproximating it.
@@ -694,11 +701,13 @@ type:
   \label{thm:filteredField}
   \lean{CGLean.Filtered.instField}
   \uses{def:filteredInv, thm:filteredRing}
+  \leanok
   If $A$ is a field, then \code{Filtered $A$ $f$} is a field.
 \end{lemma}
 
 \begin{proof}
   \uses{thm:filteredRing}
+  \leanok
   Follows immediately.
 \end{proof}
 
@@ -706,6 +715,7 @@ type:
   \label{def:filteredCompare}
   \uses{def:filtered}
   \lean{CGLean.Filtered.Pre.cmp, CGLean.Filtered.Pre.cmp_eq, CGLean.Filtered.compare_get}
+  \leanok
   We define the ordering on \code{Filtered $A$ $f$} using the approximate
   comparison and only fall back to the ordering on $A$ if the approximation is
   inconclusive.
@@ -720,12 +730,14 @@ type:
   \label{thm:filteredOrdered}
   \lean{CGLean.Filtered.instLinearOrder, CGLean.Filtered.instIsStrictOrderedRing}
   \uses{thm:filteredRing}
+  \leanok
   If $A$ is a linearly ordered commutative ring, then so is \code{Filtered $A$
   $f$}, and its comparison agrees with that of $A$.
 \end{lemma}
 
 \begin{proof}
   \uses{thm:filteredRing, def:filteredCompare}
+  \leanok
   Follows immediately from the fact the comparison matches that on $A$.
 \end{proof}
 
@@ -748,6 +760,7 @@ field.
   \label{def:adjoinApprox}
   \uses{def:adjoin, def:approxStrategy}
   \lean{AdjoinSqrt.toReal, CGLean.ApproxSqrt, AdjoinSqrt.approxStrategy}
+  \leanok
   Given an approximation strategy $f : A → α$ with embedding $i : A → ℝ$, an
   element $n ∈ A$ with $i(n) \geq 0$, and an element $\hat{s} ∈ α$ with
   $\sqrt{i(n)} ∈ \hat{s}$, we define an approximation strategy for
@@ -758,14 +771,16 @@ field.
 
 \begin{lemma}[$f_{\sqrt{n}}$ is a valid approximation strategy]
   \label{thm:adjoinApproxValid}
-  \uses{def:adjoinApprox, thm:adjoinOrderedRing}
+  \uses{def:adjoinApprox, thm:adjoinOrderedRing, AdjoinSqrt.toReal_nonneg}
   \lean{AdjoinSqrt.toRealOrderHom, AdjoinSqrt.toReal_monotone, AdjoinSqrt.approxStrategy}
+  \leanok
   If $A$ is a linearly ordered field with a positive non-square $n ∈ A$, then
   $i_{\sqrt{n}}$ is an embedding and $f_{\sqrt{n}}$ is a valid
   approximation strategy.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   We need to check that $i_{\sqrt{n}} : A[\sqrt{n}] → ℝ$ is an order embedding
   and that $f_{\sqrt{n}} : A[\sqrt{n}] → α$ is a valid approximation strategy.
 
@@ -791,10 +806,12 @@ field.
   \label{thm:numberType}
   \uses{def:adjoin, def:filtered}
   \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldNum, CGLean.NumberType.instLinearOrderNum}
+  \leanok
   \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 \begin{proof}
   \uses{thm:adjoinOrderedField, thm:adjoinApproxValid, thm:filteredField, thm:filteredOrdered}
+  \leanok
   $ℚ$ is clearly a linearly ordered field. The fact that $2$ is a positive
   non-square in $ℚ$ is well-known, and it can be used to prove that $3$ is also
   a positive non-square in $ℚ[\sqrt{2}]$ (the proof by contradiction is easy).
