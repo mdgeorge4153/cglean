@@ -18,7 +18,7 @@ So this checks:
 Names cited only by statements without \\leanok are not checked. Run from the
 project root, after `lake build`.
 """
-import re, subprocess, sys, pathlib
+import re, subprocess, sys, pathlib, tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TEX = ROOT / "blueprint" / "src" / "content.tex"
@@ -62,8 +62,16 @@ def scan(tex: str) -> tuple[list[str], set[str], list[str]]:
     return list(dict.fromkeys(stated)), proved, bad
 
 
+def library_roots() -> list[str]:
+    """Every root of every library: some files sit outside `CGLean.lean`."""
+    config = tomllib.loads((ROOT / "lakefile.toml").read_text())
+    return [root for lib in config.get("lean_lib", [])
+            for root in lib.get("roots", [lib["name"]])]
+
+
 def check_declarations(stated: list[str], proved: set[str]) -> list[str]:
-    src = "import CGLean\n" + "".join(f"#print axioms {n}\n" for n in stated)
+    src = "".join(f"import {r}\n" for r in library_roots())
+    src += "".join(f"#print axioms {n}\n" for n in stated)
     probe = ROOT / ".lake" / "blueprint-decls.lean"
     probe.parent.mkdir(parents=True, exist_ok=True)
     probe.write_text(src)

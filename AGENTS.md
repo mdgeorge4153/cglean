@@ -18,6 +18,23 @@ This keeps informal notation consistent with the structure's own field names
 identifiers quoted verbatim from source, e.g. `x.a₁`, are unaffected — this
 is about how to write new prose/proofs, not about renaming existing code.)
 
+### Approximations
+
+When writing informal math about approximate arithmetic (`RealApprox`,
+`ApproxStrategy`, `Filtered`), use:
+
+| kind                          | letters         | example                                  |
+|-------------------------------|-----------------|------------------------------------------|
+| exact values in `A`           | `a`, `b`, `c`   | `a = a₁ + aₙ√n` (as above)               |
+| reals                         | `x`, `y`        | `x ∈ X`                                  |
+| approximations in `α`         | `X`, `Y`, `Z`   | `X + Y`; `Ŝ` approximates `√n`           |
+| embedding and strategy        | `i : A → ℝ`, `f : A → α` | `i(a) ∈ f(a)`                   |
+| interval endpoints            | `x_lo`, `x_hi`  | `X = [x_lo, x_hi]`                       |
+| dyadic rationals              | `m · 2^k`       |                                          |
+
+This matches the Lean, where `RealApprox`'s fields are stated with
+`{x y : ℝ} {X Y : α}`. As above, it governs prose, not Lean identifiers.
+
 ## Blueprint prose
 
 Don't write expository prose for the blueprint (proof sketches, explanations,
