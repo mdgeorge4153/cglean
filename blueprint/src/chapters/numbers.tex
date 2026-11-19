@@ -509,11 +509,29 @@ interesting nonetheless.
   Trivial
 \end{proof}
 
+\begin{definition}[Quadratic algebra]
+  \label{def:quadraticAlgebra}
+  \lean{QuadraticAlgebra}
+  \mathlibok
+  For a commutative semiring $A$ and $a, b ∈ A$, the quadratic algebra over $A$
+  with coefficients $a$, $b$ has elements $x + yω$ for $x, y ∈ A$, with
+  $ω^2 = a + bω$.
+\end{definition}
+
 \begin{lemma}
   \label{thm:mathlibAdjoin}
-  \uses{def:adjoin}
-  $A[\sqrt{n}]$ is equivalent to $A[x] / (x^2 - n)$ as defined in mathlib.
+  \lean{AdjoinSqrt.quadraticAlgebraEquiv}
+  \leanok
+  \uses{def:adjoin, thm:adjoinAlgebra, def:quadraticAlgebra}
+  If $A$ is a commutative semiring, then $A[\sqrt{n}]$ is isomorphic, as an
+  $A$-algebra, to the quadratic algebra over $A$ with coefficients $n$ and $0$,
+  by $a_1 + a_n\sqrt{n} \mapsto a_1 + a_nω$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Trivial.
+\end{proof}
 
 \TODO{Talk about sign-based formulation and how it avoids the addition and
 multiplication in the cone computation. Link it to the implementation, cite
