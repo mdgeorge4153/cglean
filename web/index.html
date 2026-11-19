@@ -10,7 +10,9 @@
     svg  { border: 1px solid #ccc; width: 400px; max-width: 100%; touch-action: none; user-select: none; }
     /* Embedded in the blueprint (demo-embed.js): just the canvas. */
     .embedded body { margin: 0; }
-    .embedded p    { display: none; }
+    .embedded p, .embedded #bench { display: none; }
+    #bench   { margin-top: 1rem; }
+    #bench > * { margin: .3rem 0; }
   </style>
 </head>
 <body>
@@ -18,6 +20,19 @@
   and the drawing are all in Lean
   (<code>CGLeanWeb/Drag.lean</code>), compiled to WebAssembly.</p>
   <svg id="canvas" viewBox="0 0 400 400"></svg>
+  <div id="bench">
+    <div><label><input type="checkbox" id="exact"> Show the exact version (both always run)</label></div>
+    <div>
+      Trace: <span id="trace"></span>
+      <button id="record">Record a drag</button>
+      <button id="synthetic">Use the built-in drag</button>
+    </div>
+    <div>
+      Replay <input id="reps" type="number" value="20" min="1" style="width: 5em"> times
+      <button id="replay">Compare exact and filtered</button>
+    </div>
+    <pre id="results"></pre>
+  </div>
   <script type="module" src="main.js"></script>
 </body>
 </html>
