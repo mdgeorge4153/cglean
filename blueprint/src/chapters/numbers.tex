@@ -3,8 +3,8 @@
 
 For our computational geometry algorithms to be correct, we need to use exact
 number representations --- roundoff error introduced by floating-point
-approximations can easily lead to incorrect outcomes.  For example,
-if the intersection of two polygons is a single point or line, small rounding
+approximations can easily lead to incorrect outcomes~\cite{kettner2008}.
+For example, if the intersection of two polygons is a single point or line, small rounding
 errors could easily make the intersection look empty.
 
 Mathlib provides an exact real number representation that encodes a number as
@@ -533,8 +533,8 @@ $k$). By keeping the size of the number representations bounded, we store and
 compute with these numbers efficiently, but we give up precision.
 
 The \code{Filtered} type defined in this section takes the best of both
-worlds. We store a computation that evaluates to the exact value, but we keep it
-unevaluated. We also store a fast approximation of that value that we update on
+worlds, much as CGAL's filtered kernels do~\cite{cgal}. We store a computation
+that evaluates to the exact value, but we keep it unevaluated. We also store a fast approximation of that value that we update on
 every operation. We only fall back to the exact computation if the approximation
 isn't sufficient to compare two values.
 

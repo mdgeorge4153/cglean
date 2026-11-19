@@ -46,7 +46,11 @@ apply to reference-style material such as the related-work section, which is
 fine to write in full.
 
 The blueprint is split into one file per chapter under `blueprint/src/chapters/`,
-`\input` from `content.tex`; each chapter gets its own dependency graph.
+`\input` from `content.tex`; each chapter gets its own dependency graph
+(linked from the chapter's sidebar entry by `toc-graphs.js`). A chapter's graph
+shows only that chapter's nodes, so a `\uses` of a node in another chapter
+draws no edge; add `\alsoIn{chap:other}` to a node to show it, with its
+edges, in that chapter's graph too.
 References are a `thebibliography` in `chapters/references.tex`: add a
 `\bibitem{key}` there and `\cite{key}` it.
 
