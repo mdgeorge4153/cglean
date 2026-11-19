@@ -1,12 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CGLean drag test</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     svg  { border: 1px solid #ccc; width: 400px; max-width: 100%; touch-action: none; user-select: none; }
+    /* Embedded in the blueprint (demo-embed.js): just the canvas. */
+    .embedded body { margin: 0; }
+    .embedded p    { display: none; }
   </style>
 </head>
 <body>

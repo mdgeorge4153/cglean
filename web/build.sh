@@ -6,7 +6,7 @@
 # the C for Lean's core libraries Init and Std, caching all of it in
 # .lake/wasm-v<version>/. Later runs only redo the steps from Lake onwards.
 #
-# Needs: emscripten (`brew install emscripten`), elan, curl, python3, and
+# Needs: emscripten (`brew install emscripten`, or emsdk), elan, curl, python3, and
 # Mathlib's build cache (`lake exe cache get`).
 #
 # See web/README.md for how the pieces fit together.
@@ -28,7 +28,8 @@ LEAN_VERSION=$(sed 's/.*:v//' lean-toolchain)
 W=$ROOT/.lake/wasm-v$LEAN_VERSION   # everything here depends on the toolchain
 SRC=$W/lean4-src
 
-export EM_CACHE=$ROOT/.lake/emcache   # the default, inside Homebrew's tree, isn't writable
+# The default, inside Homebrew's tree, isn't writable.
+export EM_CACHE=${EM_CACHE:-$ROOT/.lake/emcache}
 
 mkdir -p "$W" "$OUT"
 
@@ -59,7 +60,8 @@ if [ ! -d "$SRC" ]; then
 
   # A stub used only when building without libuv support (as we do) has a
   # signature that no longer matches its declaration, so it doesn't compile.
-  sed -i '' \
+  # (-i.orig, as BSD and GNU sed disagree on a bare -i.)
+  sed -i.orig \
     -e 's|^extern "C" LEAN_EXPORT lean_obj_res lean_uv_os_get_group() {|extern "C" LEAN_EXPORT lean_obj_res lean_uv_os_get_group(uint64_t gid) {|' \
     "$SRC/src/runtime/uv/system.cpp"
 fi
