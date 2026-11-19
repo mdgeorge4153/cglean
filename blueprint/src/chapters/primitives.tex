@@ -48,14 +48,14 @@
   \lean{CGLean.CCW.cyclic, CGLean.CCW.antisymm, CGLean.CCW.interiority, CGLean.CCW.transitivity}
   \uses{def:ccw}
   \leanok
-  $\ccw$ satisfies Knuth's axioms 1, 2, 4 and 5.
+  $\ccw$ satisfies Knuth's axioms 1, 2, 4 and 5~\cite{knuth1992}.
 \end{lemma}
 
 \begin{proof}
   \leanok
   \TODO{\begin{itemize}
     \item 1, 4, 5: the strict fields directly
-    \item 2: swap, and -1 ≠ 1
+    \item 2: swap, and $-1 ≠ 1$
   \end{itemize}}
 \end{proof}
 
@@ -113,9 +113,9 @@
 \begin{proof}
   \leanok
   \TODO{\begin{itemize}
-    \item cyclic, swap: identities + sign(-a) = -sign(a)
+    \item cyclic, swap: identities + $\sign(-a) = -\sign(a)$
     \item interiority: area sum + nonneg closed under +
-    \item transitivity: Plücker + sign_mul; divide by det(t,s,q) > 0
+    \item transitivity: Plücker + \code{sign\_mul}; divide by $\det(t,s,q) > 0$
     \item no general-position assumption anywhere
   \end{itemize}}
 \end{proof}
