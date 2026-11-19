@@ -1,4 +1,6 @@
-import CGLean.Render.CCW
+module
+
+public meta import CGLean.Render.CCW
 
 /-!
 # The counterclockwise axioms, drawn
@@ -12,6 +14,8 @@ rotation that makes the shape of each axiom visible: interiority says the inner
 point sees all three edges the same way, and transitivity says the same of a
 point off to one side.
 -/
+
+meta section
 
 namespace CGLean.Render
 

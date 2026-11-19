@@ -1,5 +1,7 @@
-import ProofWidgets.Data.Svg
-import ProofWidgets.Component.HtmlDisplay
+module
+
+public meta import ProofWidgets.Data.Svg
+public meta import ProofWidgets.Component.HtmlDisplay
 
 /-!
 # Drawing counterclockwise claims
@@ -28,6 +30,8 @@ the data and stay where they are, while the lines joining them are annotation
 and may slide — and claims sharing a pivot are given arcs of different radii,
 which additionally lets a chain of them be read as an angular order.
 -/
+
+public meta section
 
 namespace CGLean.Render
 
