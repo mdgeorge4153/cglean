@@ -2,6 +2,7 @@ module
 
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import CGLean.Data.AdjoinSqrt
+import all CGLean.Data.AdjoinSqrt
 public import CGLean.Data.Filtered
 
 /-!

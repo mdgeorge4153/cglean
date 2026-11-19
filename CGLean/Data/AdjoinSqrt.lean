@@ -63,7 +63,7 @@ variable [Add R] [Mul R] [Sub R] [Neg R]
 @[simps, expose] public def conj (x : AdjoinSqrt R n) : AdjoinSqrt R n := ⟨x.a₁, -x.aₙ⟩
 
 /-- `norm (a₁ + aₙ √n)` is `a₁² - naₙ²` -/
-@[expose] public def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
+public def norm (x : AdjoinSqrt R n) : R := x.a₁ * x.a₁ - n * x.aₙ * x.aₙ
 
 @[simps] public instance instInv [Inv R] [Zero R] : Inv (AdjoinSqrt R n) where
   inv x := x.conj * x.norm⁻¹
