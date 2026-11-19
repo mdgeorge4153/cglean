@@ -10,6 +10,7 @@ public import CGLean.Data.AdjoinSqrt.Filtered
 public import CGLean.Data.Filtered
 public import CGLean.Geometry.Point2D
 public import CGLean.Geometry.Arrangement
+public import CGLean.Render.CCW
 public import CGLean.Render.Region
 public import CGLean.Render.Utils
 public import CGLean.Playground
