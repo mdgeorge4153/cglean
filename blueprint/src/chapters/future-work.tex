@@ -54,6 +54,12 @@ associativity and commutativity by hand. Mathlib also defines \code{Algebra.norm
 as precisely the determinant of the multiplication map, so the norm and its
 multiplicativity would come from the same place.
 
+\TODO{Revisit given Mathlib's \code{QuadraticAlgebra}: \begin{itemize}
+  \item $A[\sqrt{n}] ≅$ \code{QuadraticAlgebra A n 0} (Lemma~\ref{thm:mathlibAdjoin}), closer than \code{AdjoinRoot}
+  \item already a field under \code{Fact (¬ IsSquare n)}; norm, conjugation (\code{star}), \code{lift}
+  \item no order; still ours
+\end{itemize}}
+
 What it would \emph{not} simplify is the ordering, which is the bulk of the work
 and was the difficult part. Mathlib supplies the ring and field theory of an
 extension but no order theory for one: that is Artin--Schreier territory, and

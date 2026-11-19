@@ -7,6 +7,7 @@ public import CGLean.Classes.Region
 public import CGLean.Classes.RingOps
 public import CGLean.Data.AdjoinSqrt
 public import CGLean.Data.AdjoinSqrt.Filtered
+public import CGLean.Data.AdjoinSqrt.QuadraticAlgebra
 public import CGLean.Data.Filtered
 public import CGLean.Geometry.Point2D
 public import CGLean.Geometry.Arrangement
