@@ -20,11 +20,13 @@ function svgPoint(e) {
 function redraw() { svg.innerHTML = render(); }
 
 svg.addEventListener('pointerdown', e => {
+  e.preventDefault();   // otherwise a drag can select text, and the next press drags that
   svg.setPointerCapture(e.pointerId);
   down(...svgPoint(e));
   redraw();
 });
 svg.addEventListener('pointermove', e => { move(...svgPoint(e)); redraw(); });
 svg.addEventListener('pointerup', () => { up(); redraw(); });
+svg.addEventListener('pointercancel', () => { up(); redraw(); });
 
 redraw();
