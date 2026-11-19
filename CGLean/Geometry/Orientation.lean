@@ -1,6 +1,8 @@
-import CGLean.Geometry.Point2D
-import CGLean.Classes.OrientationSystem
-import Mathlib.Data.Sign.Basic
+module
+
+public import CGLean.Geometry.Point2D
+public import CGLean.Classes.OrientationSystem
+public import Mathlib.Basic.Sign.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 
@@ -22,15 +24,11 @@ and antisymmetry are the identities themselves, under `sign_neg`.
 
 open SignType (sign)
 
-variable {k : Type} [CommRing k] [LinearOrder k] [IsStrictOrderedRing k]
+variable {k : Type} [CommRing k]
+
+@[expose] public section
 
 namespace CGLean
-
-private theorem nonneg_iff {a : k} : 0 ≤ a ↔ sign a ≠ .neg := by
-  rw [Ne, SignType.neg_eq_neg_one, sign_eq_neg_one_iff, not_lt]
-
-private theorem sign_eq_pos_iff {a : k} : sign a = .pos ↔ 0 < a := by
-  rw [SignType.pos_eq_one, sign_eq_one_iff]
 
 /-- Twice the signed area of the triangle `p q r`, positive exactly when the
 three points are traversed counterclockwise and zero exactly when they are
@@ -66,28 +64,38 @@ theorem det_plucker (p q r s t : Point k) :
 Each field is stated here against `sign (det ..)` so that the proofs are about
 the determinant rather than about a structure projection. -/
 
-private theorem sign_det_cyclic (p q r : Point k) :
+variable [LinearOrder k]
+
+private theorem nonneg_iff {a : k} : 0 ≤ a ↔ sign a ≠ .neg := by
+  rw [Ne, SignType.neg_eq_neg_one, sign_eq_neg_one_iff, not_lt]
+
+private theorem sign_eq_pos_iff {a : k} : sign a = .pos ↔ 0 < a := by
+  rw [SignType.pos_eq_one, sign_eq_one_iff]
+
+theorem sign_det_cyclic (p q r : Point k) :
     sign (det q r p) = sign (det p q r) := by rw [det_cyclic]
 
-private theorem sign_det_swap (p q r : Point k) :
+variable [IsStrictOrderedRing k]
+
+theorem sign_det_swap (p q r : Point k) :
     sign (det p r q) = -sign (det p q r) := by
   rw [det_swap, Left.sign_neg]
 
-private theorem sign_det_interiority {p q r t : Point k}
+theorem sign_det_interiority {p q r t : Point k}
     (h₁ : sign (det t q r) ≠ .neg) (h₂ : sign (det p t r) ≠ .neg)
     (h₃ : sign (det p q t) ≠ .neg) : sign (det p q r) ≠ .neg := by
   rw [← nonneg_iff] at h₁ h₂ h₃ ⊢
   rw [det_sum p q r t]
   exact add_nonneg (add_nonneg h₁ h₂) h₃
 
-private theorem sign_det_interiority_pos {p q r t : Point k}
+theorem sign_det_interiority_pos {p q r t : Point k}
     (h₁ : sign (det t q r) = .pos) (h₂ : sign (det p t r) = .pos)
     (h₃ : sign (det p q t) = .pos) : sign (det p q r) = .pos := by
   rw [sign_eq_pos_iff] at h₁ h₂ h₃ ⊢
   rw [det_sum p q r t]
   exact add_pos (add_pos h₁ h₂) h₃
 
-private theorem sign_det_transitivity {p q r s t : Point k}
+theorem sign_det_transitivity {p q r s t : Point k}
     (hsp : sign (det t s p) ≠ .neg) (hsq : sign (det t s q) = .pos)
     (hsr : sign (det t s r) ≠ .neg) (hpq : sign (det t p q) ≠ .neg)
     (hqr : sign (det t q r) ≠ .neg) : sign (det t p r) ≠ .neg := by
@@ -100,7 +108,7 @@ private theorem sign_det_transitivity {p q r s t : Point k}
   rw [not_le] at hc
   nlinarith
 
-private theorem sign_det_transitivity_pos {p q r s t : Point k}
+theorem sign_det_transitivity_pos {p q r s t : Point k}
     (hsp : sign (det t s p) = .pos) (hsq : sign (det t s q) = .pos)
     (hsr : sign (det t s r) = .pos) (hpq : sign (det t p q) = .pos)
     (hqr : sign (det t q r) = .pos) : sign (det t p r) = .pos := by

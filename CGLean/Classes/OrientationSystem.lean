@@ -1,4 +1,6 @@
-import Mathlib.Data.Sign.Basic
+module
+
+public import Mathlib.Basic.Sign.Basic
 
 /-!
 # Orientation systems
@@ -28,6 +30,8 @@ verified here.
 The strict laws are not consequences of the non-strict ones: `≠ .neg` leaves
 `.zero` open, so both are carried.
 -/
+
+@[expose] public section
 
 namespace CGLean
 
