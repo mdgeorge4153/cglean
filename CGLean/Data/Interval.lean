@@ -27,7 +27,7 @@ to axiomatize floating point arithmetic and use that.
 
 namespace CGLean
 
-namespace Interval
+namespace RoundedInterval
 
 open LeanCert.Core
 
@@ -238,9 +238,9 @@ instance {A : Type} [Ring A] [Preorder A] [e : ApproxStrategy A IntervalDyadic] 
   sqrt := sqrt (e.approx n)
   mem_sqrt := mem_sqrt (e.mem_approx' n)
 
-end Interval
+end RoundedInterval
 
-open LeanCert.Core
+open LeanCert.Core RoundedInterval
 
 /-- The rationals, approximated by `ofRat`: the base of every tower of square
 roots. It isn't an instance, so that the application picks it. -/
@@ -248,7 +248,7 @@ roots. It isn't an instance, so that the application picks it. -/
 def ApproxStrategy.ratInterval : ApproxStrategy ℚ IntervalDyadic where
   hom := Erased.mk (Rat.castHom ℝ)
   strictMono := by rw [Erased.out_mk]; exact Rat.cast_strictMono
-  approx := Interval.ofRat
-  mem_approx q := by rw [Erased.out_mk]; exact Interval.mem_ofRat q
+  approx := ofRat
+  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
 
 end CGLean

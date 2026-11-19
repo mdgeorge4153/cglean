@@ -13,7 +13,7 @@ Building compiles every imported Mathlib module to native code, so the first
 build takes several minutes.
 -/
 
-open CGLean CGLean.NumberType CGLean.Interval
+open CGLean CGLean.NumberType CGLean.RoundedInterval
 
 abbrev F := Num
 instance : Inhabited L := ⟨0⟩
