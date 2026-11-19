@@ -752,8 +752,8 @@ field.
   element $n ∈ A$ with $i(n) \geq 0$, and an element $\hat{s} ∈ α$ with
   $\sqrt{i(n)} ∈ \hat{s}$, we define an approximation strategy for
   $A[\sqrt{n}]$ with embedding
-  $i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := i(a_1) + i(a_n)\sqrt{i(n)}$ and
-  approximation $f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n)\hat{s}$.
+  $$i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := i(a_1) + i(a_n)\sqrt{i(n)}$$ and
+  approximation $$f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n)\hat{s}$$
 \end{definition}
 
 \begin{lemma}[$f_{\sqrt{n}}$ is a valid approximation strategy]
@@ -766,18 +766,25 @@ field.
 \end{lemma}
 
 \begin{proof}
-  Most of the requirements are immediate from the definitions. To check the ordering property,
-  we first prove that if $0 \leq a$ then $0 \leq i_{\sqrt{n}}(a)$, from
-  which the main result follows.
+  We need to check that $i_{\sqrt{n}} : A[\sqrt{n}] → ℝ$ is an order embedding
+  and that $f_{\sqrt{n}} : A[\sqrt{n}] → α$ is a valid approximation strategy.
+
+  Most of the requirements for $i_{\sqrt{n}}$ are immediate from the definitions. To check
+  the ordering property of $i_{\sqrt{n}}$, we first prove that if $0 \leq a$ then $0 \leq
+  i_{\sqrt{n}}(a)$, from which the main result follows.
 
   To check that, we consider the cases where $\norm{a} \geq 0$ and $\norm{a}
   \leq 0$ separately. In each case, one of the two terms in $i_{\sqrt{n}}(a)$
   is nonnegative by assumption, and by squaring you can check that the nonnegative
   one dominates.
 
-  % TODO (prose):
-  %  * validity: i(a_1) ∈ f(a_1), i(a_n) ∈ f(a_n), √i(n) ∈ ŝ, then
-  %    compatibility of + and *
+  Now we need to show that $f_{\sqrt{n}} : A[\sqrt{n}] → α$ is a valid strategy, i.e.
+  that $i_{\sqrt{n}}(a) ∈ f_{\sqrt{n}}(a)$ for all $a ∈ A[\sqrt{n}]$. We have
+  $i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) = i(a_1) + i(a_n)\sqrt{i(n)}$. Since $f$ is a valid
+  strategy we have $i(a_1) ∈ f(a_1)$ and $i(a_n) ∈ f(a_n)$, and by assumption
+  $\sqrt{i(n)} ∈ \hat{s}$; since $α$ is an approximation type, we can put these
+  together to conclude $i(a_1) + i(a_n)\sqrt{i(n)} ∈ f(a_1) + f(a_n)\hat{s} =
+  f_{\sqrt{n}}(a_1 + a_n\sqrt{n})$ as required.
 \end{proof}
 
 \begin{corollary}[Example number type]
