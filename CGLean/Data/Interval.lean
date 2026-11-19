@@ -27,6 +27,8 @@ to axiomatize floating point arithmetic and use that.
 
 namespace CGLean
 
+namespace Interval
+
 open LeanCert.Core
 
 /-! ## Definitions -/
@@ -209,7 +211,7 @@ theorem compare?_complete {x y : IntervalDyadic} (h : compare? x y = none) :
 
 /-! ## Approximating reals by intervals -/
 
-instance : RealApprox IntervalDyadic where
+instance instDyadicApprox : RealApprox IntervalDyadic where
   toMembership := inferInstance
   add I J := trim (I.add J)
   neg := IntervalDyadic.neg
@@ -226,7 +228,7 @@ instance : RealApprox IntervalDyadic where
   mem_inv? := mem_inv?
   compare_of_compare? := compare_of_compare?
 
-instance : RealApprox.IsComplete IntervalDyadic where
+instance instDyadicComplete : RealApprox.IsComplete IntervalDyadic where
   zero_mem_of_inv?_eq_none := zero_mem_of_inv?_eq_none
   exists_ne_of_compare?_eq_none := compare?_complete
 
@@ -236,13 +238,17 @@ instance {A : Type} [Ring A] [Preorder A] [e : ApproxStrategy A IntervalDyadic] 
   sqrt := sqrt (e.approx n)
   mem_sqrt := mem_sqrt (e.mem_approx' n)
 
+end Interval
+
+open LeanCert.Core
+
 /-- The rationals, approximated by `ofRat`: the base of every tower of square
 roots. It isn't an instance, so that the application picks it. -/
 @[instance_reducible]
 def ApproxStrategy.ratInterval : ApproxStrategy ℚ IntervalDyadic where
   hom := Erased.mk (Rat.castHom ℝ)
   strictMono := by rw [Erased.out_mk]; exact Rat.cast_strictMono
-  approx := ofRat
-  mem_approx q := by rw [Erased.out_mk]; exact mem_ofRat q
+  approx := Interval.ofRat
+  mem_approx q := by rw [Erased.out_mk]; exact Interval.mem_ofRat q
 
 end CGLean
