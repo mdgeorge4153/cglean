@@ -576,7 +576,7 @@ numerator and denominator, but then you need to perform a gcd operation on every
 arithmetic operation.
 
 There are fast approximate ways to represent numbers, such as floating point
-numbers or dyadic rationals (numbers of the form $a/2^k$ with integers $a$ and
+numbers or dyadic rationals (numbers of the form $m/2^k$ with integers $m$ and
 $k$). By keeping the size of the number representations bounded, we store and
 compute with these numbers efficiently, but we give up precision.
 
@@ -590,15 +590,15 @@ To define our \code{Filtered} type, we first need to formalize what we need
 from an approximation strategy. First, we need an approximation type that
 supports fast versions of the operations we care about. The intuition behind the
 definition is that the approximations are fuzzy, so that an approximate value
-$a$ could potentially represent many real numbers.
+$X$ could potentially represent many real numbers.
 \begin{definition}[Approximation type]
   \label{def:realApprox}
   \lean{CGLean.RealApprox}
   \leanok
   An approximation type $α$ is a type whose values represent subsets of the real
   numbers, and that supports the ring operations. The ring operations must be
-  compatible with the operations on the approximated real numbers (e.g. if $x_1 ∈
-  a_1$ and $x_2 ∈ a_2$ then $x_1 + x_2 ∈ a_1 + a_2$, and similarly for
+  compatible with the operations on the approximated real numbers (e.g. if $x ∈
+  X$ and $y ∈ Y$ then $x + y ∈ X + Y$, and similarly for
   multiplication and subtraction).
 
   An inverse operation should also be defined, but it may not be possible to
@@ -610,15 +610,34 @@ $a$ could potentially represent many real numbers.
 
   Similarly, the approximation should have a partial comparison operation, but
   we may not be able to determine the order between two approximations if they
-  overlap. However, we do require that if $a_1 < a_2$ then for all $x_1 ∈
-  a_1$ and $x_2 ∈ a_2$, that $x_1 < x_2$, and similarly for $=$ and $>$.
+  overlap. However, we do require that if $X < Y$ then for all $x ∈
+  X$ and $y ∈ Y$, that $x < y$, and similarly for $=$ and $>$.
 \end{definition}
 Notably, we \emph{don't} require the ring properties for approximation types; in
 fact we don't really need a notion of equality.
 
+This definition doesn't require that the partial inverse and comparison
+operations \emph{only} fail when they must (i.e. when trying to invert an
+approximation that could be 0, or trying to compare approximations that
+overlap). However, those can be nice properties to check for an implementation,
+so we also have a definition that includes those requirements:
+
+\begin{definition}[Complete approximation type]
+  \label{def:completeApprox}
+  \lean{CGLean.RealApprox.IsComplete}
+  \uses{def:realApprox}
+  \leanok
+  An approximation type is \emph{complete} if \begin{itemize}
+    \item For all $X ∈ α$, if $0 \notin X$ then $X^{-1}$ is defined
+    \item If the comparison between $X$ and $Y$ is undefined, then there is
+      some $x_1 ∈ X, y_1 ∈ Y$ and some $x_2 ∈ X, y_2 ∈ Y$ such that
+      comparing $x_1$ to $y_1$ gives a different answer than comparing $x_2$ to
+      $y_2$.
+  \end{itemize}
+\end{definition}
+
 We have implemented the approximation type using intervals whose endpoints are
-dyadic rationals (numbers of the form $a \cdot 2^k$ for integers $a$ and $k$),
-and whose operations round the endpoints to a fixed precision. The
+bounded-precision dyadic rationals; see Subsection~\ref{sec:dyadicInterval}. The
 \code{Filtered} type is generic though, so you can also implement an
 approximation type using floating-point arithmetic, fixed-point arithmetic
 stored in machine words, or a variety of other formats.
@@ -635,7 +654,7 @@ be useful, $f$ must be compatible with the embeddings of $A$ and $α$ into $ℝ$
   An approximation strategy for a linearly ordered ring $A$ is an embedding $i :
   A → ℝ$ (i.e. a function $i$ that preserves the linearly ordered ring
   operations), an approximation type $α$, and a function $f : A → α$ such that
-  for all $x ∈ A$, $i(x) ∈ f(x)$. We typically just refer to $f$, since $i$ is
+  for all $a ∈ A$, $i(a) ∈ f(a)$. We typically just refer to $f$, since $i$ is
   unique and usually clear from context.
 \end{definition}
 
@@ -648,8 +667,8 @@ type:
   \lean{CGLean.Filtered, CGLean.Filtered.Pre, CGLean.Filtered.get}
   \leanok
   Given an approximation strategy $f : A → α$, a \code{Filtered $A$ $f$}
-  value consists of an unevaluated value $x$ of type $A$ and an approximation $a
-  ∈ α$ with $i(x) ∈ a$. We consider two values in \code{Filtered $A$ $f$} to be
+  value consists of an unevaluated value $a$ of type $A$ and an approximation $X
+  ∈ α$ with $i(a) ∈ X$. We consider two values in \code{Filtered $A$ $f$} to be
   equal if the wrapped $A$ values are equal.
 \end{definition}
 
@@ -665,10 +684,10 @@ type:
 
   For this definition to make sense, we need to ensure that the uncomputed
   exact values and the immediately computed approximate values match up (e.g.
-  that $i(x_1 + x_2) ∈ a_1 + a_2$). This follows because $i$ is an
-  embedding, so that $i(x_1 + x_2) = i(x_1) + i(x_2)$, and because $α$'s
-  operations are compatible with the real number operations, so that $i(x_1) +
-  i(x_2) ∈ a_1 + a_2$. The same reasoning applies for the other operations.
+  that $i(a + b) ∈ X + Y$). This follows because $i$ is an
+  embedding, so that $i(a + b) = i(a) + i(b)$, and because $α$'s
+  operations are compatible with the real number operations, so that $i(a) +
+  i(b) ∈ X + Y$. The same reasoning applies for the other operations.
 \end{definition}
 
 \begin{lemma}
@@ -741,12 +760,126 @@ type:
   Follows immediately from the fact the comparison matches that on $A$.
 \end{proof}
 
-\subsection{Dyadic interval approximation strategy}
-% TODO: describe rounding in a bit more detail
-% TODO: comparison completeness
-% TODO: inverse completeness
-% TODO: sqrt implementation
-% TODO: performance stats
+\subsection{Approximating with dyadic intervals}
+\label{sec:dyadicInterval}
+While the \code{Filtered} type works with many approximation strategies, we have
+built a simple approximation type based on dyadic rationals as a proof of
+concept. The definitions of dyadic intervals and exact operations on them are
+taken from the LeanCert library:
+
+\begin{definition}[Dyadic interval]
+  \label{def:dyadicInterval}
+  \lean{LeanCert.Core.IntervalDyadic}
+  \mathlibok % It's not in mathlib, but it isn't here either
+  A \emph{dyadic interval} is a closed interval whose endpoints are dyadic
+  rationals: numbers of the form $m\cdot2^k$ for integers $m$ and $k$.
+\end{definition}
+
+For this development, we define all of the operations on dyadic intervals so
+that they round the intervals out to a fixed precision:
+
+\begin{definition}[Operations on dyadic intervals]
+  \label{def:dyadicOps}
+  \lean{CGLean.RoundedInterval.trim, CGLean.RoundedInterval.compare?, CGLean.RoundedInterval.inv?}
+  \uses{def:dyadicInterval}
+  \leanok
+  We define the ring operations on our dyadic intervals by first performing the
+  exact ring operations on the endpoints, and then rounding them in the correct
+  direction to dyadic rationals with a fixed precision (i.e. numbers of the form
+  $m \cdot 2^k$ with $m$ having at most 64 bits).
+
+  We define inversion the same way, but only if the interval doesn't contain 0.
+
+  We define comparison by comparing the upper end of one interval with the
+  other: when comparing the intervals $X = [x_{lo}, x_{hi}]$ and $Y = [y_{lo},
+  y_{hi}]$:\begin{itemize}
+    \item If $x_{hi} < y_{lo}$ then we say $X < Y$
+    \item If $x_{lo} > y_{hi}$ then we say $X > Y$
+    \item If $x_{lo} = x_{hi} = y_{lo} = y_{hi}$ then we say $X = Y$
+    \item Otherwise the comparison is inconclusive
+  \end{itemize}
+\end{definition}
+
+\begin{lemma}[Dyadic intervals are an approximation type]
+  \label{thm:dyadicApprox}
+  \lean{CGLean.RoundedInterval.instDyadicApprox}
+  \uses{def:dyadicOps, def:realApprox}
+  \leanok
+  Dyadic intervals are an approximation type, i.e. the operations on the
+  approximations produce approximations of the corresponding operations on
+  real numbers.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  This boils down to checking that we're rounding in the right direction and the
+  basic properties about dyadic arithmetic that LeanCert provides.
+\end{proof}
+
+We can also check that we only fail to invert or compare if we need to:
+\begin{lemma}
+  \label{thm:dyadicComplete}
+  \lean{CGLean.RoundedInterval.instDyadicComplete}
+  \uses{def:completeApprox, thm:dyadicApprox}
+  \leanok
+  Dyadic intervals are a complete approximation type.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  We need to show that comparison is only undefined if the intervals overlap and
+  that inversion is undefined only if the interval contains zero. The second
+  property is obvious from the definition. To check the comparison property, if
+  none of the comparison definitions apply then the intervals overlap; you can
+  use the endpoints of the intervals themselves as the examples of numbers that
+  don't compare consistently.
+\end{proof}
+
+The dyadic interval approximation is probably not the most efficient choice for
+our fast approximation. Even though we round to 64 bits, Lean's fast small
+integer implementation only applies at 31 bits, and all of the dyadic operations
+blow up the precision before rounding it back down.
+
+Nevertheless, a simple benchmark shows that even the unoptimized dyadic filter
+provides an improvement (see \code{bench/Main.lean}):
+
+\begin{center}
+\begin{tabular}{lrrrr}
+  \hline
+  orientation tests in $ℚ[\sqrt{2}][\sqrt{3}]$ & tests & exact & filtered & fallbacks \\
+  \hline
+  random input points & 2000 & 88 ms & 20 ms & 21 \\
+  intersections of input lines & 2000 & 651 ms & 39 ms & 20 \\
+  intersections of lines through those & 2000 & 2815 ms & 134 ms & 55 \\
+  all collinear & 100 & 38 ms & 45 ms & 100 \\
+  \hline
+\end{tabular}
+\end{center}
+The intersection operation produces coordinates by algebraically operating on
+the input points, which has the effect of increasing the size of the exact
+representations. That's why the runtime increases in each of the first three
+rows. You can see that the filtering reduces a lot of computational overhead in
+these cases.
+
+The ``fallbacks'' column gives the number of times that the filter was
+insufficient and the exact arithmetic was needed. In the ``all collinear'' case,
+all of the tested computations produce equality, which means the filter doesn't
+help at all. This row shows that the overhead of doing the filtering is small
+($\sim$18\%).
+
+It's also worth noting that for this test, the fallbacks were only taken when
+the numbers being compared were actually equal, which means that the filter was
+always useful on random data.
+
+A floating-point implementation would almost certainly be an even bigger
+improvement, but would require axiomatizing the IEEE 754 floating point
+specification (similar to how Flocq does for Coq). We leave that
+formalization to future work.
+
+Degenerate cases may actually be important to the performance of certain
+applications. It is worth considering whether other optimizations could be used
+for determining equality that improve performance in these cases. This is also
+left for future work.
 
 \section{Putting the pieces together}
 \label{sec:numberType}
@@ -762,11 +895,11 @@ field.
   \lean{AdjoinSqrt.toReal, CGLean.ApproxSqrt, AdjoinSqrt.approxStrategy}
   \leanok
   Given an approximation strategy $f : A → α$ with embedding $i : A → ℝ$, an
-  element $n ∈ A$ with $i(n) \geq 0$, and an element $\hat{s} ∈ α$ with
-  $\sqrt{i(n)} ∈ \hat{s}$, we define an approximation strategy for
+  element $n ∈ A$ with $i(n) \geq 0$, and an element $\hat{S} ∈ α$ with
+  $\sqrt{i(n)} ∈ \hat{S}$, we define an approximation strategy for
   $A[\sqrt{n}]$ with embedding
   $$i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := i(a_1) + i(a_n)\sqrt{i(n)}$$ and
-  approximation $$f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n)\hat{s}$$
+  approximation $$f_{\sqrt{n}}(a_1 + a_n\sqrt{n}) := f(a_1) + f(a_n)\hat{S}$$
 \end{definition}
 
 \begin{lemma}[$f_{\sqrt{n}}$ is a valid approximation strategy]
@@ -797,20 +930,20 @@ field.
   that $i_{\sqrt{n}}(a) ∈ f_{\sqrt{n}}(a)$ for all $a ∈ A[\sqrt{n}]$. We have
   $i_{\sqrt{n}}(a_1 + a_n\sqrt{n}) = i(a_1) + i(a_n)\sqrt{i(n)}$. Since $f$ is a valid
   strategy we have $i(a_1) ∈ f(a_1)$ and $i(a_n) ∈ f(a_n)$, and by assumption
-  $\sqrt{i(n)} ∈ \hat{s}$; since $α$ is an approximation type, we can put these
-  together to conclude $i(a_1) + i(a_n)\sqrt{i(n)} ∈ f(a_1) + f(a_n)\hat{s} =
+  $\sqrt{i(n)} ∈ \hat{S}$; since $α$ is an approximation type, we can put these
+  together to conclude $i(a_1) + i(a_n)\sqrt{i(n)} ∈ f(a_1) + f(a_n)\hat{S} =
   f_{\sqrt{n}}(a_1 + a_n\sqrt{n})$ as required.
 \end{proof}
 
 \begin{corollary}[Example number type]
   \label{thm:numberType}
-  \uses{def:adjoin, def:filtered}
+  \uses{def:adjoin, def:filtered, def:dyadicInterval}
   \lean{CGLean.NumberType.isStrictOrderedRing, CGLean.NumberType.instFieldNum, CGLean.NumberType.instLinearOrderNum}
   \leanok
   \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} is a linearly ordered field.
 \end{corollary}
 \begin{proof}
-  \uses{thm:adjoinOrderedField, thm:adjoinApproxValid, thm:filteredField, thm:filteredOrdered}
+  \uses{thm:adjoinOrderedField, thm:adjoinApproxValid, thm:filteredField, thm:filteredOrdered, thm:dyadicApprox}
   \leanok
   $ℚ$ is clearly a linearly ordered field. The fact that $2$ is a positive
   non-square in $ℚ$ is well-known, and it can be used to prove that $3$ is also
@@ -820,8 +953,9 @@ field.
   Applying Lemma~\ref{thm:adjoinApproxValid} twice, starting from the
   rationals approximated by dyadic intervals, gives an approximation strategy
   for $ℚ[\sqrt{2}][\sqrt{3}]$. Plugging this into the construction of
-  \code{Filtered} gives a linearly ordered field structure on
-  \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} as required.
+  \code{Filtered} with our dyadic interval approximation gives a linearly
+  ordered field structure on \code{Filtered $ℚ[\sqrt{2}][\sqrt{3}]$} as
+  required.
 \end{proof}
 
 \chapter{Applications}
@@ -950,6 +1084,13 @@ application.
   Exhibits concrete inputs on which floating-point implementations of convex
   hull and Delaunay triangulation fail, and analyses the geometry of the
   floating-point orientation predicate. This is the empirical case for
+  Chapter~\ref{chap:numbers}.
+
+\item Sylvie Boldo and Guillaume Melquiond, \emph{Flocq: A Unified Library for
+  Proving Floating-Point Algorithms in Coq}, ARITH 20, pp.\ 243--252, IEEE, 2011.
+  \link{https://doi.org/10.1109/ARITH.2011.40}{doi:10.1109/ARITH.2011.40}.
+  A formalization of IEEE 754 floating-point arithmetic in Coq, and a model for
+  how hardware floats could back the fast approximations of
   Chapter~\ref{chap:numbers}.
 
 \item The mathlib Community, \emph{The Lean Mathematical Library}, CPP 2020,
