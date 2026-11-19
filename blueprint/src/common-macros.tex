@@ -2,8 +2,20 @@
 % both by the pdf version and the web version.
 % This should be most of your macros.
 
+% Theorem environments (amsthm, loaded by web.tex and print.tex).
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\link}[2]{\href{#1}{#2}}
 \DeclareMathOperator{\sign}{sign}
 \newcommand{\norm}[1]{\operatorname{norm}(#1)}
 \newcommand{\conj}[1]{\bar{#1}}
+
+% A note to the author, shown in red in both the web and print versions.
+\newcommand{\TODO}[1]{{\color{red}\textbf{TODO:} #1}}
+
+\renewcommand{\bibname}{References}

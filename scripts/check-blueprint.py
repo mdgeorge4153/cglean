@@ -31,6 +31,15 @@ ENV = re.compile(
 )
 
 
+def expand(path: pathlib.Path) -> str:
+    """The text of `path`, with each `\\input{f}` replaced by the expanded text
+    of `f` (relative to `blueprint/src`, `.tex` optional, as in LaTeX)."""
+    def sub(m: re.Match) -> str:
+        name = m.group(1)
+        return expand(TEX.parent / (name if name.endswith(".tex") else name + ".tex"))
+    return re.sub(r"\\input\{([^}]*)\}", sub, path.read_text())
+
+
 def label(body: str) -> str:
     m = re.search(r"\\label\{([^}]+)\}", body)
     return m.group(1) if m else "(unlabelled)"
@@ -102,7 +111,7 @@ def check_declarations(stated: list[str], proved: set[str]) -> list[str]:
 
 
 def main() -> int:
-    stated, proved, problems = scan(TEX.read_text())
+    stated, proved, problems = scan(expand(TEX))
     if not stated:
         problems.append(f"no \\lean{{}} references on {OK} statements")
     else:

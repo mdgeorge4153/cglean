@@ -39,9 +39,20 @@ This matches the Lean, where `RealApprox`'s fields are stated with
 
 Don't write expository prose for the blueprint (proof sketches, explanations,
 statement commentary) — instead, leave short bullet points marking what
-needs to be written, for the author to fill in by hand later. This doesn't
+needs to be written, for the author to fill in by hand later. Put them in a
+`\TODO{...}` note (an `itemize` inside it for several), which shows in red in
+both the web and print versions, rather than in `%` comments. This doesn't
 apply to reference-style material such as the related-work section, which is
 fine to write in full.
+
+The blueprint is split into one file per chapter under `blueprint/src/chapters/`,
+`\input` from `content.tex`; each chapter gets its own dependency graph
+(linked from the chapter's sidebar entry by `toc-graphs.js`). A chapter's graph
+shows only that chapter's nodes, so a `\uses` of a node in another chapter
+draws no edge; add `\alsoIn{chap:other}` to a node to show it, with its
+edges, in that chapter's graph too.
+References are a `thebibliography` in `chapters/references.tex`: add a
+`\bibitem{key}` there and `\cite{key}` it.
 
 ## Mathematical level
 
