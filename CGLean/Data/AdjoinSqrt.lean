@@ -56,6 +56,33 @@ which agrees with this one only up to a proof. -/
 @[simps] public instance instCoe [Zero R] : Coe R (AdjoinSqrt R n) where
   coe x := ⟨x, 0⟩
 
+/-! The casts and scalar actions below are componentwise. Mathlib's defaults
+(`Nat.unaryCast`, `nsmulRec`, ...) would give the same values, but compute `k`
+as `1 + 1 + ⋯ + 1`, taking time (and stack) proportional to `k`. -/
+
+@[simps] public instance instNatCast [NatCast R] [Zero R] : NatCast (AdjoinSqrt R n) where
+  natCast k := ⟨k, 0⟩
+
+@[simps] public instance instIntCast [IntCast R] [Zero R] : IntCast (AdjoinSqrt R n) where
+  intCast k := ⟨k, 0⟩
+
+@[simps] public instance instRatCast [RatCast R] [Zero R] : RatCast (AdjoinSqrt R n) where
+  ratCast q := ⟨q, 0⟩
+
+@[simps] public instance instNNRatCast [NNRatCast R] [Zero R] : NNRatCast (AdjoinSqrt R n) where
+  nnratCast q := ⟨q, 0⟩
+
+public instance instSMulNat [SMul ℕ R] : SMul ℕ (AdjoinSqrt R n) where
+  smul k x := ⟨k • x.a₁, k • x.aₙ⟩
+
+public instance instSMulInt [SMul ℤ R] : SMul ℤ (AdjoinSqrt R n) where
+  smul k x := ⟨k • x.a₁, k • x.aₙ⟩
+
+@[simp] public lemma nsmul_a₁ [SMul ℕ R] (k : ℕ) (x : AdjoinSqrt R n) : (k • x).a₁ = k • x.a₁ := rfl
+@[simp] public lemma nsmul_aₙ [SMul ℕ R] (k : ℕ) (x : AdjoinSqrt R n) : (k • x).aₙ = k • x.aₙ := rfl
+@[simp] public lemma zsmul_a₁ [SMul ℤ R] (k : ℤ) (x : AdjoinSqrt R n) : (k • x).a₁ = k • x.a₁ := rfl
+@[simp] public lemma zsmul_aₙ [SMul ℤ R] (k : ℤ) (x : AdjoinSqrt R n) : (k • x).aₙ = k • x.aₙ := rfl
+
 section Ops
 variable [Add R] [Mul R] [Sub R] [Neg R]
 
@@ -102,7 +129,9 @@ public instance instAddSemigroup [AddSemigroup R] : AddSemigroup (AdjoinSqrt R n
 public instance instAddMonoid [AddMonoid R] : AddMonoid (AdjoinSqrt R n) where
   zero_add := by intros a; ext <;> simp
   add_zero := by intros; ext <;> simp
-  nsmul := nsmulRec
+  nsmul k x := k • x
+  nsmul_zero := by intros; ext <;> simp
+  nsmul_succ := by intros; ext <;> simp [succ_nsmul]
 
 public instance instAddCommMonoid [AddCommMonoid R] : AddCommMonoid (AdjoinSqrt R n) := by
   constructor; intros; ext <;> apply add_comm
@@ -117,6 +146,8 @@ public instance instNonUnitalSemiring [CommSemiring R] : NonUnitalSemiring (Adjo
 public instance instSemiring [CommSemiring R] : Semiring (AdjoinSqrt R n) where
   one_mul := by intros; ext <;> simp
   mul_one := by intros; ext <;> simp
+  natCast_zero := by ext <;> simp
+  natCast_succ := by intros; ext <;> simp
 
 /-- `A[√n]` is an `A`-algebra. Not an instance, for the same reason as
 `componentSMul`; bring it into scope with `letI := AdjoinSqrt.algebra`. -/
@@ -134,7 +165,12 @@ public abbrev algebra [CommSemiring R] : Algebra R (AdjoinSqrt R n) where
 
 public instance instRing [CommRing R] : Ring (AdjoinSqrt R n) where
   neg_add_cancel := by intros; ext <;> simp
-  zsmul := zsmulRec
+  zsmul k x := k • x
+  zsmul_zero' := by intros; ext <;> simp
+  zsmul_succ' := by intros; ext <;> simp <;> ring
+  zsmul_neg' := by intros; ext <;> simp <;> ring
+  intCast_ofNat := by intros; ext <;> simp
+  intCast_negSucc := by intros; ext <;> simp
 
 public instance instCommRing [CommRing R] : CommRing (AdjoinSqrt R n) where
   mul_comm := by intros; ext <;> simp <;> ring
@@ -179,6 +215,17 @@ public instance instField [Field R] [Fact (¬ IsSquare n)] : Field (AdjoinSqrt R
     obtain ⟨x, y, _⟩ := exists_pair_ne R
     exact ⟨x, y, by simpa⟩
 
+  -- `/` is still the default, `x * y⁻¹`, so `show` unfolds it.
+  ratCast_def q := by
+    show (q : AdjoinSqrt R n) = (q.num : AdjoinSqrt R n) * (q.den : AdjoinSqrt R n)⁻¹
+    ext
+    · simp [norm, Rat.cast_def]; field_simp
+    · simp
+  nnratCast_def q := by
+    show (q : AdjoinSqrt R n) = (q.num : AdjoinSqrt R n) * (q.den : AdjoinSqrt R n)⁻¹
+    ext
+    · simp [norm, NNRat.cast_def]; field_simp
+    · simp
   qsmul := _
   nnqsmul := _
 
