@@ -8,11 +8,7 @@
 // its module's initializer would have set up (it can't, if, like these, it
 // only calls other functions).
 
+// None are needed at the moment. The last, Nat.cast : ℕ → ℚ from
+// Mathlib.Tactic.Linarith.Oracle.SimplexAlgorithm, went with Lean v4.35.0.
+
 #include <lean/lean.h>
-
-lean_object * l_Rat_ofInt(lean_object *);
-
-// From Mathlib/Tactic/Linarith/Oracle/SimplexAlgorithm.c: Nat.cast : ℕ → ℚ
-LEAN_EXPORT lean_object * lp_mathlib_Nat_cast___at___00Mathlib_Tactic_Linarith_SimplexAlgorithm_postprocess_spec__0(lean_object * a) {
-  return l_Rat_ofInt(lean_nat_to_int(a));
-}

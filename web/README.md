@@ -3,7 +3,8 @@ CGLean in the browser
 
 An experiment in running CGLean's Lean code in a web page, compiled to
 WebAssembly. Currently a drag-and-drop test: a point dragged with the mouse,
-held inside a box, with exact coordinates in ℚ[√2] (`CGLeanWeb/Drag.lean`).
+held inside a box, with exact coordinates in CGLean's number type
+`Filtered ℚ[√2][√3]` (`CGLeanWeb/Drag.lean`).
 
 
 Building
@@ -14,8 +15,8 @@ Building
     web/build.sh
     python3 -m http.server -d web 8000     # then open http://localhost:8000
 
-The first run takes a few minutes and caches its work in `.lake/wasm/`; later
-runs take seconds.
+The first run takes a few minutes and caches its work in
+`.lake/wasm-v<version>/`; later runs take seconds.
 
 
 How it fits together
@@ -32,8 +33,8 @@ How it fits together
 `build.sh`:
 
 1. Builds Lean's C++ runtime and libuv with Emscripten. Lean doesn't
-   publish a WebAssembly build; two out-of-date WebAssembly-only stubs in its
-   source are patched so that it compiles.
+   publish a WebAssembly build; an out-of-date WebAssembly-only stub in its
+   source is patched so that it compiles.
 2. Generates C for Lean's core libraries `Init` and `Std` with the installed
    `lean`.
 3. Runs Lake, which builds the .olean files and emits C for this package. The
@@ -52,11 +53,18 @@ ordinary imports.
 elaborator modules (`Lean.*`, `Mathlib.Tactic.*`, Aesop, ...), whose
 initializers become no-ops and which aren't linked. That takes the build from
 about 2,400 modules and a 70 MB `.wasm` (which also needed Lean's C++ kernel,
-and still didn't start) to about 1,050 modules and under 1 MB.
+and still didn't start) to about 940 modules and under 1 MB for ℚ[√2] alone.
+With `NumberType` it is about 3,000 modules and 2 MB, since LeanCert's
+interval arithmetic imports much of Mathlib's analysis library.
+
+Files outside the module system (LeanCert, and the CGLean files that import
+it, `Drag` included) have only a combined initializer. `prune.py` rewrites
+their C to call the runtime halves of their imports instead.
 
 If linked code does use something from a cut module, the link fails with an
 undefined symbol. So far that has happened only for specializations that
-Lean's compiler shares between modules; see `borrowed.c`.
+Lean's compiler shares between modules; see `borrowed.c` (empty at the
+moment).
 
 Upstream changes that would make pruning unnecessary: Mathlib using
 `meta import` for tactics used only at elaboration time, or Lean running only

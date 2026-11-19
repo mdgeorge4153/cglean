@@ -19,8 +19,8 @@ Two things keep that set small:
   If code we do link uses anything from a cut module, linking fails with an
   undefined symbol rather than misbehaving at runtime; see borrowed.c.
 
-Modules that don't use the module system (currently all of CGLean) have only
-a combined initializer. Their C is rewritten to call the runtime halves of
+Modules that don't use the module system (LeanCert, and the CGLean files that
+import it) have only a combined initializer. Their C is rewritten to call the runtime halves of
 their imports instead.
 
 Usage: prune.py ENTRY_MODULE OUTDIR C_ROOT...
@@ -71,10 +71,10 @@ def main():
              if n == 'initialize_' + mangled or re.fullmatch(r'initialize_[A-Za-z0-9]+_' + mangled, n)]
     if len(entry) != 1:
         sys.exit(f'prune.py: cannot find a unique initializer for {entry_module}: {entry}')
-    entry = entry[0]
+    entry = runtime_half(entry[0])
 
     seen, stubs, files, parent = set(), set(), [], {}
-    todo = [runtime_half(entry)]
+    todo = [entry]
     while todo:
         n = todo.pop()
         if n in seen:
@@ -106,7 +106,8 @@ def main():
         s = CALL.sub(lambda m: runtime_half(m.group(1)) + '(builtin)', s)
         s = re.sub(r'^lean_object\* (initialize_\w+)\(uint8_t builtin\);',
                    lambda m: f'lean_object* {runtime_half(m.group(1))}(uint8_t builtin);', s, flags=re.M)
-        out = os.path.join(outdir, 'c', os.path.basename(f))
+        # Named after the whole path: basenames repeat, e.g. LeanCert's Taylor.c.
+        out = os.path.join(outdir, 'c', os.path.relpath(f).replace(os.sep, '_'))
         with open(out, 'w') as h:
             h.write(s)
         sources.append(out)

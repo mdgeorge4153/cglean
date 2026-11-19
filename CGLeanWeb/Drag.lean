@@ -1,44 +1,44 @@
 /-
 Drag-and-drop test for the WebAssembly build: a point that can be dragged with
 the mouse, but is held inside an axis-aligned box. Coordinates are exact, in
-ℚ[√2]: the box's corners are irrational, and clamping uses the order on
-`AdjoinSqrt`.
+CGLean's number type `Filtered ℚ[√2][√3]`: the box's corners are irrational,
+and clamping uses its order.
 
 The state lives here, and the page's JavaScript only forwards pointer events
 and displays the SVG that `render` returns (see `web/`).
 -/
-import Mathlib.Algebra.Order.Ring.Rat
-import Mathlib.Algebra.Field.Rat
-import Mathlib.Tactic.NormNum
-import CGLean.Data.AdjoinSqrt
+import CGLean.App.NumberType
 import CGLean.Classes.Floatable
 
 namespace CGLeanWeb.Drag
 
-open AdjoinSqrt
+open CGLean.NumberType
 
-abbrev K := AdjoinSqrt ℚ 2
+instance {R : Type} [Floatable R] {n : R} : Floatable (AdjoinSqrt R n) where
+  toFloat a := Floatable.toFloat a.a₁ + Floatable.toFloat a.aₙ * (Floatable.toFloat n).sqrt
 
-instance : Inhabited K := ⟨0⟩
+instance : Inhabited Num := ⟨0⟩
 
--- TODO: √2 is irrational. Proofs are erased from compiled code, so this sorry
--- doesn't affect what runs.
-instance : Fact (¬ IsSquare (2 : ℚ)) := ⟨sorry⟩
-instance : Fact ((0 : ℚ) < 2) := ⟨by norm_num⟩
-
-def toFloat (a : K) : Float := Floatable.toFloat a.a₁ + Floatable.toFloat a.aₙ * Float.sqrt 2
+def toFloat (a : Num) : Float := Floatable.toFloat a.get
 
 -- Mouse positions, rounded to hundredths of a unit.
-def ofFloat (f : Float) : K := ⟨mkRat (f * 100).round.toInt64.toInt 100, 0⟩
+def ofFloat (f : Float) : Num := (mkRat (f * 100).round.toInt64.toInt 100 : ℚ)
 
-def K.toString (a : K) : String :=
-  if a.aₙ = 0 then s!"{a.a₁}"
-  else if a.a₁ = 0 then s!"{a.aₙ}√2"
-  else s!"{a.a₁} + {a.aₙ}√2"
+-- `a₁ + aₙ√n`, leaving out the parts that are zero. The components are shown
+-- with `str`, in parentheses when they have more than one part themselves.
+def showSqrt {R : Type} {n : R} [Zero R] [DecidableEq R] (str : R → String) (r : String)
+    (a : AdjoinSqrt R n) : String :=
+  let paren (x : R) := let t := str x; if t.contains ' ' then s!"({t})" else t
+  if a.aₙ = 0 then str a.a₁
+  else if a.a₁ = 0 then s!"{paren a.aₙ}√{r}"
+  else s!"{paren a.a₁} + {paren a.aₙ}√{r}"
+
+def Num.toString (a : Num) : String :=
+  showSqrt (showSqrt (fun q : ℚ => s!"{q}") "2") "3" a.get
 
 structure Point where
-  x : K
-  y : K
+  x : Num
+  y : Num
   deriving Inhabited
 
 -- An axis-aligned bounding box, given by its corners with the smallest and
@@ -58,12 +58,13 @@ structure State where
   dragging : Bool
   deriving Inhabited
 
-def sqrt2 : K := ⟨0, 1⟩
+def sqrt2 : Num := .ofValue ⟨⟨0, 1⟩, 0⟩
+def sqrt3 : Num := .ofValue ⟨0, 1⟩
 
 -- Coordinates are SVG user units; the page's viewBox is 0 0 400 400.
 def initial : State where
-  box      := ⟨⟨50 * sqrt2, 50 * sqrt2⟩, ⟨200 * sqrt2, 150 * sqrt2⟩⟩
-  point    := ⟨100 * sqrt2, 100 * sqrt2⟩
+  box      := ⟨⟨50 * sqrt2, 50 * sqrt3⟩, ⟨200 * sqrt2, 150 * sqrt3⟩⟩
+  point    := ⟨100 * sqrt2, 100 * sqrt3⟩
   dragging := false
 
 -- Radius of the dot, in SVG units; also how close a press must be to grab it.
@@ -97,6 +98,6 @@ def render : IO String := do
     width='{toFloat (b.hi.x - b.lo.x)}' height='{toFloat (b.hi.y - b.lo.y)}' \
     fill='none' stroke='#888' stroke-width='2'/>\
     <circle cx='{toFloat p.x}' cy='{toFloat p.y}' r='{radius}' fill='{fill}'/>\
-    <text x='10' y='390' font-size='14'>({K.toString p.x}, {K.toString p.y})</text>"
+    <text x='10' y='390' font-size='14'>({Num.toString p.x}, {Num.toString p.y})</text>"
 
 end CGLeanWeb.Drag

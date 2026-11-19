@@ -4,7 +4,7 @@
 # Lean does not ship a WebAssembly build, so the first run also builds Lean's
 # runtime and its libuv dependency with Emscripten, and generates and compiles
 # the C for Lean's core libraries Init and Std, caching all of it in
-# .lake/wasm/. Later runs only redo the steps from Lake onwards.
+# .lake/wasm-v<version>/. Later runs only redo the steps from Lake onwards.
 #
 # Needs: emscripten (`brew install emscripten`), elan, curl, python3, and
 # Mathlib's build cache (`lake exe cache get`).
@@ -14,7 +14,6 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-W=$ROOT/.lake/wasm
 OUT=$ROOT/web/dist
 JOBS=${JOBS:-$(sysctl -n hw.ncpu 2>/dev/null || nproc)}
 
@@ -26,9 +25,10 @@ LIBUV_VERSION=1.48.0   # must match the GIT_TAG in Lean's src/CMakeLists.txt
 cd "$ROOT"
 LEAN=$(elan which lean)
 LEAN_VERSION=$(sed 's/.*:v//' lean-toolchain)
+W=$ROOT/.lake/wasm-v$LEAN_VERSION   # everything here depends on the toolchain
 SRC=$W/lean4-src
 
-export EM_CACHE=$W/emcache   # the default, inside Homebrew's tree, isn't writable
+export EM_CACHE=$ROOT/.lake/emcache   # the default, inside Homebrew's tree, isn't writable
 
 mkdir -p "$W" "$OUT"
 
@@ -57,12 +57,8 @@ if [ ! -d "$SRC" ]; then
   curl -sfL "https://github.com/leanprover/lean4/archive/refs/tags/v$LEAN_VERSION.tar.gz" \
     | tar xz -C "$SRC" --strip-components 1 --exclude '*/.claude' --exclude '*/.vscode'
 
-  # Two stubs used only when building without libuv support (as we do) have
-  # signatures that no longer match their declarations, so they don't compile.
-  sed -i '' \
-    -e 's|^extern "C" LEAN_EXPORT lean_obj_res lean_uv_event_loop_alive() {|extern "C" LEAN_EXPORT uint8_t lean_uv_event_loop_alive() {|' \
-    -e 's|^    return io_result_mk_error("lean_uv_event_loop_alive is not supported");|    return 0;|' \
-    "$SRC/src/runtime/uv/event_loop.cpp"
+  # A stub used only when building without libuv support (as we do) has a
+  # signature that no longer matches its declaration, so it doesn't compile.
   sed -i '' \
     -e 's|^extern "C" LEAN_EXPORT lean_obj_res lean_uv_os_get_group() {|extern "C" LEAN_EXPORT lean_obj_res lean_uv_os_get_group(uint64_t gid) {|' \
     "$SRC/src/runtime/uv/system.cpp"

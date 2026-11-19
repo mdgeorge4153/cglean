@@ -17,6 +17,13 @@ lean_object * cglean_pointer_move(double x, double y);
 lean_object * cglean_pointer_up(void);
 lean_object * cglean_render(void);
 
+// Every module that imports Lean (as Mathlib's do) calls this from its
+// initializer. The real one, in Lean's src/initialize/init.cpp, also
+// initializes the `Lean` package, which is exactly what prune.py cuts. The
+// rest of what it does is covered by lean_initialize_runtime_module below and
+// by the entry module's initializer, which initializes Init itself.
+void lean_initialize(void) {}
+
 // Consumes an `IO Unit` result, printing the error if there is one.
 static void finish(lean_object * res) {
   if (!lean_io_result_is_ok(res)) lean_io_result_show_error(res);
