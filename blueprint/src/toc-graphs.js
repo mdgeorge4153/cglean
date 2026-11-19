@@ -1,5 +1,5 @@
 // plastexdepgraph (dep_by=chapter) lists every "Chapter N graph" link at the
-// bottom of the sidebar. Move each one to the top of chapter N's entry, as
+// bottom of the sidebar. Move each one to the end of chapter N's entry, as
 // "Dependency graph", giving the chapter a collapsible sub-list (as the theme
 // does for chapters with sections) if it doesn't have one. (The graph pages
 // themselves have no sidebar.)
@@ -20,6 +20,6 @@ $(function () {
       $sub = $('<ul class="sub-toc-1"></ul>').appendTo($chapter);
     }
     $item.children("a").text("Dependency graph");
-    $item.prependTo($sub);
+    $item.appendTo($sub);
   });
 });
