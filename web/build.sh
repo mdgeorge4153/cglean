@@ -31,6 +31,16 @@ SRC=$W/lean4-src
 # The default, inside Homebrew's tree, isn't writable.
 export EM_CACHE=${EM_CACHE:-$ROOT/.lake/emcache}
 
+# With ccache installed, compiles go through it: that saves recompiling C that
+# hasn't changed but looks new, as after switching branches or in CI. Compilers
+# are checked by version rather than by modification time, since CI installs
+# Emscripten afresh on every run.
+if command -v ccache > /dev/null; then
+  export EM_COMPILER_WRAPPER=${EM_COMPILER_WRAPPER:-ccache}
+  export CCACHE_DIR=${CCACHE_DIR:-$ROOT/.lake/ccache}
+  export CCACHE_COMPILERCHECK=${CCACHE_COMPILERCHECK:-'%compiler% --version'}
+fi
+
 mkdir -p "$W" "$OUT"
 
 CFLAGS=(-O2 -ffp-contract=off -DNDEBUG -I"$W/include" -I"$SRC/src/include")

@@ -86,14 +86,10 @@ jobs:
           key: demo-emsdk-6.0.10
           save: true   # TEMPORARY: to measure ccache on this PR
 
-      # EM_COMPILER_WRAPPER runs Emscripten's clang under ccache. ccache would
-      # otherwise check the compiler by its modification time, which is new on
-      # every run since setup-emsdk installs it afresh.
+      # build.sh uses ccache when it's installed, in the directory the action
+      # sets in CCACHE_DIR.
       - name: Build the demo
         run: web/build.sh
-        env:
-          EM_COMPILER_WRAPPER: ccache
-          CCACHE_COMPILERCHECK: '%compiler% --version'
 
       # doc-gen4 records every declaration it sees in a SQLite database and
       # only then renders HTML from it. DOCGEN_LOCAL_MODULE_ROOTS restricts that
