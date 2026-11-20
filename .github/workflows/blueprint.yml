@@ -89,21 +89,12 @@ jobs:
       - uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           key: demo-emsdk-6.0.10
-          save: true   # TEMPORARY: to measure ccache on this PR
+          save: ${{ github.ref == 'refs/heads/main' }}
 
       # build.sh uses ccache when it's installed; the action configures its
       # cache directory.
       - name: Build the demo
         run: web/build.sh
-        env:   # TEMPORARY: to see why ccache misses
-          CCACHE_DEBUG: 'true'
-          CCACHE_DEBUGDIR: ${{ github.workspace }}/_ccache-debug
-
-      - uses: actions/upload-artifact@v7   # TEMPORARY
-        with:
-          name: ccache-debug-${{ github.run_attempt }}
-          path: _ccache-debug/**/*Mathlib_Init.o.*
-          retention-days: 1
 
       # doc-gen4 records every declaration it sees in a SQLite database and
       # only then renders HTML from it. DOCGEN_LOCAL_MODULE_ROOTS restricts that
