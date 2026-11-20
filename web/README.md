@@ -15,7 +15,8 @@ Building
     web/build.sh
     python3 -m http.server -d web 8000     # then open http://localhost:8000
 
-The first run takes a few minutes and caches its work in
+With `ccache` installed (`brew install ccache`), compiles go through it, which
+helps after switching branches. The first run takes a few minutes and caches its work in
 `.lake/wasm-v<version>/`; later runs take seconds.
 
 The blueprint embeds the demo in its Applications chapter. To build both and
