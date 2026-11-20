@@ -25,7 +25,8 @@ div.proof_content {
 }
 
 /* Demos embedded by demo-embed.js: a 400px square canvas, and a few lines
- * of results below it. */
+ * of results below it. The script fits the height to the demo; this is a
+ * starting value. */
 iframe.demo {
 	display: block;
 	width: 402px;
