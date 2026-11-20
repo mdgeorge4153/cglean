@@ -41,3 +41,8 @@ root = "Main"
 # Code for the WebAssembly build; see web/README.md.
 [[lean_lib]]
 name = "CGLeanWeb"
+
+# The demo's benchmark, natively; see CGLeanWeb/Bench.lean. Not a default target.
+[[lean_exe]]
+name = "demo-bench"
+root = "CGLeanWeb.Bench"

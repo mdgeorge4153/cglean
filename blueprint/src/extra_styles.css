@@ -24,11 +24,12 @@ div.proof_content {
 	border-left: .08rem solid grey;
 }
 
-/* Demos embedded by demo-embed.js: the canvas is 400px square. */
+/* Demos embedded by demo-embed.js: a 400px square canvas, and a few lines
+ * of results below it. */
 iframe.demo {
 	display: block;
 	width: 402px;
 	max-width: 100%;
-	height: 402px;
+	height: 480px;
 	border: none;
 }
