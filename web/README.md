@@ -24,11 +24,25 @@ serve the blueprint locally, with the demo in place:
     scripts/serve-blueprint.sh              # --no-demo to reuse web/dist
 
 
+Benchmark
+---------
+
+The page runs the demo in filtered arithmetic (`Filtered ℚ[√2][√3]`). Each
+drag is recorded, and when it ends, replayed from where it started in both
+filtered and exact (`ℚ[√2][√3]`) arithmetic; the times appear below the canvas.
+Browsers coarsen timers to 5–100 µs, so each replay is repeated until it takes
+at least 20 ms, and each arithmetic keeps its best of three rounds. The same
+comparison runs natively on a built-in drag with
+
+    lake build demo-bench && .lake/build/bin/demo-bench [replays]
+
+
 How it fits together
 --------------------
 
     CGLeanWeb/Drag.lean   state, event handlers and SVG rendering, in Lean;
                           `@[export]` gives the handlers C names
+    CGLeanWeb/Bench.lean  the benchmark, natively
     web/glue.c            starts Lean's runtime; unwraps IO results for JS
     web/main.js           forwards pointer events, displays the returned SVG
     web/build.sh          the whole pipeline (below)
