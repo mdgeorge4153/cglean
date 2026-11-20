@@ -32,12 +32,12 @@ SRC=$W/lean4-src
 export EM_CACHE=${EM_CACHE:-$ROOT/.lake/emcache}
 
 # With ccache installed, compiles go through it: that saves recompiling C that
-# hasn't changed but looks new, as after switching branches or in CI. Compilers
-# are checked by version rather than by modification time, since CI installs
-# Emscripten afresh on every run.
+# hasn't changed but looks new, as after switching branches or worktrees, or in
+# CI. Its cache is ccache's usual one, shared between worktrees (CI's action
+# configures where). Compilers are checked by version rather than modification
+# time, since CI installs Emscripten afresh on every run.
 if command -v ccache > /dev/null; then
   export EM_COMPILER_WRAPPER=${EM_COMPILER_WRAPPER:-ccache}
-  export CCACHE_DIR=${CCACHE_DIR:-$ROOT/.lake/ccache}
   export CCACHE_COMPILERCHECK=${CCACHE_COMPILERCHECK:-'%compiler% --version'}
 fi
 

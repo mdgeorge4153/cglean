@@ -86,8 +86,8 @@ jobs:
           key: demo-emsdk-6.0.10
           save: true   # TEMPORARY: to measure ccache on this PR
 
-      # build.sh uses ccache when it's installed, in the directory the action
-      # sets in CCACHE_DIR.
+      # build.sh uses ccache when it's installed; the action configures its
+      # cache directory.
       - name: Build the demo
         run: web/build.sh
 
