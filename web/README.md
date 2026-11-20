@@ -18,6 +18,11 @@ Building
 The first run takes a few minutes and caches its work in
 `.lake/wasm-v<version>/`; later runs take seconds.
 
+The blueprint embeds the demo in its Applications chapter. To build both and
+serve the blueprint locally, with the demo in place:
+
+    scripts/serve-blueprint.sh              # --no-demo to reuse web/dist
+
 
 How it fits together
 --------------------
