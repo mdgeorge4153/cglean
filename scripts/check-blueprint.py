@@ -72,9 +72,11 @@ def scan(tex: str) -> tuple[list[str], set[str], list[str]]:
 
 
 def library_roots() -> list[str]:
-    """Every root of every library: some files sit outside `CGLean.lean`."""
+    """Every root of the CGLean library: some files sit outside `CGLean.lean`.
+    Other libraries (CGLeanWeb) aren't in the blueprint, nor in the default
+    `lake build`."""
     config = tomllib.loads((ROOT / "lakefile.toml").read_text())
-    return [root for lib in config.get("lean_lib", [])
+    return [root for lib in config.get("lean_lib", []) if lib["name"] == "CGLean"
             for root in lib.get("roots", [lib["name"]])]
 
 

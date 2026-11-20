@@ -11,11 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-# Let a running deployment finish rather than cancelling it part-way.
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -47,6 +42,29 @@ jobs:
             echo "::error::lake build produced warnings other than sorry (listed above)"
             exit 1
           fi
+
+      # The drag-and-drop demo, compiled to WebAssembly (web/README.md) and
+      # embedded in the blueprint's Applications chapter. Built on every PR, so
+      # that a change breaking it doesn't merge. The cache holds what build.sh
+      # makes once per Lean version: Lean's runtime, libuv, and the C for Init
+      # and Std, plus Emscripten's own system libraries.
+      - uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: 6.0.10
+
+      - name: Cache the WebAssembly runtime
+        uses: actions/cache@v6
+        with:
+          path: |
+            .lake/wasm-v*/lean4-src
+            .lake/wasm-v*/libuv
+            .lake/wasm-v*/lib
+            .lake/wasm-v*/core-c
+            .lake/emcache
+          key: Wasm1-${{ hashFiles('lean-toolchain') }}-emsdk-6.0.10
+
+      - name: Build the demo
+        run: web/build.sh
 
       # doc-gen4 records every declaration it sees in a SQLite database and
       # only then renders HTML from it. DOCGEN_LOCAL_MODULE_ROOTS restricts that
@@ -110,6 +128,8 @@ jobs:
           mkdir -p _site
           cp -r blueprint/web/. _site/
           cp -r docbuild/.lake/build/doc _site/docs
+          mkdir -p _site/demo
+          cp -r web/index.html web/main.js web/dist _site/demo/
 
       - uses: actions/upload-pages-artifact@v5
         with:
@@ -119,6 +139,12 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Let a running deployment finish rather than cancelling it part-way. Only
+    # here: on the whole workflow, every PR's build would queue behind every
+    # other's, and a newly queued one cancels whichever was waiting.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
