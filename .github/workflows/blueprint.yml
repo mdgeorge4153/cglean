@@ -62,9 +62,14 @@ jobs:
       # that a change breaking it doesn't merge. The cache holds what build.sh
       # makes once per Lean version: Lean's runtime, libuv, and the C for Init
       # and Std, plus Emscripten's own system libraries.
+      # Installed at a fixed path, and cached: by default each run installs it
+      # in a new temporary directory, whose path ends up in everything ccache
+      # hashes (clang's --version, the paths of its own headers), so nothing
+      # would ever match.
       - uses: mymindstorm/setup-emsdk@v16
         with:
           version: 6.0.10
+          actions-cache-folder: .emsdk
 
       - name: Cache the WebAssembly runtime
         uses: actions/cache@v6
