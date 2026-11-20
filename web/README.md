@@ -27,12 +27,12 @@ serve the blueprint locally, with the demo in place:
 Benchmark
 ---------
 
-The demo runs twice side by side, in exact arithmetic (`ℚ[√2][√3]`) and
-filtered (`Filtered ℚ[√2][√3]`); the page shows one of them. Below the canvas
-(on the demo's own page, not in the blueprint), record a drag or use the
-built-in one, then replay it through both and compare the times. Browsers
-coarsen timers to 5–100 µs, so the page times many replays at once, and keeps
-each arithmetic's best of three rounds. The same replay runs natively with
+The page runs the demo in filtered arithmetic (`Filtered ℚ[√2][√3]`). Each
+drag is recorded, and when it ends, replayed from where it started in both
+filtered and exact (`ℚ[√2][√3]`) arithmetic; the times appear below the canvas.
+Browsers coarsen timers to 5–100 µs, so each replay is repeated until it takes
+at least 20 ms, and each arithmetic keeps its best of three rounds. The same
+comparison runs natively on a built-in drag with
 
     lake build demo-bench && .lake/build/bin/demo-bench [replays]
 

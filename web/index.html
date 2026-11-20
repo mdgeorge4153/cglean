@@ -8,11 +8,10 @@
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     svg  { border: 1px solid #ccc; width: 400px; max-width: 100%; touch-action: none; user-select: none; }
-    /* Embedded in the blueprint (demo-embed.js): just the canvas. */
+    /* Embedded in the blueprint (demo-embed.js): just the canvas and results. */
     .embedded body { margin: 0; }
-    .embedded p, .embedded #bench { display: none; }
-    #bench   { margin-top: 1rem; }
-    #bench > * { margin: .3rem 0; }
+    .embedded p    { display: none; }
+    #results { margin: .5rem 0 0; font-size: 13px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -20,19 +19,8 @@
   and the drawing are all in Lean
   (<code>CGLeanWeb/Drag.lean</code>), compiled to WebAssembly.</p>
   <svg id="canvas" viewBox="0 0 400 400"></svg>
-  <div id="bench">
-    <div><label><input type="checkbox" id="exact"> Show the exact version (both always run)</label></div>
-    <div>
-      Trace: <span id="trace"></span>
-      <button id="record">Record a drag</button>
-      <button id="synthetic">Use the built-in drag</button>
-    </div>
-    <div>
-      Replay <input id="reps" type="number" value="20" min="1" style="width: 5em"> times
-      <button id="replay">Compare exact and filtered</button>
-    </div>
-    <pre id="results"></pre>
-  </div>
+  <pre id="results">Drag the dot; when you let go, the drag is replayed in exact and in
+filtered arithmetic, and timed.</pre>
   <script type="module" src="main.js"></script>
 </body>
 </html>

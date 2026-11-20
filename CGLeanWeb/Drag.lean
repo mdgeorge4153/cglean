@@ -3,9 +3,9 @@ Drag-and-drop test for the WebAssembly build: a point that can be dragged with
 the mouse, but is held inside an axis-aligned box. Coordinates are exact, in
 `ℚ[√2][√3]`: the box's corners are irrational, and clamping uses its order.
 
-The demo runs twice side by side, once in exact arithmetic (`L`) and once
-filtered (`Num = Filtered L`), so that the two can be timed against each other:
-the page can record a drag (or use a built-in one) and replay it through either.
+The page runs it in filtered arithmetic (`Num = Filtered L`). Each drag is
+recorded, and on release replayed through both filtered and exact arithmetic
+(`L`), so that the two can be timed against each other.
 
 The state lives here, and the page's JavaScript only forwards pointer events
 and displays the SVG that `render` returns (see `web/`).
@@ -105,6 +105,11 @@ def State.render (s : State R) : String :=
     <circle cx='{toFloat p.x}' cy='{toFloat p.y}' r='{radius}' fill='{fill}'/>\
     <text x='10' y='390' font-size='14'>({p.x}, {p.y})</text>"
 
+def Point.map {S : Type} (f : R → S) (p : Point R) : Point S := ⟨f p.x, f p.y⟩
+
+def State.map {S : Type} (f : R → S) (s : State R) : State S :=
+  ⟨⟨s.box.lo.map f, s.box.hi.map f⟩, s.point.map f, s.dragging⟩
+
 -- Runs `trace` from `s`, and shows where the point ends up.
 def replay (s : State R) (trace : Array Event) : String :=
   let p := (trace.foldl State.step s).point
@@ -112,13 +117,12 @@ def replay (s : State R) (trace : Array Event) : String :=
 
 end
 
-/-! ## Both versions, live -/
+/-! ## The live demo, and replays -/
 
-def initialExact : State L := initial ⟨⟨0, 1⟩, 0⟩ ⟨0, 1⟩
 def initialFiltered : State Num := initial (.ofValue ⟨⟨0, 1⟩, 0⟩) (.ofValue ⟨0, 1⟩)
 
--- A drag for benchmarks: press on the dot, then circle around the box's
--- centre (√ not needed: these are only mouse positions) in and out of it.
+-- A drag for the native benchmark (Bench.lean): press on the dot, then circle
+-- around the box's centre, in and out of it.
 def syntheticTrace : Array Event := Id.run do
   let mut t := #[.down 141.42 173.2]
   for i in [0:2000] do
@@ -128,22 +132,22 @@ def syntheticTrace : Array Event := Id.run do
   return t.push .up
 
 structure Live where
-  exact     : State L
-  filtered  : State Num
-  -- Which of the two the page shows.
-  showExact : Bool
-  recording : Bool
-  trace     : Array Event
+  state : State Num
+  -- The state when the last drag started, and its events since.
+  start : State Num
+  trace : Array Event
 
-instance : Nonempty Live := ⟨⟨initialExact, initialFiltered, false, false, #[]⟩⟩
+instance : Nonempty Live := ⟨⟨initialFiltered, initialFiltered, #[]⟩⟩
 
-initialize live : IO.Ref Live ←
-  IO.mkRef ⟨initialExact, initialFiltered, false, false, syntheticTrace⟩
+initialize live : IO.Ref Live ← IO.mkRef ⟨initialFiltered, initialFiltered, #[]⟩
 
+-- A press that grabs the dot starts a new trace; one that misses clears it.
 def handle (e : Event) : IO Unit :=
   live.modify fun l =>
-    { l with exact := l.exact.step e, filtered := l.filtered.step e,
-             trace := if l.recording then l.trace.push e else l.trace }
+    let state := l.state.step e
+    match e with
+    | .down .. => { state, start := l.state, trace := if state.dragging then #[e] else #[] }
+    | _ => { l with state, trace := if l.trace.isEmpty then #[] else l.trace.push e }
 
 @[export cglean_pointer_down]
 def pointerDown (x y : Float) : IO Unit := handle (.down x y)
@@ -155,30 +159,21 @@ def pointerMove (x y : Float) : IO Unit := handle (.move x y)
 def pointerUp : IO Unit := handle .up
 
 @[export cglean_render]
-def render : IO String := do
-  let l ← live.get
-  return if l.showExact then l.exact.render else l.filtered.render
+def render : IO String := return (← live.get).state.render
 
-@[export cglean_show_exact]
-def showExact (b : UInt8) : IO Unit := live.modify ({ · with showExact := b != 0 })
-
--- Recording replaces the trace with the events from now until it stops.
-@[export cglean_set_recording]
-def setRecording (b : UInt8) : IO Unit :=
-  live.modify fun l =>
-    if b != 0 then { l with recording := true, trace := #[] } else { l with recording := false }
-
-@[export cglean_use_synthetic_trace]
-def useSyntheticTrace : IO Unit := live.modify ({ · with recording := false, trace := syntheticTrace })
-
+-- The number of events in the last drag, or 0 if the last press missed the dot.
 @[export cglean_trace_size]
 def traceSize : IO UInt32 := return (← live.get).trace.size.toUInt32
 
--- Replays the trace once, from the initial state, in exact arithmetic or
+-- Replays the last drag once, from where it started, in exact arithmetic or
 -- filtered; returns where the point ends up.
 @[export cglean_replay]
 def replayTrace (exact : UInt8) : IO String := do
-  let t := (← live.get).trace
-  return if exact != 0 then replay initialExact t else replay initialFiltered t
+  let l ← live.get
+  return if exact != 0 then replay (l.start.map CGLean.Filtered.get) l.trace else replay l.start l.trace
+
+-- For the native benchmark: the built-in drag, from the initial state.
+def useSyntheticTrace : IO Unit :=
+  live.set ⟨initialFiltered, initialFiltered, syntheticTrace⟩
 
 end CGLeanWeb.Drag

@@ -16,9 +16,6 @@ lean_object * cglean_pointer_down(double x, double y);
 lean_object * cglean_pointer_move(double x, double y);
 lean_object * cglean_pointer_up(void);
 lean_object * cglean_render(void);
-lean_object * cglean_show_exact(uint8_t b);
-lean_object * cglean_set_recording(uint8_t b);
-lean_object * cglean_use_synthetic_trace(void);
 lean_object * cglean_trace_size(void);
 lean_object * cglean_replay(uint8_t exact);
 
@@ -44,10 +41,6 @@ EMSCRIPTEN_KEEPALIVE void cglean_init(void) {
 EMSCRIPTEN_KEEPALIVE void cglean_js_pointer_down(double x, double y) { finish(cglean_pointer_down(x, y)); }
 EMSCRIPTEN_KEEPALIVE void cglean_js_pointer_move(double x, double y) { finish(cglean_pointer_move(x, y)); }
 EMSCRIPTEN_KEEPALIVE void cglean_js_pointer_up(void)                 { finish(cglean_pointer_up()); }
-
-EMSCRIPTEN_KEEPALIVE void cglean_js_show_exact(int b)    { finish(cglean_show_exact(b != 0)); }
-EMSCRIPTEN_KEEPALIVE void cglean_js_set_recording(int b) { finish(cglean_set_recording(b != 0)); }
-EMSCRIPTEN_KEEPALIVE void cglean_js_use_synthetic_trace(void) { finish(cglean_use_synthetic_trace()); }
 
 EMSCRIPTEN_KEEPALIVE unsigned cglean_js_trace_size(void) {
   lean_object * res = cglean_trace_size();
