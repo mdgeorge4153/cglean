@@ -11,8 +11,18 @@ permissions:
   pages: write
   id-token: write
 
+# A new push to a PR cancels that PR's run still in progress, which would only
+# check a commit nobody looks at any more. Pushes to main queue instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Three jobs: `lean` (the library, the demo, the API docs, and the blueprint
+# check) and `blueprint` (which needs no Lean) run in parallel; on main, `site`
+# then puts their output together and `deploy` publishes it. The demo stays in
+# `lean`, rather than a job of its own, so that Mathlib's cache is fetched once.
 jobs:
-  build:
+  lean:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -43,14 +53,23 @@ jobs:
             exit 1
           fi
 
+      # It reads the blueprint's source, not the built blueprint.
+      - name: Check the blueprint against the library
+        run: python3 scripts/check-blueprint.py
+
       # The drag-and-drop demo, compiled to WebAssembly (web/README.md) and
       # embedded in the blueprint's Applications chapter. Built on every PR, so
       # that a change breaking it doesn't merge. The cache holds what build.sh
       # makes once per Lean version: Lean's runtime, libuv, and the C for Init
       # and Std, plus Emscripten's own system libraries.
+      # Installed at a fixed path, and cached: by default each run installs it
+      # in a new temporary directory, whose path ends up in everything ccache
+      # hashes (clang's --version, the paths of its own headers), so nothing
+      # would ever match.
       - uses: mymindstorm/setup-emsdk@v16
         with:
           version: 6.0.10
+          actions-cache-folder: .emsdk
 
       - name: Cache the WebAssembly runtime
         uses: actions/cache@v6
@@ -63,6 +82,17 @@ jobs:
             .lake/emcache
           key: Wasm1-${{ hashFiles('lean-toolchain') }}-emsdk-6.0.10
 
+      # Most of the demo's build is compiling the same few thousand C files
+      # (Mathlib's, Init's, ...) with emcc, so ccache keeps the objects. Only
+      # main saves the cache; PRs restore main's, rather than each storing
+      # another copy.
+      - uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: demo-emsdk-6.0.10
+          save: ${{ github.ref == 'refs/heads/main' }}
+
+      # build.sh uses ccache when it's installed; the action configures its
+      # cache directory.
       - name: Build the demo
         run: web/build.sh
 
@@ -98,6 +128,28 @@ jobs:
           DOCGEN_LOCAL_MODULE_ROOTS: CGLean
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
 
+      # The API documentation goes under `docs/`, which is where the blueprint's
+      # `\dochome` points its statement links, and the demo under `demo/`,
+      # where the blueprint embeds it.
+      - name: Collect the demo and the documentation
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p _part/demo
+          cp -r docbuild/.lake/build/doc _part/docs
+          cp -r web/index.html web/main.js web/dist _part/demo/
+
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-lean
+          path: _part
+          retention-days: 1
+
+  blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
       # plasTeX renders the text itself; TeX is only needed for the TikZ
       # pictures, which it compiles with latex and converts with dvisvgm (see
       # web.tex). A few texlive packages rather than texlive-full. Graphviz is
@@ -118,30 +170,34 @@ jobs:
       - name: Build blueprint
         run: leanblueprint web
 
-      - name: Check the blueprint against the library
-        run: python3 scripts/check-blueprint.py
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-blueprint
+          path: blueprint/web
+          retention-days: 1
 
-      # The blueprint sits at the root and the API documentation under `docs/`,
-      # which is where the blueprint's `\dochome` points its statement links.
-      - name: Assemble the site
-        run: |
-          mkdir -p _site
-          cp -r blueprint/web/. _site/
-          cp -r docbuild/.lake/build/doc _site/docs
-          mkdir -p _site/demo
-          cp -r web/index.html web/main.js web/dist _site/demo/
+  # The blueprint at the root, with the demo and the documentation beside it.
+  site:
+    needs: [lean, blueprint]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: site-*
+          path: _site
+          merge-multiple: true
 
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
   deploy:
-    needs: build
+    needs: site
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Let a running deployment finish rather than cancelling it part-way. Only
-    # here: on the whole workflow, every PR's build would queue behind every
-    # other's, and a newly queued one cancels whichever was waiting.
+    # Let a running deployment finish rather than cancelling it part-way.
     concurrency:
       group: pages
       cancel-in-progress: false
